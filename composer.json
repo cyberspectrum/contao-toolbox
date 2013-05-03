@@ -1,0 +1,25 @@
+{
+	"name": "cyberspectrum/contao-toolbox",
+	"description": "Contao ToolBox",
+	"keywords": ["Contao", "Toolbox", "Helper"],
+	"homepage": "http://cyberspectrum.de",
+	"license": "LGPL",
+	"authors": [
+		{
+			"name": "Christian Schiffler",
+			"email": "c.schiffler@cyberspectrum.de"
+		}
+	],
+	"require": {
+		"php": ">=5.3.3",
+		"symfony/console": "2.*",
+		"kriswallsmith/buzz": "dev-master"
+	},
+	"require-dev": {
+		"symfony/finder": "2.*",
+		"symfony/process": "2.*"
+	},
+	"autoload": {
+		"psr-0": { "CyberSpectrum\\": "src/" }
+	}
+}
