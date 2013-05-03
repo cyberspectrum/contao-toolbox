@@ -103,7 +103,7 @@ abstract class CommandBase extends Command
 
 		if (!$this->txlang)
 		{
-			$this->txlang = $this->getConfigValue('/extra/contao/transifex/languages-tx');
+			$this->txlang = $this->getConfigValue('/extra/contao/transifex/languages_tx');
 
 			if (!$this->txlang)
 			{
@@ -114,7 +114,7 @@ abstract class CommandBase extends Command
 
 		if (!$this->ctolang)
 		{
-			$this->ctolang = $this->getConfigValue('/extra/contao/transifex/languages-cto');
+			$this->ctolang = $this->getConfigValue('/extra/contao/transifex/languages_cto');
 
 			if (!$this->ctolang)
 			{
