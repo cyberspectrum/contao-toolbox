@@ -105,7 +105,10 @@ class ConvertToXliff extends ConvertBase
 			$dest->setDate($time);
 
 			$this->convert($src, $dest, $base);
-			$dest->save();
+			if (is_file($dstDir . DIRECTORY_SEPARATOR . $dstFile) || $dest->getKeys())
+			{
+				$dest->save();
+			}
 		}
 
 		if ($this->cleanup && ($files = array_diff($this->determinePresentFiles($language), $destinationFiles)))

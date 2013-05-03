@@ -61,6 +61,7 @@ class ConvertFromXliff extends ConvertBase
 		$destinationFiles = array();
 		foreach ($this->baseFiles as $file)
 		{
+			$this->output->writeln(sprintf('processing file: %s...', $file));
 			$srcFile            = $this->getLanguageBasePath() .DIRECTORY_SEPARATOR . $language .DIRECTORY_SEPARATOR . $file;
 
 			// not a file from transifex received yet.
@@ -93,9 +94,11 @@ class ConvertFromXliff extends ConvertBase
 			$dest->setLastChange($src->getDate());
 
 			$this->convert($src, $dest);
-			$dest->save();
 
-			$this->output->writeln(sprintf('processing file: %s...', $file));
+			if (is_file($dstDir . DIRECTORY_SEPARATOR . $dstFile) || $dest->getKeys())
+			{
+				$dest->save();
+			}
 		}
 
 		if ($this->cleanup && ($files = array_diff($this->determinePresentFiles($language), $destinationFiles)))
