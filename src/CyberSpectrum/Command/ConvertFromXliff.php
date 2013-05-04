@@ -42,17 +42,29 @@ class ConvertFromXliff extends ConvertBase
 
 	protected function convert(Xliff\File $src, Contao\File $dst)
 	{
+		$changed = false;
+
 		foreach ($src->getKeys() as $key)
 		{
 			if (($value = $src->getTarget($key)) !== null)
 			{
-				$dst->setValue($key, $value);
+				if ($dst->getValue($key) != $value)
+				{
+					$changed = true;
+					$dst->setValue($key, $value);
+				}
 			}
 			else
 			{
-				$dst->removeValue($key);
+				if ($dst->getValue($key) !== null)
+				{
+					$changed = true;
+					$dst->removeValue($key);
+				}
 			}
 		}
+
+		return $changed;
 	}
 
 	protected function processLanguage($language)
@@ -89,15 +101,23 @@ class ConvertFromXliff extends ConvertBase
 			}
 
 			$dest = new Contao\File($dstDir . DIRECTORY_SEPARATOR . $dstFile);
-			$dest->setLanguage($language);
-			$dest->setTransifexProject($this->project);
-			$dest->setLastChange($src->getDate());
 
-			$this->convert($src, $dest);
+			$changed = $this->convert($src, $dest);
 
-			if (is_file($dstDir . DIRECTORY_SEPARATOR . $dstFile) || $dest->getKeys())
+			if ($changed)
 			{
-				$dest->save();
+				$dest->setLanguage($language);
+				$dest->setTransifexProject($this->project);
+				$dest->setLastChange($src->getDate());
+
+				if ($dest->getKeys())
+				{
+					$dest->save();
+				}
+				else
+				{
+					unlink($dstDir . DIRECTORY_SEPARATOR . $dstFile);
+				}
 			}
 		}
 
