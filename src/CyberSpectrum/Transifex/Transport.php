@@ -56,7 +56,7 @@ class Transport
 		}
 
 		/** @var \Guzzle\Http\Message\Response $response */
-		$response = $this->client->post($url, $headers, $content);
+		$response = $this->client->post($url, $headers, $content)->send();
 
 		$this->checkError($response);
 
@@ -76,7 +76,7 @@ class Transport
 		}
 
 		/** @var \Guzzle\Http\Message\Response $response */
-		$response = $this->client->put($url, $headers, $content);
+		$response = $this->client->put($url, $headers, $content)->send();
 
 		$this->checkError($response);
 
