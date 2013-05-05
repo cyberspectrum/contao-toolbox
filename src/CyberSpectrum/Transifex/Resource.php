@@ -267,13 +267,18 @@ class Resource extends BaseObject
 		$this->setMimetype($response['mimetype']);
 	}
 
-	public function fetchTranslation($langcode)
+	public function fetchTranslation($langcode, $mode = 'reviewed')
 	{
+		$parameters = array(
+			'file' => 1,
+			'mode' => $mode
+		);
+
 		return $this->execute(sprintf(
 			'project/%s/resource/%s/translation/%s',
 			$this->ensureParameter('project'),
 			$this->ensureParameter('slug'),
 			$langcode
-		), array('file' => 1));
+		), $parameters);
 	}
 }

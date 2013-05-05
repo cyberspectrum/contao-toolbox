@@ -7,6 +7,7 @@ use CyberSpectrum\Transifex\Resource;
 use CyberSpectrum\Translation\Xliff\File;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Input\InputOption;
 
 class DownloadTransifex extends TransifexBase
 {
@@ -15,7 +16,27 @@ class DownloadTransifex extends TransifexBase
 		parent::configure();
 		$this->setName('download-transifex');
 		$this->setDescription('Download xliff translations from transifex.');
+
+		$this->addOption('mode', 'm', InputOption::VALUE_OPTIONAL, 'Download mode to use.', 'reviewed');
 	}
+
+	protected function initialize(InputInterface $input, OutputInterface $output)
+	{
+
+		parent::initialize($input, $output);
+
+		$translationMode = $input->getOption('mode');
+		$validModes = array('reviewed', 'translated', 'default');
+		if (!in_array($translationMode, $validModes))
+		{
+			throw new \InvalidArgumentException(sprintf(
+				'Invalid translation mode %s specified. Must be one of %s',
+				$translationMode,
+				implode(', ', $validModes)
+			));
+		}
+	}
+
 
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
@@ -24,6 +45,9 @@ class DownloadTransifex extends TransifexBase
 			$this->writelnAlways($output, '<error>No project set or no API received, exiting.</error>');
 			return;
 		}
+
+
+		$translationMode = $input->getOption('mode');
 
 		$project = new Project($this->getApi());
 
@@ -45,14 +69,15 @@ class DownloadTransifex extends TransifexBase
 			$resource->fetchDetails();
 
 			$allLanguages = ($input->getArgument('languages') == 'all');
-			foreach ($resource->getAvailableLanguages() as $code => $language)
+
+			foreach (array_keys($resource->getAvailableLanguages()) as $code)
 			{
 				// we are using 2char iso 639-1 in Contao - what a pitty :(
 				if (($allLanguages || in_array(substr($code, 0, 2), $this->languages)) && ($code != $this->baselanguage))
 				{
 					$this->writeln($output, sprintf('Updating language <info>%s</info>', $code));
 					// pull it.
-					$data = $resource->fetchTranslation($code);
+					$data = $resource->fetchTranslation($code, $translationMode);
 					if ($data)
 					{
 						$domain = substr($resource->getSlug(), strlen($this->prefix));
