@@ -21,7 +21,7 @@ class DownloadTransifex extends TransifexBase
 	{
 		if (!($this->project && $this->getApi()))
 		{
-			$output->writeln('No project set or no API received, exiting.');
+			$this->writelnAlways($output, '<error>No project set or no API received, exiting.</error>');
 			return;
 		}
 
@@ -36,10 +36,12 @@ class DownloadTransifex extends TransifexBase
 			/** @var \CyberSpectrum\Transifex\Resource $resource */
 			if (substr($resource->getSlug(), 0, strlen($this->prefix)) != $this->prefix)
 			{
-				$output->writeln('file ' . $resource->getSlug() . ' is not for this repository, ignored.');
+				$this->writelnVerbose($output, sprintf('Received resource <info>%s</info> is not for this repository, ignored.', $resource->getSlug()));
 				continue;
 			}
-			$output->writeln('polling ' . $resource->getSlug());
+			$this->writeln($output, sprintf('Processing resource <info>%s</info>', $resource->getSlug()));
+
+			$this->writelnVerbose($output, sprintf('Polling languages from resource <info>%s</info>', $resource->getSlug()));
 			$resource->fetchDetails();
 
 			$allLanguages = ($input->getArgument('languages') == 'all');
@@ -48,7 +50,7 @@ class DownloadTransifex extends TransifexBase
 				// we are using 2char iso 639-1 in Contao - what a pitty :(
 				if (($allLanguages || in_array(substr($code, 0, 2), $this->languages)) && ($code != $this->baselanguage))
 				{
-					$output->writeln('updating language ' . $code);
+					$this->writeln($output, sprintf('Updating language <info>%s</info>', $code));
 					// pull it.
 					$data = $resource->fetchTranslation($code);
 					if ($data)
@@ -81,7 +83,7 @@ class DownloadTransifex extends TransifexBase
 						}
 						foreach (array_diff($new->getKeys(), $local->getKeys()) as $key)
 						{
-							$output->writeln($key . ' seems to be obsolete.');
+							$this->writeln($output, sprintf('Language key <info>%s</info> seems to be orphaned, please check.', $key));
 						}
 
 						if ($local->getKeys())
@@ -93,11 +95,10 @@ class DownloadTransifex extends TransifexBase
 							$local->save();
 						}
 					}
-					die();
 				}
 				else
 				{
-					$output->writeln('skipping language ' . $code);
+					$this->writelnVerbose($output, sprintf('skipping language <info>%s</info>', $code));
 				}
 			}
 		}

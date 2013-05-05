@@ -20,7 +20,7 @@ class UploadTransifex extends TransifexBase
 	{
 		if (!($this->project && $this->getApi()))
 		{
-			$output->writeln('No project set or no API received, exiting.');
+			$this->writelnAlways($output, '<error>No project set or no API received, exiting.</error>');
 			return;
 		}
 
@@ -38,7 +38,7 @@ class UploadTransifex extends TransifexBase
 			if (array_key_exists($this->prefix . $noext, $resources))
 			{
 				// already present, update.
-				$output->writeln('Update ressource ' . $this->prefix . $noext);
+				$this->writeln($output, sprintf('Updating ressource <info>%s</info>', $this->prefix . $noext));
 				/** @var \CyberSpectrum\Transifex\Resource $resource */
 				$resource = $resources[$this->prefix . $noext];
 				$resource->setContent(file_get_contents($file));
@@ -46,7 +46,7 @@ class UploadTransifex extends TransifexBase
 			}
 			else
 			{
-				$output->writeln('Create new ressource ' . $this->prefix . $noext);
+				$this->writeln($output, sprintf('Creating new ressource <info>%s</info>', $this->prefix . $noext));
 				// upload new.
 				$resource = new Resource($this->getApi());
 				$resource->setProject($this->project);

@@ -62,7 +62,7 @@ class TransifexBase extends CommandBase
 		{
 			if ($user = getenv('transifexuser'))
 			{
-				$output->writeln('using user specified in environment.');
+				$this->writelnVerbose($output, 'Using transifex user specified in environment.');
 			}
 			elseif ($input->isInteractive())
 			{
@@ -71,7 +71,7 @@ class TransifexBase extends CommandBase
 
 				if (!($user = $dialog->ask($output, 'User:')))
 				{
-					$output->writeln('ok... no user? no work!');
+					$this->writelnAlways($output, '<error>Error: no transifex user specified, exiting.</error>');
 					return;
 				}
 			}
@@ -87,7 +87,7 @@ class TransifexBase extends CommandBase
 		{
 			if ($pass = getenv('transifexpass'))
 			{
-				$output->writeln('using password specified in environment.');
+				$this->writelnVerbose($output, 'Using transifex password specified in environment.');
 			}
 			elseif ($input->isInteractive())
 			{
@@ -96,7 +96,7 @@ class TransifexBase extends CommandBase
 
 				if (!($pass = $dialog->askHiddenResponse($output, 'Password:')))
 				{
-					$output->writeln('ehm... no password? I don\'t believe you!');
+					$this->writelnAlways($output, '<error>Error: no transifex user password specified, exiting.</error>');
 					return;
 				}
 			}

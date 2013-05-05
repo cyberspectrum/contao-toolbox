@@ -12,16 +12,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class ConvertBase extends CommandBase
 {
-	/**
-	 * @var InputInterface
-	 */
-	protected $input;
-
-	/**
-	 * @var OutputInterface
-	 */
-	protected $output;
-
 	protected $cleanup;
 
 	protected $baseFiles;
@@ -55,7 +45,7 @@ abstract class ConvertBase extends CommandBase
 
 	abstract protected function isValidDestinationFile($file);
 
-	abstract protected function processLanguage($language);
+	abstract protected function processLanguage(OutputInterface $output, $language);
 
 	protected function determinePresentFiles($language)
 	{
@@ -77,8 +67,6 @@ abstract class ConvertBase extends CommandBase
 	protected function initialize(InputInterface $input, OutputInterface $output)
 	{
 		parent::initialize($input, $output);
-		$this->input        = $input;
-		$this->output       = $output;
 
 		$this->cleanup      = $input->getOption('cleanup');
 	}
@@ -89,7 +77,7 @@ abstract class ConvertBase extends CommandBase
 
 		foreach ($this->languages as $lang)
 		{
-			$this->processLanguage($lang);
+			$this->processLanguage($output, $lang);
 		}
 	}
 }

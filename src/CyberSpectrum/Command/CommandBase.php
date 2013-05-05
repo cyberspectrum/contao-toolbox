@@ -38,6 +38,54 @@ abstract class CommandBase extends Command
 		$this->addArgument('languages', InputArgument::OPTIONAL, 'Languages to process as comma delimited list or "all" for all languages.', 'all');
 	}
 
+	protected function write(OutputInterface $output, $messages, $newline = false, $type = 0, $verbosity = OutputInterface::VERBOSITY_NORMAL)
+	{
+		if ($output->getVerbosity() >= $verbosity)
+		{
+			$output->write($messages, $newline, $type);
+		}
+	}
+
+	protected function writeVerbose(OutputInterface $output, $messages, $newline = false, $type = 0)
+	{
+		if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE)
+		{
+			$output->write($messages, $newline, $type);
+		}
+	}
+
+	protected function writeAlways(OutputInterface $output, $messages, $newline = false, $type = 0)
+	{
+		if ($output->getVerbosity() >= OutputInterface::VERBOSITY_QUIET)
+		{
+			$output->write($messages, $newline, $type);
+		}
+	}
+
+	protected function writeln(OutputInterface $output, $messages, $type = 0, $verbosity = OutputInterface::VERBOSITY_NORMAL)
+	{
+		if ($output->getVerbosity() >= $verbosity)
+		{
+			$output->writeln($messages, $type);
+		}
+	}
+
+	protected function writelnVerbose(OutputInterface $output, $messages, $type = 0)
+	{
+		if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE)
+		{
+			$output->writeln($messages, $type);
+		}
+	}
+
+	protected function writelnAlways(OutputInterface $output, $messages, $type = 0)
+	{
+		if ($output->getVerbosity() >= OutputInterface::VERBOSITY_QUIET)
+		{
+			$output->writeln($messages, $type);
+		}
+	}
+
 	protected function getConfigValue($name)
 	{
 		$config = new JsonConfig(getcwd() . '/composer.json');
@@ -47,13 +95,14 @@ abstract class CommandBase extends Command
 
 	abstract protected function getLanguageBasePath();
 
-	protected function determineLanguages($srcdir, $filter = array())
+	protected function determineLanguages(OutputInterface $output, $srcdir, $filter = array())
 	{
 		if (!is_dir($srcdir))
 		{
 			throw new \InvalidArgumentException(sprintf('The path %s does not exist.', $srcdir));
 		}
 
+		$this->writelnVerbose($output, sprintf('<info>scanning for languages in: %s</info>', $srcdir));
 		$matches = array();
 		$iterator = new \DirectoryIterator($srcdir);
 		do
@@ -63,6 +112,11 @@ abstract class CommandBase extends Command
 			if ((!$iterator->isDot()) && (strlen($item) == 2) && ((!$filter) || in_array($item, $filter)))
 			{
 				$matches[] = $item;
+				$this->writelnVerbose($output, sprintf('<info>using: %s</info>', $item));
+			}
+			elseif(!$iterator->isDot())
+			{
+				$this->writelnVerbose($output, sprintf('<info>not using: %s</info>', $item));
 			}
 			$iterator->next();
 		}
@@ -87,7 +141,7 @@ abstract class CommandBase extends Command
 				throw new \RuntimeException('Error: unable to determine transifex project name.');
 			}
 
-			$output->writeln(sprintf('automatically using project: %s', $this->project));
+			$this->writelnVerbose($output, sprintf('<info>automatically using project: %s</info>', $this->project));
 		}
 
 		if (!$this->prefix)
@@ -98,7 +152,7 @@ abstract class CommandBase extends Command
 			{
 				throw new \RuntimeException('Error: unable to determine transifex prefix.');
 			}
-			$output->writeln(sprintf('automatically using prefix: %s', $this->prefix));
+			$this->writelnVerbose($output, sprintf('<info>automatically using prefix: %s</info>', $this->prefix));
 		}
 
 		if (!$this->txlang)
@@ -109,7 +163,7 @@ abstract class CommandBase extends Command
 			{
 				throw new \RuntimeException('Error: unable to determine transifex root folder.');
 			}
-			$output->writeln(sprintf('automatically using xliff folder: %s', $this->txlang));
+			$this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $this->txlang));
 		}
 
 		if (!$this->ctolang)
@@ -120,7 +174,7 @@ abstract class CommandBase extends Command
 			{
 				throw new \RuntimeException('Error: unable to determine contao language root folder.');
 			}
-			$output->writeln(sprintf('automatically using Contao language folder: %s', $this->ctolang));
+			$this->writelnVerbose($output, sprintf('<info>automatically using Contao language folder: %s</info>', $this->ctolang));
 		}
 
 		$activeLanguages = array();
@@ -129,7 +183,7 @@ abstract class CommandBase extends Command
 			$activeLanguages = explode(',', $langs);
 		}
 
-		$this->determineLanguages($this->getLanguageBasePath(), $activeLanguages);
+		$this->determineLanguages($output, $this->getLanguageBasePath(), $activeLanguages);
 	}
 
 }

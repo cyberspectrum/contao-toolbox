@@ -2,6 +2,8 @@
 
 namespace CyberSpectrum\Command;
 
+use Symfony\Component\Console\Output\OutputInterface;
+
 use CyberSpectrum\Translation\Xliff;
 use CyberSpectrum\Translation\Contao;
 
@@ -37,7 +39,7 @@ class ConvertToXliff extends ConvertBase
 		return (substr($file, -4) == '.xlf');
 	}
 
-	protected function convert(Contao\File $src, Xliff\File $dst, Contao\File $base)
+	protected function convert(OutputInterface $output, Contao\File $src, Xliff\File $dst, Contao\File $base)
 	{
 		$baseKeys = $base->getKeys();
 		foreach ($baseKeys as $key)
@@ -58,19 +60,20 @@ class ConvertToXliff extends ConvertBase
 		{
 			if (!in_array($key, $baseKeys))
 			{
-				$this->output->writeln(sprintf('UNDEFINED LANGUAGE KEY FOUND: %s...', $key));
+				$this->writelnVerbose($output, sprintf('Language key <info>%s</info> is not present in the source. Removing it.', $key));
 				$dst->remove($key);
 			}
 		}
 	}
 
-	protected function processLanguage($language)
+	protected function processLanguage(OutputInterface $output, $language)
 	{
-		$this->output->writeln(sprintf('processing language: %s...', $language));
+		$this->writeln($output, sprintf('processing language: <info>%s</info>...', $language));
+
 		$destinationFiles = array();
 		foreach ($this->baseFiles as $file)
 		{
-			$this->output->writeln(sprintf('processing file: %s...', $file));
+			$this->writelnVerbose($output, sprintf('processing file: <info>%s</info>...', $file));
 
 			$basFile            = $this->getLanguageBasePath() .DIRECTORY_SEPARATOR . $this->baselanguage .DIRECTORY_SEPARATOR . $file;
 			$srcFile            = $this->getLanguageBasePath() .DIRECTORY_SEPARATOR . $language .DIRECTORY_SEPARATOR . $file;
@@ -104,7 +107,7 @@ class ConvertToXliff extends ConvertBase
 			}
 			$dest->setDate($time);
 
-			$this->convert($src, $dest, $base);
+			$this->convert($output, $src, $dest, $base);
 			if (is_file($dstDir . DIRECTORY_SEPARATOR . $dstFile) || $dest->getKeys())
 			{
 				$dest->save();
@@ -113,11 +116,12 @@ class ConvertToXliff extends ConvertBase
 
 		if ($this->cleanup && ($files = array_diff($this->determinePresentFiles($language), $destinationFiles)))
 		{
-			$this->output->writeln(sprintf('the following obsolete files have been found: %s', implode(', ', $files)));
+			$this->writeln($output, sprintf('the following obsolete files have been found and will get deleted: <info>%s</info>', implode(', ', $files)));
+
 			foreach ($files as $file)
 			{
 				unlink($this->getDestinationBasePath() .DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $file);
-				$this->output->writeln('deleting ' . $language . DIRECTORY_SEPARATOR . $file);
+				$this->writelnVerbose($output, sprintf('deleting obsolete file <info>%s</info>', $file));
 			}
 		}
 	}
