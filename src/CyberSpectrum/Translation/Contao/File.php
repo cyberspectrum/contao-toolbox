@@ -209,9 +209,9 @@ class File implements \IteratorAggregate
 		foreach($keys as $key)
 		{
 			$prefix  = $langPrefixes[$key];
-			$buffer .= sprintf('%s = \'%s\';' . PHP_EOL,
+			$buffer .= sprintf('%s = %s;' . PHP_EOL,
 				$prefix . str_repeat(' ', ($maxlen - strlen($prefix))),
-				$this->getValue($key)
+				var_export($this->getValue($key), true)
 			);
 		}
 		$res = fopen($this->filename, 'wb');

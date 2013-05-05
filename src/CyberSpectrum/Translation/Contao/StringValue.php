@@ -71,7 +71,7 @@ class StringValue implements ParserInterface
 			if ($this->tokenIs(T_CONSTANT_ENCAPSED_STRING))
 			{
 				$token = $this->getToken();
-				$this->data[] = substr($token[1], 1, -1);
+				$this->data[] = stripslashes(substr($token[1], 1, -1));
 			}
 			elseif ($this->tokenIs(T_LNUMBER))
 			{
