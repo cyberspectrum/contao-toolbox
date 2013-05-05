@@ -3,19 +3,21 @@
 
 namespace CyberSpectrum\Transifex;
 
-use Buzz\Browser;
-use Buzz\Listener\BasicAuthListener;
-use Buzz\Message\Request;
-use Buzz\Message\Response;
+use Guzzle\Http\Client;
+use Guzzle\Http\Message\Response;
+use Guzzle\Plugin\CurlAuth\CurlAuthPlugin;
 
 class Transport
 {
-	protected $browser;
+	/**
+	 * @var \Guzzle\Http\Client
+	 */
+	protected $client;
 
 	public function __construct($user, $pass)
 	{
-		$this->browser = new Browser();
-		$this->browser->setListener(new BasicAuthListener($user, $pass));
+		$this->client = new Client('http://www.transifex.com/api/2/');
+		$this->client->addSubscriber(new CurlAuthPlugin($user, $pass));
 	}
 
 
@@ -26,24 +28,24 @@ class Transport
 			switch ($response->getHeader('Content-Type'))
 			{
 				case 'text/plain':
-					throw new \RuntimeException('Error: ' . $response->getContent() . ' URI: ' . $this->browser->getLastRequest()->getResource());
+					throw new \RuntimeException('Error: ' . $response->getBody(true) . ' URI: ' . $response->getRequest()->getUrl());
 					break;
 				case 'application/json':
-						$error = json_decode($response->getContent());
+						$error = json_decode($response->getBody(true));
 						if (isset($error->message))
 						{
-							throw new \RuntimeException($error->message);
+							throw new \RuntimeException($error->message . ' URI: ' . $response->getRequest()->getUrl());
 						}
 					break;
 				default:
-					throw new \RuntimeException('Unknown Error: No error message was returned from the server - Code: ' . $response->getStatusCode() . ' URI: ' . $this->browser->getLastRequest()->getResource());
+					throw new \RuntimeException('Unknown Error: No error message was returned from the server - Code: ' . $response->getStatusCode() . ' URI: ' . $response->getRequest()->getUrl());
 			}
 		}
 	}
 
 	public function POST($command, $params=null, $postcontenttype = 'application/json')
 	{
-		$url = 'http://www.transifex.com/api/2/' . $command;
+		$url = $command;
 
 		$headers = array('Content-type: ' . $postcontenttype);
 
@@ -53,17 +55,17 @@ class Transport
 			$content = json_encode($params);
 		}
 
-		/** @var  $response */
-		$response = $this->browser->post($url, $headers, $content);
+		/** @var \Guzzle\Http\Message\Response $response */
+		$response = $this->client->post($url, $headers, $content);
 
 		$this->checkError($response);
 
-		return $response->getContent();
+		return $response->getBody(true);
 	}
 
 	public function PUT($command, $params=null, $postcontenttype = 'application/json')
 	{
-		$url = 'http://www.transifex.com/api/2/' . $command;
+		$url = $command;
 
 		$headers = array('Content-type: ' . $postcontenttype);
 
@@ -73,18 +75,18 @@ class Transport
 			$content = json_encode($params);
 		}
 
-		/** @var  $response */
-		$response = $this->browser->put($url, $headers, $content);
+		/** @var \Guzzle\Http\Message\Response $response */
+		$response = $this->client->put($url, $headers, $content);
 
 		$this->checkError($response);
 
-		return $response->getContent();
+		return $response->getBody(true);
 	}
 
 
 	public function execute($command, $params=null)
 	{
-		$url = 'http://www.transifex.com/api/2/' . $command;
+		$url = $command;
 
 		if (substr($url, -1) !== '/')
 		{
@@ -101,12 +103,12 @@ class Transport
 			$url .= '?' . implode('&', $p);
 		}
 
-		/** @var  $response */
-		$response = $this->browser->get($url);
+		/** @var \Guzzle\Http\Message\Response $response */
+		$response = $this->client->get($url)->send();
 
 		$this->checkError($response);
 
-		return $response->getContent();
+		return $response->getBody(true);
 	}
 
 	public function executeJson($command, $params=null, $postdata=null)
