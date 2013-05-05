@@ -31,11 +31,11 @@ class Transport
 					throw new \RuntimeException('Error: ' . $response->getBody(true) . ' URI: ' . $response->getRequest()->getUrl());
 					break;
 				case 'application/json':
-						$error = json_decode($response->getBody(true));
-						if (isset($error->message))
-						{
-							throw new \RuntimeException($error->message . ' URI: ' . $response->getRequest()->getUrl());
-						}
+					$error = json_decode($response->getBody(true));
+					if (isset($error->message))
+					{
+						throw new \RuntimeException($error->message . ' URI: ' . $response->getRequest()->getUrl());
+					}
 					break;
 				default:
 					throw new \RuntimeException('Unknown Error: No error message was returned from the server - Code: ' . $response->getStatusCode() . ' URI: ' . $response->getRequest()->getUrl());
@@ -47,7 +47,7 @@ class Transport
 	{
 		$url = $command;
 
-		$headers = array('Content-type: ' . $postcontenttype);
+		$headers = array('Content-Type' => $postcontenttype);
 
 		$content = $params;
 		if ($postcontenttype == 'application/json')
@@ -67,7 +67,7 @@ class Transport
 	{
 		$url = $command;
 
-		$headers = array('Content-type: ' . $postcontenttype);
+		$headers = array('Content-Type' => $postcontenttype);
 
 		$content = $params;
 		if ($postcontenttype == 'application/json')
