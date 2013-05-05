@@ -26,7 +26,7 @@ class Transport
 			switch ($response->getHeader('Content-Type'))
 			{
 				case 'text/plain':
-					throw new \RuntimeException('Error: ' . $response->getContent());
+					throw new \RuntimeException('Error: ' . $response->getContent() . ' URI: ' . $this->browser->getLastRequest()->getResource());
 					break;
 				case 'application/json':
 						$error = json_decode($response->getContent());
@@ -85,6 +85,11 @@ class Transport
 	public function execute($command, $params=null)
 	{
 		$url = 'http://www.transifex.com/api/2/' . $command;
+
+		if (substr($url, -1) !== '/')
+		{
+			$url .= '/';
+		}
 
 		if ($params)
 		{
