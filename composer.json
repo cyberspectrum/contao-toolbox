@@ -3,7 +3,7 @@
 	"description": "Contao ToolBox",
 	"keywords": ["Contao", "Toolbox", "Helper"],
 	"homepage": "http://cyberspectrum.de",
-	"license": "LGPL",
+	"license": "LGPL-3.0+",
 	"authors": [
 		{
 			"name": "Christian Schiffler",
@@ -24,5 +24,10 @@
 	},
 	"bin": [
 		"bin/ctb"
-	]
+	],
+	"extra": {
+		"branch-alias": {
+			"dev-master": "1.0.x-dev"
+		}
+	}
 }
