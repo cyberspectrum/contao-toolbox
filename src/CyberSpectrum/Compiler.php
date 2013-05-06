@@ -60,7 +60,7 @@ class Compiler
 			->name('*.php')
 			->exclude('Tests')
 			->in(__DIR__.'/../../vendor/symfony/')
-			->in(__DIR__.'/../../vendor/kriswallsmith/')
+			->in(__DIR__.'/../../vendor/guzzle/')
 		;
 
 		foreach ($finder as $file) {
