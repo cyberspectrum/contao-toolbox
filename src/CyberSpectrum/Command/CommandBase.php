@@ -93,6 +93,19 @@ abstract class CommandBase extends Command
 		return $config->getConfigValue($name);
 	}
 
+	protected function checkValidSlug($slug)
+	{
+		if (preg_match_all('#^([a-z,A-Z,0-9,\-,_]*)(.+)?$#', $slug, $matches)
+			&& (strlen($matches[2][0]) > 0))
+		{
+			throw new \RuntimeException(sprintf(
+				'Error: prefix "%s" is invalid. It must only contain letters, numbers, underscores and hyphens. Found problem near: "%s"',
+				$slug,
+				$matches[2][0]
+			));
+		}
+	}
+
 	abstract protected function getLanguageBasePath();
 
 	protected function determineLanguages(OutputInterface $output, $srcdir, $filter = array())
@@ -132,6 +145,9 @@ abstract class CommandBase extends Command
 		$this->txlang       = $input->getOption('xliff');
 		$this->ctolang      = $input->getOption('contao');
 		$this->baselanguage = $input->getOption('base-language');
+
+		$this->checkValidSlug($this->project);
+		$this->checkValidSlug($this->prefix);
 
 		if (!$this->project)
 		{
