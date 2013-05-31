@@ -96,9 +96,15 @@ class Transport
 		if ($params)
 		{
 			$p=array();
-			foreach ($params as $k=>$v)
+			foreach ($params as $k => $v)
 			{
-				$p[] = urlencode($k).'='.urlencode($v);
+				if (strlen($v))
+				{
+					$p[] = urlencode($k).'='.urlencode($v);
+				}
+				else{
+					$p[] = urlencode($k);
+				}
 			}
 			$url .= '?' . implode('&', $p);
 		}

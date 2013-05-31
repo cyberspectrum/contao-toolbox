@@ -250,7 +250,7 @@ class Resource extends BaseObject
 			'project/%s/resource/%s',
 			$this->ensureParameter('project'),
 			$this->ensureParameter('slug')
-		), array('details' => '1'));
+		), array('details' => ''));
 
 		$this->setFromResult($response);
 	}
@@ -270,7 +270,7 @@ class Resource extends BaseObject
 	public function fetchTranslation($langcode, $mode = 'reviewed')
 	{
 		$parameters = array(
-			'file' => 1,
+			'file' => '',
 			'mode' => $mode
 		);
 
