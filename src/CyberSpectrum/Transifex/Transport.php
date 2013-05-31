@@ -43,7 +43,7 @@ class Transport
 		}
 	}
 
-	public function POST($command, $params=null, $postcontenttype = 'application/json')
+	public function POST($command, $params = null, $postcontenttype = 'application/json')
 	{
 		$url = $command;
 
@@ -63,7 +63,7 @@ class Transport
 		return $response->getBody(true);
 	}
 
-	public function PUT($command, $params=null, $postcontenttype = 'application/json')
+	public function PUT($command, $params = null, $postcontenttype = 'application/json')
 	{
 		$url = $command;
 
@@ -84,7 +84,7 @@ class Transport
 	}
 
 
-	public function execute($command, $params=null)
+	public function execute($command, $params = null)
 	{
 		$url = $command;
 
@@ -100,9 +100,10 @@ class Transport
 			{
 				if (strlen($v))
 				{
-					$p[] = urlencode($k).'='.urlencode($v);
+					$p[] = urlencode($k) . '=' . urlencode($v);
 				}
-				else{
+				else
+				{
 					$p[] = urlencode($k);
 				}
 			}
@@ -117,9 +118,8 @@ class Transport
 		return $response->getBody(true);
 	}
 
-	public function executeJson($command, $params=null, $postdata=null)
+	public function executeJson($command, $params = null, $postdata = null)
 	{
 		return json_decode($this->execute($command, $params, $postdata), true);
 	}
-
 }
