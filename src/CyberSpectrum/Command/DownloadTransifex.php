@@ -17,7 +17,7 @@ class DownloadTransifex extends TransifexBase
 		$this->setName('download-transifex');
 		$this->setDescription('Download xliff translations from transifex.');
 
-		$this->addOption('mode', 'm', InputOption::VALUE_OPTIONAL, 'Download mode to use.', 'reviewed');
+		$this->addOption('mode', 'm', InputOption::VALUE_OPTIONAL, 'Download mode to use (reviewed, translated, default).', 'reviewed');
 	}
 
 	protected function initialize(InputInterface $input, OutputInterface $output)
@@ -40,12 +40,17 @@ class DownloadTransifex extends TransifexBase
 
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
-		if (!($this->project && $this->getApi()))
+		if (!$this->project)
 		{
-			$this->writelnAlways($output, '<error>No project set or no API received, exiting.</error>');
+			$this->writelnAlways($output, '<error>No project set, exiting.</error>');
 			return;
 		}
 
+		if (!$this->getApi())
+		{
+			$this->writelnAlways($output, '<error>No API received, exiting.</error>');
+			return;
+		}
 
 		$translationMode = $input->getOption('mode');
 

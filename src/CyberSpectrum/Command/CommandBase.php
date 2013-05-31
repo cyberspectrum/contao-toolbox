@@ -86,11 +86,33 @@ abstract class CommandBase extends Command
 		}
 	}
 
+	/**
+	 * Fetch some value from the config.
+	 * First the value will be read from composer.json (section /extra/contao/...) and then from the global ctb config
+	 * (if any exists).
+	 *
+	 * @param string $name the config value to retrieve.
+	 *
+	 * @return mixed
+	 */
 	protected function getConfigValue($name)
 	{
+		if (substr($name, 0, 1) != '/')
+		{
+			$name = '/' .$name;
+		}
 		$config = new JsonConfig(getcwd() . '/composer.json');
+		$value = $config->getConfigValue('/extra/contao' . $name);
 
-		return $config->getConfigValue($name);
+		// fallback to global config.
+		if ($value === null)
+		{
+			/** @var JsonConfig $config */
+			$config = $this->getApplication()->getConfig();
+			$value = $config->getConfigValue($name);
+		}
+
+		return $value;
 	}
 
 	protected function checkValidSlug($slug)
@@ -151,7 +173,7 @@ abstract class CommandBase extends Command
 
 		if (!$this->project)
 		{
-			$this->project = $this->getConfigValue('/extra/contao/transifex/project');
+			$this->project = $this->getConfigValue('/transifex/project');
 			if (!$this->project)
 			{
 				throw new \RuntimeException('Error: unable to determine transifex project name.');
@@ -162,7 +184,7 @@ abstract class CommandBase extends Command
 
 		if (!$this->prefix)
 		{
-			$this->prefix = $this->getConfigValue('/extra/contao/transifex/prefix');
+			$this->prefix = $this->getConfigValue('/transifex/prefix');
 
 			if (!$this->prefix)
 			{
@@ -173,7 +195,7 @@ abstract class CommandBase extends Command
 
 		if (!$this->txlang)
 		{
-			$this->txlang = $this->getConfigValue('/extra/contao/transifex/languages_tx');
+			$this->txlang = $this->getConfigValue('/transifex/languages_tx');
 
 			if (!$this->txlang)
 			{
@@ -184,7 +206,7 @@ abstract class CommandBase extends Command
 
 		if (!$this->ctolang)
 		{
-			$this->ctolang = $this->getConfigValue('/extra/contao/transifex/languages_cto');
+			$this->ctolang = $this->getConfigValue('/transifex/languages_cto');
 
 			if (!$this->ctolang)
 			{

@@ -33,7 +33,12 @@ class TransifexBase extends CommandBase
 
 	protected function getLanguageBasePath()
 	{
-		return realpath($this->txlang);
+		$path = realpath($this->txlang);
+		if (!$path)
+		{
+			return $this->txlang;
+		}
+		return $path;
 	}
 
 	protected function getAllTxFiles($language)
@@ -60,7 +65,11 @@ class TransifexBase extends CommandBase
 		$user = $input->getOption('user');
 		if (!$user)
 		{
-			if ($user = getenv('transifexuser'))
+			if ($user = $this->getConfigValue('/transifex/user'))
+			{
+				$this->writelnVerbose($output, 'Using transifex user specified in config.');
+			}
+			elseif ($user = getenv('transifexuser'))
 			{
 				$this->writelnVerbose($output, 'Using transifex user specified in environment.');
 			}
@@ -69,7 +78,7 @@ class TransifexBase extends CommandBase
 				/** @var \Symfony\Component\Console\Helper\DialogHelper $dialog */
 				$dialog = $this->getHelperSet()->get('dialog');
 
-				if (!($user = $dialog->ask($output, 'User:')))
+				if (!($user = $dialog->ask($output, 'Transifex user:')))
 				{
 					$this->writelnAlways($output, '<error>Error: no transifex user specified, exiting.</error>');
 					return;
@@ -85,7 +94,11 @@ class TransifexBase extends CommandBase
 
 		if (!$pass)
 		{
-			if ($pass = getenv('transifexpass'))
+			if ($pass = $this->getConfigValue('/transifex/pass'))
+			{
+				$this->writelnVerbose($output, 'Using transifex password specified in config.');
+			}
+			elseif ($pass = getenv('transifexpass'))
 			{
 				$this->writelnVerbose($output, 'Using transifex password specified in environment.');
 			}
@@ -94,7 +107,7 @@ class TransifexBase extends CommandBase
 				/** @var \Symfony\Component\Console\Helper\DialogHelper $dialog */
 				$dialog = $this->getHelperSet()->get('dialog');
 
-				if (!($pass = $dialog->askHiddenResponse($output, 'Password:')))
+				if (!($pass = $dialog->askHiddenResponse($output, 'Transifex password:')))
 				{
 					$this->writelnAlways($output, '<error>Error: no transifex user password specified, exiting.</error>');
 					return;
