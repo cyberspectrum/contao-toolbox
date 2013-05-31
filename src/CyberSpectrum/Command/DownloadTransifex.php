@@ -17,7 +17,11 @@ class DownloadTransifex extends TransifexBase
 		$this->setName('download-transifex');
 		$this->setDescription('Download xliff translations from transifex.');
 
-		$this->addOption('mode', 'm', InputOption::VALUE_OPTIONAL, 'Download mode to use (reviewed, translated, default).', 'reviewed');
+		$this->addOption(
+			'mode', 'm',
+			InputOption::VALUE_OPTIONAL,
+			'Download mode to use (reviewed, translated, default).', 'reviewed'
+		);
 	}
 
 	protected function initialize(InputInterface $input, OutputInterface $output)
@@ -53,6 +57,12 @@ class DownloadTransifex extends TransifexBase
 		}
 
 		$translationMode = $input->getOption('mode');
+
+		// HOTFIX: translated actually appears to be "translator"
+		if ($translationMode == 'translated')
+		{
+			$translationMode = 'translator';
+		}
 
 		$project = new Project($this->getApi());
 

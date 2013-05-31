@@ -4,6 +4,7 @@
 namespace CyberSpectrum\Transifex;
 
 use Guzzle\Http\Client;
+use Guzzle\Http\Message\Request;
 use Guzzle\Http\Message\Response;
 use Guzzle\Plugin\CurlAuth\CurlAuthPlugin;
 
@@ -21,20 +22,20 @@ class Transport
 	}
 
 
-	protected function checkError(Response $response)
+	protected function checkError(Response $response, Request $request)
 	{
 		if (($response->getStatusCode() != 200) && ($response->getStatusCode() != 201))
 		{
 			switch ($response->getHeader('Content-Type'))
 			{
 				case 'text/plain':
-					throw new \RuntimeException('Error: ' . $response->getBody(true) . ' URI: ' . $response->getRequest()->getUrl());
+					throw new \RuntimeException('Error: ' . $response->getBody(true) . ' URI: ' . $request->getUrl());
 					break;
 				case 'application/json':
 					$error = json_decode($response->getBody(true));
 					if (isset($error->message))
 					{
-						throw new \RuntimeException($error->message . ' URI: ' . $response->getRequest()->getUrl());
+						throw new \RuntimeException($error->message . ' URI: ' . $request->getUrl());
 					}
 					break;
 				default:
@@ -55,10 +56,18 @@ class Transport
 			$content = json_encode($params);
 		}
 
-		/** @var \Guzzle\Http\Message\Response $response */
-		$response = $this->client->post($url, $headers, $content)->send();
-
-		$this->checkError($response);
+		$request = $this->client->post($url, $headers, $content);
+		try
+		{
+			/** @var \Guzzle\Http\Message\Response $response */
+			$response = $request->send();
+			$this->checkError($response, $request);
+		}
+		catch(\Exception $e)
+		{
+			$this->checkError($request->getResponse(), $request);
+			return null;
+		}
 
 		return $response->getBody(true);
 	}
@@ -75,10 +84,18 @@ class Transport
 			$content = json_encode($params);
 		}
 
-		/** @var \Guzzle\Http\Message\Response $response */
-		$response = $this->client->put($url, $headers, $content)->send();
-
-		$this->checkError($response);
+		$request = $this->client->put($url, $headers, $content);
+		try
+		{
+			/** @var \Guzzle\Http\Message\Response $response */
+			$response = $request->send();
+			$this->checkError($response, $request);
+		}
+		catch(\Exception $e)
+		{
+			$this->checkError($request->getResponse(), $request);
+			return null;
+		}
 
 		return $response->getBody(true);
 	}
@@ -110,10 +127,18 @@ class Transport
 			$url .= '?' . implode('&', $p);
 		}
 
-		/** @var \Guzzle\Http\Message\Response $response */
-		$response = $this->client->get($url)->send();
-
-		$this->checkError($response);
+		$request = $this->client->get($url);
+		try
+		{
+			/** @var \Guzzle\Http\Message\Response $response */
+			$response = $request->send();
+			$this->checkError($response, $request);
+		}
+		catch(\Exception $e)
+		{
+			$this->checkError($request->getResponse(), $request);
+			return null;
+		}
 
 		return $response->getBody(true);
 	}
