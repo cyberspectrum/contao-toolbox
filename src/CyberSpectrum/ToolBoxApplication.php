@@ -12,8 +12,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use CyberSpectrum\Command\ConvertFromXliff;
 use CyberSpectrum\Command\ConvertToXliff;
-use CyberSpectrum\Command\DownloadTransifex;
-use CyberSpectrum\Command\UploadTransifex;
+use CyberSpectrum\Command\Transifex\DownloadTransifex;
+use CyberSpectrum\Command\Transifex\UploadTransifex;
 
 class ToolBoxApplication extends BaseApplication
 {
@@ -59,6 +59,8 @@ class ToolBoxApplication extends BaseApplication
 
 	/**
 	 * @param  InputInterface    $input
+	 *
+	 * @return string
 	 *
 	 * @throws \RuntimeException
 	 */

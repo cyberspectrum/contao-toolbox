@@ -1,8 +1,9 @@
 <?php
 
-namespace CyberSpectrum\Command;
+namespace CyberSpectrum\Command\Transifex;
 
 use CyberSpectrum\Transifex\Transport;
+use CyberSpectrum\Command\CommandBase;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

@@ -1,6 +1,6 @@
 <?php
 
-namespace CyberSpectrum\Command;
+namespace CyberSpectrum\Command\Transifex;
 
 use CyberSpectrum\Transifex\Project;
 use CyberSpectrum\Transifex\Resource;
