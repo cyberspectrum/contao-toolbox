@@ -170,7 +170,7 @@ abstract class CommandBase extends Command
 		$this->txlang       = $input->getOption('xliff');
 		$this->ctolang      = $input->getOption('contao');
 		$this->baselanguage = $input->getOption('base-language');
-		$this->skipFiles    = explode(',', $input->getOption('skip-files'));
+		$this->skipFiles    = $input->getOption('skip-files') ? explode(',', $input->getOption('skip-files')) : null;
 
 		$this->checkValidSlug($this->project);
 		$this->checkValidSlug($this->prefix);
