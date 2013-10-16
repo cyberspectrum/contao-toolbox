@@ -47,9 +47,4 @@ class JsonConfig
 
 		return $this->scanTo($chunks, $this->data);
 	}
-
-	public function getTransifexPrefix()
-	{
-		return $this->getConfigValue('/extra/contao/transifex/prefix');
-	}
 }
