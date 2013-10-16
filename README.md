@@ -17,7 +17,7 @@ curl -sS https://getcomposer.org/installer | php
 
 2. Install the application.
 ```
-./composer install discordier/toolbox
+./composer create-project cyberspectrum/contao-toolbox
 ```
 
 ### via plain git cloning
