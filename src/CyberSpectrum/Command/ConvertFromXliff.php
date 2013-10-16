@@ -41,6 +41,11 @@ class ConvertFromXliff extends ConvertBase
 		return (substr($file, -4) == '.php');
 	}
 
+    protected function isNotFileToSkip($file)
+    {
+        return true;
+    }
+
 	protected function convert(OutputInterface $output, Xliff\File $src, Contao\File $dst)
 	{
 		$changed = false;

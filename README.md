@@ -134,6 +134,15 @@ the "acme-more" directory.
 ##### --base-language (-b)  The base language to use. (default: "en")
 This defines the language to be used as source language on transifex and in the xlf files.
 
+##### --skip-files (-s)
+This option can be used to skip certain language files.
+
+This value will get read from the key `extra/contao/transifex/skip_files` in composer.json if omitted.
+
+__Example:__
+Assume we have a file named "skipme.php" in the languages folder that does not have any related data on transifex.
+By adding "skipme" to the list of files to skip, this will not be considered.
+
 ### Managing translations on transifex.
 
 #### Common parameters to transifex commands
