@@ -2,8 +2,6 @@
 
 namespace CyberSpectrum\Translation\Contao;
 
-use CyberSpectrum\Translation\File as FileInterface;
-
 class File implements \IteratorAggregate
 {
 	/**
@@ -150,8 +148,6 @@ class File implements \IteratorAggregate
 
 	/**
 	 * Parse a language file into language strings.
-	 *
-	 * @param string $filename The file to read.
 	 *
 	 * @return void
 	 */
