@@ -214,6 +214,7 @@ class File implements \IteratorAggregate
 				var_export($this->getValue($key), true)
 			);
 		}
+		$buffer .= PHP_EOL;
 		$res = fopen($this->filename, 'wb');
 		fputs($res, $buffer);
 
