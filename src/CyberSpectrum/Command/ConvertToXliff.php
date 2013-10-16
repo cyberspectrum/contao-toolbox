@@ -41,7 +41,7 @@ class ConvertToXliff extends ConvertBase
 
 	protected function isNotFileToSkip($file)
 	{
-        return in_array(substr($file, -4), $this->skipFiles);
+        return !in_array(substr($file, 0, -4), $this->skipFiles);
 	}
 
 	protected function convert(OutputInterface $output, Contao\File $src, Xliff\File $dst, Contao\File $base)
