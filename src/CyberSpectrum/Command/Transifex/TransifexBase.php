@@ -66,7 +66,7 @@ class TransifexBase extends CommandBase
 		$user = $input->getOption('user');
 		if (!$user)
 		{
-			if ($user = $this->getConfigValue('/transifex/user'))
+			if ($user = $this->getTransifexConfigValue('/user'))
 			{
 				$this->writelnVerbose($output, 'Using transifex user specified in config.');
 			}
@@ -95,7 +95,7 @@ class TransifexBase extends CommandBase
 
 		if (!$pass)
 		{
-			if ($pass = $this->getConfigValue('/transifex/pass'))
+			if ($pass = $this->getTransifexConfigValue('/pass'))
 			{
 				$this->writelnVerbose($output, 'Using transifex password specified in config.');
 			}
