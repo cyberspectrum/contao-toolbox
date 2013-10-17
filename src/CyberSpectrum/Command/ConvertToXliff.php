@@ -39,11 +39,6 @@ class ConvertToXliff extends ConvertBase
 		return (substr($file, -4) == '.xlf');
 	}
 
-	protected function isNotFileToSkip($file)
-	{
-        return !in_array(substr($file, 0, -4), $this->skipFiles);
-	}
-
 	protected function convert(OutputInterface $output, Contao\File $src, Xliff\File $dst, Contao\File $base)
 	{
 		$baseKeys = $base->getKeys();

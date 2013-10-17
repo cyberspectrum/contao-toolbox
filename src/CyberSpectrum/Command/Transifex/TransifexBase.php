@@ -42,6 +42,11 @@ class TransifexBase extends CommandBase
 		return $path;
 	}
 
+    protected function isNotFileToSkip($basename)
+    {
+        return !in_array(substr($basename, 0, -4), $this->skipFiles);
+    }
+
 	protected function getAllTxFiles($language)
 	{
 		$iterator = new \DirectoryIterator($this->txlang. DIRECTORY_SEPARATOR . $language);
@@ -49,7 +54,10 @@ class TransifexBase extends CommandBase
 		$files = array();
 		while ($iterator->valid())
 		{
-			if (!$iterator->isDot() && $iterator->isFile() && $iterator->getExtension() == 'xlf')
+			if (!$iterator->isDot()
+                && $iterator->isFile()
+                && $iterator->getExtension() == 'xlf'
+                && $this->isNotFileToSkip($iterator->getPathname()))
 			{
 				$files[$iterator->getPathname()] = $iterator->getFilename();
 			}

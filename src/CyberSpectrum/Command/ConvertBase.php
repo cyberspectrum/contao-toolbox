@@ -50,7 +50,10 @@ abstract class ConvertBase extends CommandBase
 
 	abstract protected function processLanguage(OutputInterface $output, $language);
 
-    abstract protected function isNotFileToSkip($file);
+    protected function isNotFileToSkip($basename)
+    {
+        return !in_array(substr($basename, 0, -4), $this->skipFiles);
+    }
 
 	protected function determinePresentFiles($language)
 	{

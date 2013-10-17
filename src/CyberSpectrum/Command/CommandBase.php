@@ -141,6 +141,8 @@ abstract class CommandBase extends Command
 
 	abstract protected function getLanguageBasePath();
 
+	abstract protected function isNotFileToSkip($basename);
+
 	protected function determineLanguages(OutputInterface $output, $srcdir, $filter = array())
 	{
 		if (!is_dir($srcdir))
