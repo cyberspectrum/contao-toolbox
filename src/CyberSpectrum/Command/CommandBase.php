@@ -230,7 +230,7 @@ abstract class CommandBase extends Command
 		}
 
         if (!$this->skipFiles) {
-            $this->skipFiles = $this->getConfigValue('/transifex/skip_files');
+            $this->skipFiles = $this->getTransifexConfigValue('/skip_files');
         } else {
             // Make sure it is an array
             $this->skipFiles = array();
