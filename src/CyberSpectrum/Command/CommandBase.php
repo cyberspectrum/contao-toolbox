@@ -27,6 +27,8 @@ abstract class CommandBase extends Command
 
     protected $skipFiles;
 
+    protected $transifexconfig;
+
 	protected function configure()
 	{
 		parent::configure();
@@ -37,6 +39,7 @@ abstract class CommandBase extends Command
 		$this->addOption('prefix', null, InputOption::VALUE_OPTIONAL, 'The prefix for all language files, if empty it will get read from the composer.json.', null);
 		$this->addOption('base-language', 'b', InputOption::VALUE_OPTIONAL, 'The base language to use.', 'en');
 		$this->addOption('skip-files', 's', InputOption::VALUE_OPTIONAL, 'Comma delimited list of language files that should be skipped (e.g. "addresses,default").', null);
+		$this->addOption('transifex-config', 't', InputOption::VALUE_OPTIONAL, 'The transifex configuration to take.', 'transifex');
 
 		$this->addArgument('languages', InputArgument::OPTIONAL, 'Languages to process as comma delimited list or "all" for all languages.', 'all');
 	}
@@ -118,6 +121,11 @@ abstract class CommandBase extends Command
 		return $value;
 	}
 
+    protected function getTransifexConfigValue($name)
+    {
+        return $this->getConfigValue('/' . $this->transifexconfig . $name);
+    }
+
 	protected function checkValidSlug($slug)
 	{
 		if (preg_match_all('#^([a-z,A-Z,0-9,\-,_]*)(.+)?$#', $slug, $matches)
@@ -165,19 +173,21 @@ abstract class CommandBase extends Command
 
 	protected function initialize(InputInterface $input, OutputInterface $output)
 	{
-		$this->project      = $input->getOption('projectname');
-		$this->prefix       = $input->getOption('prefix');
-		$this->txlang       = $input->getOption('xliff');
-		$this->ctolang      = $input->getOption('contao');
-		$this->baselanguage = $input->getOption('base-language');
+		$this->project          = $input->getOption('projectname');
+		$this->prefix           = $input->getOption('prefix');
+		$this->txlang           = $input->getOption('xliff');
+		$this->ctolang          = $input->getOption('contao');
+		$this->baselanguage     = $input->getOption('base-language');
 		$this->skipFiles    = $input->getOption('skip-files') ? explode(',', $input->getOption('skip-files')) : null;
+		$this->transifexconfig  = $input->getOption('transifex-config');
 
 		$this->checkValidSlug($this->project);
 		$this->checkValidSlug($this->prefix);
 
 		if (!$this->project)
 		{
-			$this->project = $this->getConfigValue('/transifex/project');
+			$this->project = $this->getTransifexConfigValue('/project');
+
 			if (!$this->project)
 			{
 				throw new \RuntimeException('Error: unable to determine transifex project name.');
@@ -188,7 +198,7 @@ abstract class CommandBase extends Command
 
 		if (!$this->prefix)
 		{
-			$this->prefix = $this->getConfigValue('/transifex/prefix');
+			$this->prefix = $this->getTransifexConfigValue('/prefix');
 
 			if (!$this->prefix)
 			{
@@ -199,7 +209,7 @@ abstract class CommandBase extends Command
 
 		if (!$this->txlang)
 		{
-			$this->txlang = $this->getConfigValue('/transifex/languages_tx');
+			$this->txlang = $this->getTransifexConfigValue('/languages_tx');
 
 			if (!$this->txlang)
 			{
@@ -210,7 +220,7 @@ abstract class CommandBase extends Command
 
 		if (!$this->ctolang)
 		{
-			$this->ctolang = $this->getConfigValue('/transifex/languages_cto');
+			$this->ctolang = $this->getTransifexConfigValue('/languages_cto');
 
 			if (!$this->ctolang)
 			{
