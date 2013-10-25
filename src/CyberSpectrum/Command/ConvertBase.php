@@ -31,7 +31,10 @@ abstract class ConvertBase extends CommandBase
 		$files = array();
 		while ($iterator->valid())
 		{
-			if (!$iterator->isDot() && $iterator->isFile() && $this->isValidSourceFile($iterator->getPathname()))
+			if (!$iterator->isDot()
+                && $iterator->isFile()
+                && $this->isValidSourceFile($iterator->getPathname())
+                && $this->isNotFileToSkip($iterator->getBasename()))
 			{
 				$files[] = $iterator->getFilename();
 			}
@@ -46,6 +49,11 @@ abstract class ConvertBase extends CommandBase
 	abstract protected function isValidDestinationFile($file);
 
 	abstract protected function processLanguage(OutputInterface $output, $language);
+
+    protected function isNotFileToSkip($basename)
+    {
+        return !in_array(substr($basename, 0, -4), $this->skipFiles);
+    }
 
 	protected function determinePresentFiles($language)
 	{

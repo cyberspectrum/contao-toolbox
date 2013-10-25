@@ -25,6 +25,8 @@ abstract class CommandBase extends Command
 
 	protected $languages;
 
+    protected $skipFiles;
+
     protected $transifexconfig;
 
 	protected function configure()
@@ -36,6 +38,7 @@ abstract class CommandBase extends Command
 		$this->addOption('projectname', 'p', InputOption::VALUE_OPTIONAL, 'The project name, if empty it will get read from the composer.json.', null);
 		$this->addOption('prefix', null, InputOption::VALUE_OPTIONAL, 'The prefix for all language files, if empty it will get read from the composer.json.', null);
 		$this->addOption('base-language', 'b', InputOption::VALUE_OPTIONAL, 'The base language to use.', 'en');
+		$this->addOption('skip-files', 's', InputOption::VALUE_OPTIONAL, 'Comma delimited list of language files that should be skipped (e.g. "addresses,default").', null);
 		$this->addOption('transifex-config', 't', InputOption::VALUE_OPTIONAL, 'The transifex configuration to take.', 'transifex');
 
 		$this->addArgument('languages', InputArgument::OPTIONAL, 'Languages to process as comma delimited list or "all" for all languages.', 'all');
@@ -138,6 +141,8 @@ abstract class CommandBase extends Command
 
 	abstract protected function getLanguageBasePath();
 
+	abstract protected function isNotFileToSkip($basename);
+
 	protected function determineLanguages(OutputInterface $output, $srcdir, $filter = array())
 	{
 		if (!is_dir($srcdir))
@@ -175,6 +180,7 @@ abstract class CommandBase extends Command
 		$this->txlang           = $input->getOption('xliff');
 		$this->ctolang          = $input->getOption('contao');
 		$this->baselanguage     = $input->getOption('base-language');
+		$this->skipFiles    = $input->getOption('skip-files') ? explode(',', $input->getOption('skip-files')) : null;
 		$this->transifexconfig  = $input->getOption('transifex-config');
 
 		$this->checkValidSlug($this->project);
@@ -224,6 +230,13 @@ abstract class CommandBase extends Command
 			}
 			$this->writelnVerbose($output, sprintf('<info>automatically using Contao language folder: %s</info>', $this->ctolang));
 		}
+
+        if (!$this->skipFiles) {
+            $this->skipFiles = $this->getTransifexConfigValue('/skip_files');
+        } else {
+            // Make sure it is an array
+            $this->skipFiles = array();
+        }
 
 		$activeLanguages = array();
 		if (($langs = $input->getArgument('languages')) != 'all')
