@@ -158,7 +158,7 @@ class File implements \IteratorAggregate
 		// We take everything at the beginning of the file until the closing of the first doc comment.
 		preg_match('#^(.+\*/)#sU', $data, $matches);
 
-		if (count($matches[0]))
+		if ($matches && count($matches[0]))
 		{
 			$this->head = $matches[0];
 			if (preg_match('#https://www.transifex.com/projects/p/(.*)/language/(.*)/#', $this->head, $match, PREG_OFFSET_CAPTURE))
