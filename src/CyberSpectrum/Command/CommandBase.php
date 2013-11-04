@@ -180,7 +180,7 @@ abstract class CommandBase extends Command
 		$this->txlang           = $input->getOption('xliff');
 		$this->ctolang          = $input->getOption('contao');
 		$this->baselanguage     = $input->getOption('base-language');
-		$this->skipFiles    = $input->getOption('skip-files') ? explode(',', $input->getOption('skip-files')) : null;
+		$this->skipFiles        = $input->getOption('skip-files') ? explode(',', $input->getOption('skip-files')) : null;
 		$this->transifexconfig  = $input->getOption('transifex-config');
 
 		$this->checkValidSlug($this->project);
@@ -232,7 +232,7 @@ abstract class CommandBase extends Command
 		}
 
         if (!$this->skipFiles) {
-            $this->skipFiles = $this->getTransifexConfigValue('/skip_files');
+            $this->skipFiles = $this->getTransifexConfigValue('/skip_files') ?: array();
         } else {
             // Make sure it is an array
             $this->skipFiles = array();
