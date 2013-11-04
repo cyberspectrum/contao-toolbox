@@ -44,7 +44,7 @@ class TransifexBase extends CommandBase
 
     protected function isNotFileToSkip($basename)
     {
-        return !in_array(substr($basename, 0, -4), $this->skipFiles);
+        return is_array($this->skipFiles) ? !in_array(substr($basename, 0, -4), $this->skipFiles) : true;
     }
 
 	protected function getAllTxFiles($language)

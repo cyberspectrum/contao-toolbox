@@ -17,6 +17,8 @@ class Parser implements ParserInterface
 
 	protected $keystack;
 
+	protected $autoIndex = array();
+
 	public function __construct($file)
 	{
 		$this->file = $file;
@@ -83,10 +85,29 @@ class Parser implements ParserInterface
 
 				if ($subparser->getValue() === null)
 				{
-					$this->bailUnexpectedToken();
-				}
+					// auto indexed array
+					if ($this->tokenIs(']')) {
+						$path = implode('.', $this->keystack);
 
-				$this->pushStack($subparser->getValue());
+						if (!isset($this->autoIndex[$path])) {
+							$this->autoIndex[$path] = 0;
+						}
+						else {
+							$this->autoIndex[$path] ++;
+						}
+
+						$this->pushStack($this->autoIndex[$path]);
+					}
+
+					// invalid code?!
+					else {
+						$this->bailUnexpectedToken();
+					}
+				}
+				else
+				{
+					$this->pushStack($subparser->getValue());
+				}
 			}
 			elseif ($this->tokenIs('='))
 			{
