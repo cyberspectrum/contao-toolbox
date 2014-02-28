@@ -30,7 +30,7 @@ class ToolBoxApplication extends BaseApplication
 			new ConvertToXliff(),
 			new DownloadTransifex(),
 			new UploadTransifex(),
-            new CleanUpTx(),
+			new CleanUpTx(),
 			new HelpCommand(),
 			new ListCommand(),
 		);

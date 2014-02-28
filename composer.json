@@ -14,8 +14,8 @@
 		"php": ">=5.3.3",
 		"symfony/console": "2.*",
 		"guzzle/guzzle": "~3.1",
-        "symfony/finder": "2.*",
-        "symfony/filesystem": "2.*"
+		"symfony/finder": "2.*",
+		"symfony/filesystem": "2.*"
     },
 	"require-dev": {
 		"symfony/process": "2.*"
