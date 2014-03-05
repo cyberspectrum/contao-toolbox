@@ -13,7 +13,7 @@ class CleanUpTx extends CommandBase
     {
         parent::configure();
 
-        $this->setName('cleanuptx');
+        $this->setName('cleanup-tx');
         $this->setDescription('Purges the defined .tx folder.');
         $this->setHelp('Purges the defined .tx folder. You can use this little helper command to quickly start from zero again.' . PHP_EOL);
     }
