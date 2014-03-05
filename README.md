@@ -63,6 +63,8 @@ The Contao Toolbox currently provides the following commands:
     Update Contao language files from xliff translations.
 *   `to-xliff`
     Update xliff translations from Contao base language.
+*   `cleanup-tx`
+    Purges the defined .tx folder.
 
 ### The `help` command.
 Display information about a certain command.
@@ -108,7 +110,7 @@ If we have the extension acme-core and are within the contao core root directory
 ##### --xliff (-x)
 Xliff root directory (base to "en","de" etc.), if empty it will get read from the composer.json.
 This can be any path where the xlf files shall be stored locally. Note that this tool will create a subdirectory
-for every language in use.
+for every language in use. Use the command `cleanup-tx` to quickly clean up this folder right from the command line.
 
 This value will get read from the key `extra/contao/transifex/languages_tx` in composer.json if omitted.
 
@@ -240,6 +242,9 @@ user@host:~/some/project$ ctb.phar upload-transifex
 # Download new translation strings from transifex.
 user@host:~/some/project$ ctb.phar download-transifex -m translated
 
-# Finally convert all received xlf files back to php files in their corresponding location.
+# Convert all received xlf files back to php files in their corresponding location.
 user@host:~/some/project$ ctb.phar from-xliff
+
+# Finally clean up the ".tx" folder
+user@host:~/some/project$ ctb.phar cleanup-tx
 ```
