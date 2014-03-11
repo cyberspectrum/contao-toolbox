@@ -19,6 +19,11 @@ curl -sS https://getcomposer.org/installer | php
 ```
 php composer create-project --prefer-source cyberspectrum/contao-toolbox
 ```
+**Hint:** At the end of the installation composer will ask you to remove the vcs history:
+
+> Do you want to remove the existing VCS (.git, .svn..) history? [Y,n]?
+
+You must not confirm this question, type `n` to keep the history, otherwise the compiler will not work!
 
 ### via plain git cloning
 ```
