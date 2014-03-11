@@ -58,6 +58,8 @@ class Compiler
 		$finder->files()
 			->ignoreVCS(true)
 			->name('*.php')
+			->name('*.pem')
+			->name('*.pem.md5')
 			->exclude('Tests')
 			->in(__DIR__.'/../../vendor/symfony/')
 			->in(__DIR__.'/../../vendor/guzzle/')
