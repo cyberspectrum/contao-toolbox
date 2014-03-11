@@ -17,7 +17,7 @@ curl -sS https://getcomposer.org/installer | php
 
 2. Install the application.
 ```
-./composer create-project cyberspectrum/contao-toolbox
+php composer create-project --prefer-source cyberspectrum/contao-toolbox
 ```
 
 ### via plain git cloning
