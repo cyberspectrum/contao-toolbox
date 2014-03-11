@@ -3,6 +3,7 @@
 
 namespace CyberSpectrum;
 
+use CyberSpectrum\Command\CleanUpTx;
 use Symfony\Component\Console;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Command\HelpCommand;
@@ -29,6 +30,7 @@ class ToolBoxApplication extends BaseApplication
 			new ConvertToXliff(),
 			new DownloadTransifex(),
 			new UploadTransifex(),
+			new CleanUpTx(),
 			new HelpCommand(),
 			new ListCommand(),
 		);
