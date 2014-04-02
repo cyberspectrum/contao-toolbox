@@ -198,33 +198,33 @@ abstract class CommandBase extends Command
 			$this->writelnVerbose($output, sprintf('<info>automatically using project: %s</info>', $this->project));
 		}
 
-		if (!$this->prefix)
+		if ($this->prefix === null)
 		{
 			$this->prefix = $this->getTransifexConfigValue('/prefix');
 
-			if (!$this->prefix)
+			if ($this->prefix === null)
 			{
 				throw new \RuntimeException('Error: unable to determine transifex prefix.');
 			}
 			$this->writelnVerbose($output, sprintf('<info>automatically using prefix: %s</info>', $this->prefix));
 		}
 
-		if (!$this->txlang)
+		if ($this->txlang === null)
 		{
 			$this->txlang = $this->getTransifexConfigValue('/languages_tx');
 
-			if (!$this->txlang)
+			if ($this->txlang === null)
 			{
 				throw new \RuntimeException('Error: unable to determine transifex root folder.');
 			}
 			$this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $this->txlang));
 		}
 
-		if (!$this->ctolang)
+		if ($this->ctolang === null)
 		{
 			$this->ctolang = $this->getTransifexConfigValue('/languages_cto');
 
-			if (!$this->ctolang)
+			if ($this->ctolang === null)
 			{
 				throw new \RuntimeException('Error: unable to determine contao language root folder.');
 			}
