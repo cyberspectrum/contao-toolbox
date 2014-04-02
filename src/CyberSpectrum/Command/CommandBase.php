@@ -115,7 +115,10 @@ abstract class CommandBase extends Command
 		{
 			/** @var JsonConfig $config */
 			$config = $this->getApplication()->getConfig();
-			$value = $config->getConfigValue($name);
+			if ($config !== null)
+			{
+				$value = $config->getConfigValue($name);
+			}
 		}
 
 		return $value;
