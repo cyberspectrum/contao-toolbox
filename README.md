@@ -30,6 +30,11 @@ You must not confirm this question, type `n` to keep the history, otherwise the 
 git clone https://github.com/discordier/contao-toolbox.git
 ```
 
+When using Git, update the contao-toolbox repository and all dependencies via composer at the beginning.
+```
+php composer update
+```
+
 #### Optionally compile the `ctb.phar` binary for distribution.
 
 After fetching the source, you can use the shipped compiler to generate a `phar` file to install in a system wide path
