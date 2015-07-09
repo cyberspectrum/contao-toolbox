@@ -30,6 +30,11 @@
       "CyberSpectrum": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-0": {
+      "CyberSpectrum": "tests/"
+    }
+  },
   "bin": [
     "bin/ctb"
   ],

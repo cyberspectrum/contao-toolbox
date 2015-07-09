@@ -26,7 +26,3 @@ if ((!$loader = includeIfExists(__DIR__ . '/../vendor/autoload.php'))
         'php composer.phar install' . PHP_EOL;
     exit(1);
 }
-
-$loader->add('CyberSpectrum', __DIR__);
-
-require __DIR__ . '/CyberSpectrum/ContaoToolbox/Test/TestCase.php';
