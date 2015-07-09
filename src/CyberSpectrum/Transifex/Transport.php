@@ -40,7 +40,7 @@ class Transport
     public function __construct($user, $pass)
     {
         $this->client = new Client('http://www.transifex.com/api/2/');
-        $this->client->getConfig()->setPath('request.options/auth', array($user, $pass, 'Basic|Digest'));
+        $this->client->getConfig()->setPath('request.options/auth', array($user, $pass, 'Basic'));
     }
 
     /**
