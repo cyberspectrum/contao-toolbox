@@ -22,15 +22,12 @@
     "symfony/filesystem": "2.*"
   },
   "require-dev": {
-    "metamodels/php-coding-standard": "*",
-    "phpunit/phpunit": ">=3.7.10,<4-dev",
-    "squizlabs/php_codesniffer": "~1.5",
-    "phpmd/phpmd": "1.5",
+    "phpcq/all-tasks": "~1.0",
     "symfony/process": "2.*"
   },
   "autoload": {
     "psr-0": {
-      "CyberSpectrum\\": "src/"
+      "CyberSpectrum": "src/"
     }
   },
   "bin": [
