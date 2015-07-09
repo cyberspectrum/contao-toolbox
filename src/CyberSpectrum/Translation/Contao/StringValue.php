@@ -33,6 +33,11 @@ class StringValue extends AbstractParser
         $this->debug(' - enter.');
 
         while (true) {
+            // String concatenation.
+            if ($this->tokenIs('.') || $this->tokenIs(T_COMMENT)) {
+                $this->getNextToken();
+                continue;
+            }
             if ($this->tokenIs(T_CONSTANT_ENCAPSED_STRING)) {
                 $token        = $this->getToken();
                 $this->data[] = stripslashes(substr($token[1], 1, -1));
