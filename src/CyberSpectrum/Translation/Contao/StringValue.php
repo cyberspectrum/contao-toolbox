@@ -1,108 +1,76 @@
 <?php
 
+/**
+ * This toolbox provides easy ways to generate .xlf (XLIFF) files from Contao language files, push them to transifex
+ * and pull translations from transifex and convert them back to Contao language files.
+ *
+ * @package      cyberspectrum/contao-toolbox
+ * @author       Christian Schiffler <c.schiffler@cyberspectrum.de>
+ * @copyright    CyberSpectrum
+ * @license      LGPL-3.0+.
+ * @filesource
+ */
+
 namespace CyberSpectrum\Translation\Contao;
 
-class StringValue implements ParserInterface
+/**
+ * This class parses a string value.
+ */
+class StringValue extends AbstractParser
 {
-	protected $parser;
+    /**
+     * The values.
+     *
+     * @var string[]
+     */
+    private $data;
 
-	protected $level;
+    /**
+     * {@inheritDoc}
+     */
+    public function parse()
+    {
+        $this->debug(' - enter.');
 
-	protected $data;
+        while (true) {
+            if ($this->tokenIs(T_CONSTANT_ENCAPSED_STRING)) {
+                $token        = $this->getToken();
+                $this->data[] = stripslashes(substr($token[1], 1, -1));
+                $this->getNextToken();
+                continue;
+            }
+            if ($this->tokenIs(T_LNUMBER)) {
+                $token        = $this->getToken();
+                $this->data[] = strval($token[1]);
+                $this->getNextToken();
+                continue;
+            }
+            if (
+                $this->tokenIs(';')
+                || $this->tokenIs(',')
+                || $this->tokenIs(')')
+                || $this->tokenIs(']')
+                || $this->tokenIs(T_DOUBLE_ARROW)
+            ) {
+                break;
+            }
 
-	public function __construct(Parser $parser, $level = 0)
-	{
-		$this->parser = $parser;
-		$this->level  = $level;
-	}
+            $this->bailUnexpectedToken();
+        }
+        $this->debug(' - exit.');
+    }
 
-	function debug($message)
-	{
-		$this->parser->debug('StringValue ' .$this->level . ' ' . $message);
-	}
+    /**
+     * Retrieve the value of the string parser.
+     *
+     * @return null|string
+     */
+    public function getValue()
+    {
+        if (!(is_array($this->data) && count($this->data))) {
+            return null;
+        }
 
-	function pushStack($value)
-	{
-		$this->parser->pushStack($value);
-	}
-
-	function popStack()
-	{
-		return $this->parser->popStack();
-	}
-
-	function resetStack()
-	{
-		$this->parser->resetStack();
-	}
-
-	/**
-	 * Check whether the current token matches the given value.
-	 *
-	 * @param mixed $type The type that is expected, either a string value or a tokenizer id.
-	 *
-	 * @return bool
-	 */function tokenIs($type)
-	{
-		return $this->parser->tokenIs($type);
-	}
-
-	function bailUnexpectedToken($expected = false)
-	{
-		$this->parser->bailUnexpectedToken($expected);
-	}
-
-	function getToken()
-	{
-		return $this->parser->getToken();
-	}
-
-	function getNextToken($searchfor = false)
-	{
-		$this->parser->getNextToken($searchfor);
-	}
-
-	public function parse()
-	{
-		$this->debug(' - enter.');
-
-		while (true)
-		{
-			if ($this->tokenIs(T_CONSTANT_ENCAPSED_STRING))
-			{
-				$token = $this->getToken();
-				$this->data[] = stripslashes(substr($token[1], 1, -1));
-			}
-			elseif ($this->tokenIs(T_LNUMBER))
-			{
-				$token = $this->getToken();
-				$this->data[] = strval($token[1]);
-			}
-			elseif (
-				$this->tokenIs(';')
-				|| $this->tokenIs(',')
-				|| $this->tokenIs(')')
-				|| $this->tokenIs(']')
-				|| $this->tokenIs(T_DOUBLE_ARROW)
-			)
-			{
-				break;
-			}
-			else
-			{
-				$this->bailUnexpectedToken();
-			}
-			$this->getNextToken();
-		}
-		$this->debug(' - exit.');
-	}
-
-	public function getValue()
-	{
-		if (!(is_array($this->data) && count($this->data)))
-		{
-			return null;
-		}
-		return implode('', $this->data);
-	}
+        return implode('', $this->data);
+    }
 }

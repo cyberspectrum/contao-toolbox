@@ -1,5 +1,16 @@
 <?php
 
+/**
+ * This toolbox provides easy ways to generate .xlf (XLIFF) files from Contao language files, push them to transifex
+ * and pull translations from transifex and convert them back to Contao language files.
+ *
+ * @package      cyberspectrum/contao-toolbox
+ * @author       Christian Schiffler <c.schiffler@cyberspectrum.de>
+ * @author       Yanick Witschi <yanick.witschi@terminal42.ch>
+ * @copyright    CyberSpectrum
+ * @license      LGPL-3.0+.
+ * @filesource
+ */
 
 namespace CyberSpectrum\Command;
 
@@ -10,244 +21,433 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-
+/**
+ * Abstract base class for all commands.
+ */
 abstract class CommandBase extends Command
 {
-	protected $project;
+    /**
+     * The name of the transifex project.
+     *
+     * @var string
+     */
+    protected $project;
 
-	protected $prefix;
+    /**
+     * The prefix to apply to all language files.
+     *
+     * @var string
+     */
+    protected $prefix;
 
-	protected $txlang;
+    /**
+     * Location of the transifex (xliff) directories.
+     *
+     * @var string
+     */
+    protected $txlang;
 
-	protected $ctolang;
+    /**
+     * Location of the contao language directories.
+     *
+     * @var string
+     */
+    protected $ctolang;
 
-	protected $baselanguage;
+    /**
+     * Name of the base language (i.e. en).
+     *
+     * @var string
+     */
+    protected $baselanguage;
 
-	protected $languages;
+    /**
+     * List of the other languages.
+     *
+     * @var string[]
+     */
+    protected $languages;
 
+    /**
+     * Names of files to skip.
+     *
+     * @var string[]
+     */
     protected $skipFiles;
 
+    /**
+     * The transifex configuration.
+     *
+     * @var array
+     */
     protected $transifexconfig;
 
-	protected function configure()
-	{
-		parent::configure();
+    /**
+     * {@inheritDoc}
+     */
+    protected function configure()
+    {
+        parent::configure();
 
-		$this->addOption('contao', 'c', InputOption::VALUE_REQUIRED, 'Contao language root directory (base to "en","de" etc.), if empty it will get read from the composer.json.', null);
-		$this->addOption('xliff', 'x', InputOption::VALUE_OPTIONAL, 'Xliff root directory (base to "en","de" etc.), if empty it will get read from the composer.json.', null);
-		$this->addOption('projectname', 'p', InputOption::VALUE_OPTIONAL, 'The project name, if empty it will get read from the composer.json.', null);
-		$this->addOption('prefix', null, InputOption::VALUE_OPTIONAL, 'The prefix for all language files, if empty it will get read from the composer.json.', null);
-		$this->addOption('base-language', 'b', InputOption::VALUE_OPTIONAL, 'The base language to use.', 'en');
-		$this->addOption('skip-files', 's', InputOption::VALUE_OPTIONAL, 'Comma delimited list of language files that should be skipped (e.g. "addresses,default").', null);
-		$this->addOption('transifex-config', 't', InputOption::VALUE_OPTIONAL, 'The transifex configuration to take.', 'transifex');
+        $this->addOption(
+            'contao',
+            'c',
+            InputOption::VALUE_REQUIRED,
+            'Contao language root directory (base to "en","de" etc.), ' .
+            'if empty it will get read from the composer.json.',
+            null
+        );
+        $this->addOption(
+            'xliff',
+            'x',
+            InputOption::VALUE_OPTIONAL,
+            'Xliff root directory (base to "en","de" etc.), if empty it will get read from the composer.json.',
+            null
+        );
+        $this->addOption(
+            'projectname',
+            'p',
+            InputOption::VALUE_OPTIONAL,
+            'The project name, if empty it will get read from the composer.json.',
+            null
+        );
+        $this->addOption(
+            'prefix',
+            null,
+            InputOption::VALUE_OPTIONAL,
+            'The prefix for all language files, if empty it will get read from the composer.json.',
+            null
+        );
+        $this->addOption(
+            'base-language',
+            'b',
+            InputOption::VALUE_OPTIONAL,
+            'The base language to use.',
+            'en'
+        );
+        $this->addOption(
+            'skip-files',
+            's',
+            InputOption::VALUE_OPTIONAL,
+            'Comma delimited list of language files that should be skipped (e.g. "addresses,default").',
+            null
+        );
+        $this->addOption(
+            'transifex-config',
+            't',
+            InputOption::VALUE_OPTIONAL,
+            'The transifex configuration to take.',
+            'transifex'
+        );
 
-		$this->addArgument('languages', InputArgument::OPTIONAL, 'Languages to process as comma delimited list or "all" for all languages.', 'all');
-	}
+        $this->addArgument(
+            'languages',
+            InputArgument::OPTIONAL,
+            'Languages to process as comma delimited list or "all" for all languages.',
+            'all'
+        );
+    }
 
-	protected function write(OutputInterface $output, $messages, $newline = false, $type = 0, $verbosity = OutputInterface::VERBOSITY_NORMAL)
-	{
-		if ($output->getVerbosity() >= $verbosity)
-		{
-			$output->write($messages, $newline, $type);
-		}
-	}
+    /**
+     * Write a message to the console if the verbosity is equal or higher than the passed verbosity level.
+     *
+     * @param OutputInterface $output    The output interface to which shall be written.
+     * @param string[]|string $messages  The messages to write.
+     * @param bool            $newline   Flag if a newline shall be written after the messages.
+     * @param int             $type      Type of the message.
+     * @param int             $verbosity The verbosity level for which the messages shall be logged.
+     *
+     * @return void
+     */
+    protected function write(
+        OutputInterface $output,
+        $messages,
+        $newline = false,
+        $type = 0,
+        $verbosity = OutputInterface::VERBOSITY_NORMAL
+    ) {
+        if ($output->getVerbosity() >= $verbosity) {
+            $output->write($messages, $newline, $type);
+        }
+    }
 
-	protected function writeVerbose(OutputInterface $output, $messages, $newline = false, $type = 0)
-	{
-		if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE)
-		{
-			$output->write($messages, $newline, $type);
-		}
-	}
+    /**
+     * Write a message to the console if the verbosity is equal or higher than verbose.
+     *
+     * @param OutputInterface $output   The output interface to which shall be written.
+     * @param string[]|string $messages The messages to write.
+     * @param bool            $newline  Flag if a newline shall be written after the messages.
+     * @param int             $type     Type of the message.
+     *
+     * @return void
+     */
+    protected function writeVerbose(OutputInterface $output, $messages, $newline = false, $type = 0)
+    {
+        if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
+            $output->write($messages, $newline, $type);
+        }
+    }
 
-	protected function writeAlways(OutputInterface $output, $messages, $newline = false, $type = 0)
-	{
-		if ($output->getVerbosity() >= OutputInterface::VERBOSITY_QUIET)
-		{
-			$output->write($messages, $newline, $type);
-		}
-	}
+    /**
+     * Write a message always to the console for all verbosity levels higher than quiet.
+     *
+     * @param OutputInterface $output   The output interface to which shall be written.
+     * @param string[]|string $messages The messages to write.
+     * @param bool            $newline  Flag if a newline shall be written after the messages.
+     * @param int             $type     Type of the message.
+     *
+     * @return void
+     */
+    protected function writeAlways(OutputInterface $output, $messages, $newline = false, $type = 0)
+    {
+        if ($output->getVerbosity() >= OutputInterface::VERBOSITY_QUIET) {
+            $output->write($messages, $newline, $type);
+        }
+    }
 
-	protected function writeln(OutputInterface $output, $messages, $type = 0, $verbosity = OutputInterface::VERBOSITY_NORMAL)
-	{
-		if ($output->getVerbosity() >= $verbosity)
-		{
-			$output->writeln($messages, $type);
-		}
-	}
+    /**
+     * Write a message to the console if the verbosity is equal or higher than the passed verbosity level.
+     *
+     * @param OutputInterface $output    The output interface to which shall be written.
+     * @param string[]|string $messages  The messages to write.
+     * @param int             $type      Type of the message.
+     * @param int             $verbosity The verbosity level for which the messages shall be logged.
+     *
+     * @return void
+     */
+    protected function writeln(
+        OutputInterface $output,
+        $messages,
+        $type = 0,
+        $verbosity = OutputInterface::VERBOSITY_NORMAL
+    ) {
+        if ($output->getVerbosity() >= $verbosity) {
+            $output->writeln($messages, $type);
+        }
+    }
 
-	protected function writelnVerbose(OutputInterface $output, $messages, $type = 0)
-	{
-		if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE)
-		{
-			$output->writeln($messages, $type);
-		}
-	}
+    /**
+     * Write a message to the console if the verbosity is equal or higher than verbose.
+     *
+     * @param OutputInterface $output   The output interface to which shall be written.
+     * @param string[]|string $messages The messages to write.
+     * @param int             $type     Type of the message.
+     *
+     * @return void
+     */
+    protected function writelnVerbose(OutputInterface $output, $messages, $type = 0)
+    {
+        if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
+            $output->writeln($messages, $type);
+        }
+    }
 
-	protected function writelnAlways(OutputInterface $output, $messages, $type = 0)
-	{
-		if ($output->getVerbosity() >= OutputInterface::VERBOSITY_QUIET)
-		{
-			$output->writeln($messages, $type);
-		}
-	}
+    /**
+     * Write a message always to the console for all verbosity levels higher than quiet.
+     *
+     * @param OutputInterface $output   The output interface to which shall be written.
+     * @param string[]|string $messages The messages to write.
+     * @param int             $type     Type of the message.
+     *
+     * @return void
+     */
+    protected function writelnAlways(OutputInterface $output, $messages, $type = 0)
+    {
+        if ($output->getVerbosity() >= OutputInterface::VERBOSITY_QUIET) {
+            $output->writeln($messages, $type);
+        }
+    }
 
-	/**
-	 * Fetch some value from the config.
-	 * First the value will be read from composer.json (section /extra/contao/...) and then from the global ctb config
-	 * (if any exists).
-	 *
-	 * @param string $name the config value to retrieve.
-	 *
-	 * @return mixed
-	 */
-	protected function getConfigValue($name)
-	{
-		if (substr($name, 0, 1) != '/')
-		{
-			$name = '/' .$name;
-		}
-		$config = new JsonConfig(getcwd() . '/composer.json');
-		$value = $config->getConfigValue('/extra/contao' . $name);
+    /**
+     * Fetch some value from the config.
+     *
+     * First the value will be read from composer.json (section /extra/contao/...) and then from the global ctb config
+     * (if any exists).
+     *
+     * @param string $name The config value to retrieve.
+     *
+     * @return mixed
+     */
+    protected function getConfigValue($name)
+    {
+        if (substr($name, 0, 1) != '/') {
+            $name = '/' . $name;
+        }
+        $config = new JsonConfig(getcwd() . '/composer.json');
+        $value  = $config->getConfigValue('/extra/contao' . $name);
 
-		// fallback to global config.
-		if ($value === null)
-		{
-			/** @var JsonConfig $config */
-			$config = $this->getApplication()->getConfig();
-			if ($config !== null)
-			{
-				$value = $config->getConfigValue($name);
-			}
-		}
+        // Fallback to global config.
+        if ($value === null) {
+            /** @var JsonConfig $config */
+            $config = $this->getApplication()->getConfig();
+            if ($config !== null) {
+                $value = $config->getConfigValue($name);
+            }
+        }
 
-		return $value;
-	}
+        return $value;
+    }
 
+    /**
+     * Retrieve a config value from the transifex section of the config.
+     *
+     * @param string $name The name of the config value.
+     *
+     * @return mixed
+     */
     protected function getTransifexConfigValue($name)
     {
         return $this->getConfigValue('/' . $this->transifexconfig . $name);
     }
 
-	protected function checkValidSlug($slug)
-	{
-		if (preg_match_all('#^([a-z,A-Z,0-9,\-,_]*)(.+)?$#', $slug, $matches)
-			&& (strlen($matches[2][0]) > 0))
-		{
-			throw new \RuntimeException(sprintf(
-				'Error: prefix "%s" is invalid. It must only contain letters, numbers, underscores and hyphens. Found problem near: "%s"',
-				$slug,
-				$matches[2][0]
-			));
-		}
-	}
+    /**
+     * Check that the passed project slug complies to the transifex restrictions.
+     *
+     * @param string $slug The slug to test.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException When the slug is invalid, an exception is thrown.
+     */
+    protected function checkValidSlug($slug)
+    {
+        if (preg_match_all('#^([a-z,A-Z,0-9,\-,_]*)(.+)?$#', $slug, $matches)
+            && (strlen($matches[2][0]) > 0)
+        ) {
+            throw new \RuntimeException(
+                sprintf(
+                    'Error: prefix "%s" is invalid. It must only contain letters, numbers, underscores and hyphens. ' .
+                    'Found problem near: "%s"',
+                    $slug,
+                    $matches[2][0]
+                )
+            );
+        }
+    }
 
-	abstract protected function getLanguageBasePath();
+    /**
+     * Retrieve the base path for languages.
+     *
+     * @return string
+     */
+    abstract protected function getLanguageBasePath();
 
-	abstract protected function isNotFileToSkip($basename);
+    /**
+     * Determine if a file is to be skipped or not.
+     *
+     * @param string $basename The base name of the file to test.
+     *
+     * @return bool
+     */
+    abstract protected function isNotFileToSkip($basename);
 
-	protected function determineLanguages(OutputInterface $output, $srcdir, $filter = array())
-	{
-		if (!is_dir($srcdir))
-		{
-			throw new \InvalidArgumentException(sprintf('The path %s does not exist.', $srcdir));
-		}
+    /**
+     * Determine the list of languages.
+     *
+     * @param OutputInterface $output The output interface to receive log messages.
+     *
+     * @param string          $srcdir The source directory to be examined.
+     *
+     * @param array           $filter The files to be filtered away (to be ignored).
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException When the given source directory does not exist, an exception is thrown.
+     */
+    protected function determineLanguages(OutputInterface $output, $srcdir, $filter = array())
+    {
+        if (!is_dir($srcdir)) {
+            throw new \InvalidArgumentException(sprintf('The path %s does not exist.', $srcdir));
+        }
 
-		$this->writelnVerbose($output, sprintf('<info>scanning for languages in: %s</info>', $srcdir));
-		$matches = array();
-		$iterator = new \DirectoryIterator($srcdir);
-		do
-		{
-			$item = $iterator->getFilename();
+        $this->writelnVerbose($output, sprintf('<info>scanning for languages in: %s</info>', $srcdir));
+        $matches  = array();
+        $iterator = new \DirectoryIterator($srcdir);
+        do {
+            $item = $iterator->getFilename();
 
-			if ((!$iterator->isDot()) && (strlen($item) == 2) && ((!$filter) || in_array($item, $filter)))
-			{
-				$matches[] = $item;
-				$this->writelnVerbose($output, sprintf('<info>using: %s</info>', $item));
-			}
-			elseif(!$iterator->isDot())
-			{
-				$this->writelnVerbose($output, sprintf('<info>not using: %s</info>', $item));
-			}
-			$iterator->next();
-		}
-		while ($iterator->valid());
+            if ((!$iterator->isDot()) && (strlen($item) == 2) && ((!$filter) || in_array($item, $filter))) {
+                $matches[] = $item;
+                $this->writelnVerbose($output, sprintf('<info>using: %s</info>', $item));
+            } elseif (!$iterator->isDot()) {
+                $this->writelnVerbose($output, sprintf('<info>not using: %s</info>', $item));
+            }
+            $iterator->next();
+        } while ($iterator->valid());
 
-		$this->languages = $matches;
-	}
+        $this->languages = $matches;
+    }
 
-	protected function initialize(InputInterface $input, OutputInterface $output)
-	{
-		$this->project          = $input->getOption('projectname');
-		$this->prefix           = $input->getOption('prefix');
-		$this->txlang           = $input->getOption('xliff');
-		$this->ctolang          = $input->getOption('contao');
-		$this->baselanguage     = $input->getOption('base-language');
-		$this->skipFiles        = $input->getOption('skip-files') ? explode(',', $input->getOption('skip-files')) : null;
-		$this->transifexconfig  = $input->getOption('transifex-config');
+    /**
+     * {@inheritDoc}
+     *
+     * @throws \RuntimeException when the needed settings can not be determined.
+     */
+    protected function initialize(InputInterface $input, OutputInterface $output)
+    {
+        $this->project         = $input->getOption('projectname');
+        $this->prefix          = $input->getOption('prefix');
+        $this->txlang          = $input->getOption('xliff');
+        $this->ctolang         = $input->getOption('contao');
+        $this->baselanguage    = $input->getOption('base-language');
+        $this->skipFiles       = $input->getOption('skip-files') ? explode(',', $input->getOption('skip-files')) : null;
+        $this->transifexconfig = $input->getOption('transifex-config');
 
-		$this->checkValidSlug($this->project);
-		$this->checkValidSlug($this->prefix);
+        $this->checkValidSlug($this->project);
+        $this->checkValidSlug($this->prefix);
 
-		if (!$this->project)
-		{
-			$this->project = $this->getTransifexConfigValue('/project');
+        if (!$this->project) {
+            $this->project = $this->getTransifexConfigValue('/project');
 
-			if (!$this->project)
-			{
-				throw new \RuntimeException('Error: unable to determine transifex project name.');
-			}
+            if (!$this->project) {
+                throw new \RuntimeException('Error: unable to determine transifex project name.');
+            }
 
-			$this->writelnVerbose($output, sprintf('<info>automatically using project: %s</info>', $this->project));
-		}
+            $this->writelnVerbose($output, sprintf('<info>automatically using project: %s</info>', $this->project));
+        }
 
-		if ($this->prefix === null)
-		{
-			$this->prefix = $this->getTransifexConfigValue('/prefix');
+        if ($this->prefix === null) {
+            $this->prefix = $this->getTransifexConfigValue('/prefix');
 
-			if ($this->prefix === null)
-			{
-				throw new \RuntimeException('Error: unable to determine transifex prefix.');
-			}
-			$this->writelnVerbose($output, sprintf('<info>automatically using prefix: %s</info>', $this->prefix));
-		}
+            if ($this->prefix === null) {
+                throw new \RuntimeException('Error: unable to determine transifex prefix.');
+            }
+            $this->writelnVerbose($output, sprintf('<info>automatically using prefix: %s</info>', $this->prefix));
+        }
 
-		if ($this->txlang === null)
-		{
-			$this->txlang = $this->getTransifexConfigValue('/languages_tx');
+        if ($this->txlang === null) {
+            $this->txlang = $this->getTransifexConfigValue('/languages_tx');
 
-			if ($this->txlang === null)
-			{
-				throw new \RuntimeException('Error: unable to determine transifex root folder.');
-			}
-			$this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $this->txlang));
-		}
+            if ($this->txlang === null) {
+                throw new \RuntimeException('Error: unable to determine transifex root folder.');
+            }
+            $this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $this->txlang));
+        }
 
-		if ($this->ctolang === null)
-		{
-			$this->ctolang = $this->getTransifexConfigValue('/languages_cto');
+        if ($this->ctolang === null) {
+            $this->ctolang = $this->getTransifexConfigValue('/languages_cto');
 
-			if ($this->ctolang === null)
-			{
-				throw new \RuntimeException('Error: unable to determine contao language root folder.');
-			}
-			$this->writelnVerbose($output, sprintf('<info>automatically using Contao language folder: %s</info>', $this->ctolang));
-		}
+            if ($this->ctolang === null) {
+                throw new \RuntimeException('Error: unable to determine contao language root folder.');
+            }
+            $this->writelnVerbose(
+                $output,
+                sprintf('<info>automatically using Contao language folder: %s</info>', $this->ctolang)
+            );
+        }
 
         if (!$this->skipFiles) {
             $this->skipFiles = $this->getTransifexConfigValue('/skip_files') ?: array();
         } else {
-            // Make sure it is an array
+            // Make sure it is an array.
             $this->skipFiles = array();
         }
 
-		$activeLanguages = array();
-		if (($langs = $input->getArgument('languages')) != 'all')
-		{
-			$activeLanguages = explode(',', $langs);
-		}
+        $activeLanguages = array();
+        if (($langs = $input->getArgument('languages')) != 'all') {
+            $activeLanguages = explode(',', $langs);
+        }
 
-		$this->determineLanguages($output, $this->getLanguageBasePath(), $activeLanguages);
-	}
-
+        $this->determineLanguages($output, $this->getLanguageBasePath(), $activeLanguages);
+    }
 }

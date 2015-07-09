@@ -1,138 +1,165 @@
 <?php
 
+/**
+ * This toolbox provides easy ways to generate .xlf (XLIFF) files from Contao language files, push them to transifex
+ * and pull translations from transifex and convert them back to Contao language files.
+ *
+ * @package      cyberspectrum/contao-toolbox
+ * @author       Christian Schiffler <c.schiffler@cyberspectrum.de>
+ * @author       Yanick Witschi <yanick.witschi@terminal42.ch>
+ * @copyright    CyberSpectrum
+ * @license      LGPL-3.0+.
+ * @filesource
+ */
+
 namespace CyberSpectrum\Command;
 
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
+use CyberSpectrum\Translation\Contao;
+use CyberSpectrum\Translation\Contao\ContaoFile;
+use CyberSpectrum\Translation\Xliff;
+use CyberSpectrum\Translation\Xliff\XliffFile;
 use Symfony\Component\Console\Output\OutputInterface;
 
-use CyberSpectrum\Translation\Xliff;
-use CyberSpectrum\Translation\Contao;
-
+/**
+ * This class converts language files from XLIFF format into the Contao PHP array format.
+ */
 class ConvertFromXliff extends ConvertBase
 {
-	protected function configure()
-	{
-		parent::configure();
+    /**
+     * {@inheritDoc}
+     */
+    protected function configure()
+    {
+        parent::configure();
 
-		$this->setName('from-xliff');
-		$this->setDescription('Update Contao language files from xliff translations.');
+        $this->setName('from-xliff');
+        $this->setDescription('Update Contao language files from xliff translations.');
 
-		$this->setHelp('Convert the xliff files from the set transifex folder into the contao folder.' . PHP_EOL);
-	}
+        $this->setHelp('Convert the xliff files from the set transifex folder into the contao folder.' . PHP_EOL);
+    }
 
-	protected function getLanguageBasePath()
-	{
-		return $this->txlang;
-	}
+    /**
+     * {@inheritDoc}
+     */
+    protected function getLanguageBasePath()
+    {
+        return $this->txlang;
+    }
 
-	protected function getDestinationBasePath()
-	{
-		return $this->ctolang;
-	}
+    /**
+     * {@inheritDoc}
+     */
+    protected function getDestinationBasePath()
+    {
+        return $this->ctolang;
+    }
 
-	protected function isValidSourceFile($file)
-	{
-		return (substr($file, -4) == '.xlf');
-	}
+    /**
+     * {@inheritDoc}
+     */
+    protected function isValidSourceFile($file)
+    {
+        return (substr($file, -4) == '.xlf');
+    }
 
-	protected function isValidDestinationFile($file)
-	{
-		return (substr($file, -4) == '.php');
-	}
+    /**
+     * {@inheritDoc}
+     */
+    protected function isValidDestinationFile($file)
+    {
+        return (substr($file, -4) == '.php');
+    }
 
-	protected function convert(OutputInterface $output, Xliff\File $src, Contao\File $dst)
-	{
-		$changed = false;
+    /**
+     * Convert the source file to the destination file.
+     *
+     * @param XLiffFile  $src The source XLIFF file.
+     *
+     * @param ContaoFile $dst The destination Contao file.
+     *
+     * @return bool
+     */
+    protected function convert(XLiffFile $src, ContaoFile $dst)
+    {
+        $changed = false;
 
-		foreach ($src->getKeys() as $key)
-		{
-			if (($value = $src->getTarget($key)) !== null)
-			{
-				if ($dst->getValue($key) != $value)
-				{
-					$changed = true;
-					$dst->setValue($key, $value);
-				}
-			}
-			else
-			{
-				if ($dst->getValue($key) !== null)
-				{
-					$changed = true;
-					$dst->removeValue($key);
-				}
-			}
-		}
+        foreach ($src->getKeys() as $key) {
+            if (($value = $src->getTarget($key)) !== null) {
+                if ($dst->getValue($key) != $value) {
+                    $changed = true;
+                    $dst->setValue($key, $value);
+                }
+            } else {
+                if ($dst->getValue($key) !== null) {
+                    $changed = true;
+                    $dst->removeValue($key);
+                }
+            }
+        }
 
-		return $changed;
-	}
+        return $changed;
+    }
 
-	protected function processLanguage(OutputInterface $output, $language)
-	{
-		$this->writeln($output, sprintf('processing language: <info>%s</info>...', $language));
+    /**
+     * {@inheritDoc}
+     *
+     * @throws \InvalidArgumentException When an unexpected domain has been found in the xliff file.
+     */
+    protected function processLanguage(OutputInterface $output, $language)
+    {
+        $this->writeln($output, sprintf('processing language: <info>%s</info>...', $language));
 
-		$destinationFiles = array();
-		foreach ($this->baseFiles as $file)
-		{
-			$this->writelnVerbose($output, sprintf('processing file: <info>%s</info>...', $file));
+        $destinationFiles = array();
+        foreach ($this->baseFiles as $file) {
+            $this->writelnVerbose($output, sprintf('processing file: <info>%s</info>...', $file));
 
-			$srcFile            = $this->getLanguageBasePath() .DIRECTORY_SEPARATOR . $language .DIRECTORY_SEPARATOR . $file;
+            $srcFile = $this->getLanguageBasePath() . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $file;
 
-			// not a file from transifex received yet.
-			if (!file_exists($srcFile))
-			{
-				continue;
-			}
+            // not a file from transifex received yet.
+            if (!file_exists($srcFile)) {
+                continue;
+            }
 
-			$src                = new Xliff\File($srcFile);
+            $src = new XliffFile($srcFile);
 
-			$domain             = $src->getOriginal();
+            $domain = $src->getOriginal();
 
-			if ($domain != basename($file, '.xlf'))
-			{
-				throw new \InvalidArgumentException(sprintf('Unexpected domain "%s" found in file "%s" instead of domain "%s"', $domain, $srcFile, basename($file, '.xlf')));
-			}
+            if ($domain != basename($file, '.xlf')) {
+                throw new \InvalidArgumentException(
+                    sprintf(
+                        'Unexpected domain "%s" found in file "%s" instead of domain "%s"',
+                        $domain,
+                        $srcFile,
+                        basename($file, '.xlf')
+                    )
+                );
+            }
 
-			$dstFile            = $domain . '.php';
-			$destinationFiles[] = $dstFile;
+            $dstFile            = $domain . '.php';
+            $destinationFiles[] = $dstFile;
 
-			$dstDir = $this->getDestinationBasePath() .DIRECTORY_SEPARATOR . $language;
-			if (!is_dir($dstDir))
-			{
-				mkdir($dstDir, 0755, true);
-			}
+            $dstDir = $this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language;
+            if (!is_dir($dstDir)) {
+                mkdir($dstDir, 0755, true);
+            }
 
-			$dest = new Contao\File($dstDir . DIRECTORY_SEPARATOR . $dstFile);
+            $dest = new ContaoFile($dstDir . DIRECTORY_SEPARATOR . $dstFile);
 
-			$changed = $this->convert($output, $src, $dest);
+            $changed = $this->convert($src, $dest);
 
-			if ($changed)
-			{
-				$dest->setLanguage($language);
-				$dest->setTransifexProject($this->project);
-				$dest->setLastChange($src->getDate());
+            if ($changed) {
+                $dest->setLanguage($language);
+                $dest->setTransifexProject($this->project);
+                $dest->setLastChange($src->getDate());
 
-				if ($dest->getKeys())
-				{
-					$dest->save();
-				}
-				else
-				{
-					unlink($dstDir . DIRECTORY_SEPARATOR . $dstFile);
-				}
-			}
-		}
+                if ($dest->getKeys()) {
+                    $dest->save();
+                } else {
+                    unlink($dstDir . DIRECTORY_SEPARATOR . $dstFile);
+                }
+            }
+        }
 
-		if ($this->cleanup && ($files = array_diff($this->determinePresentFiles($language), $destinationFiles)))
-		{
-			$this->writeln($output, sprintf('the following obsolete files have been found and will get deleted: <info>%s</info>', implode(', ', $files)));
-
-			foreach ($files as $file)
-			{
-				unlink($this->getDestinationBasePath() .DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $file);
-				$this->writelnVerbose($output, sprintf('deleting obsolete file <info>%s</info>', $file));
-			}
-		}
-	}
+        $this->cleanupObsoleteFiles($output, $language, $destinationFiles);
+    }
 }

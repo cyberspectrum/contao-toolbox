@@ -1,51 +1,49 @@
 <?php
 
+/**
+ * This toolbox provides easy ways to generate .xlf (XLIFF) files from Contao language files, push them to transifex
+ * and pull translations from transifex and convert them back to Contao language files.
+ *
+ * @package      cyberspectrum/contao-toolbox
+ * @author       Christian Schiffler <c.schiffler@cyberspectrum.de>
+ * @copyright    CyberSpectrum
+ * @license      LGPL-3.0+.
+ * @filesource
+ */
+
 namespace CyberSpectrum\Translation\Xliff;
 
+use CyberSpectrum\Translation\AbstractTranslationIterator;
 
-class TranslationIterator implements \Iterator
+/**
+ * This class provides a simple iterator over XLIFF files.
+ */
+class TranslationIterator extends AbstractTranslationIterator
 {
-	/**
-	 * @var File
-	 */
-	protected $file;
+    /**
+     * The file we belong to.
+     *
+     * @var XliffFile
+     */
+    protected $file;
 
-	protected $keys;
+    /**
+     * Create a new instance.
+     *
+     * @param XliffFile $file The Xliff file we are working on.
+     */
+    // @codingStandardsIgnoreStart - Method override is not useless, we change the parameter type.
+    public function __construct(XliffFile $file)
+    {
+        parent::__construct($file);
+    }
+    // @codingStandardsIgnoreEnd
 
-	protected $position = 0;
-
-	/**
-	 * @param File $file the Xliff file we are working on.
-	 */
-	public function __construct($file)
-	{
-		$this->position = 0;
-		$this->file     = $file;
-		$this->keys     = $file->getKeys();
-	}
-
-	function rewind()
-	{
-		$this->position = 0;
-	}
-
-	function current()
-	{
-		return new TranslationEntry($this->key(), $this->file);
-	}
-
-	function key()
-	{
-		return $this->keys[$this->position];
-	}
-
-	function next()
-	{
-		++$this->position;
-	}
-
-	function valid()
-	{
-		return isset($this->keys[$this->position]);
-	}
+    /**
+     * {@inheritDoc}
+     */
+    public function current()
+    {
+        return new \CyberSpectrum\Translation\Xliff\TranslationEntry($this->key(), $this->file);
+    }
 }

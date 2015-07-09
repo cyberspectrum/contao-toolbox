@@ -1,51 +1,49 @@
 <?php
 
+/**
+ * This toolbox provides easy ways to generate .xlf (XLIFF) files from Contao language files, push them to transifex
+ * and pull translations from transifex and convert them back to Contao language files.
+ *
+ * @package      cyberspectrum/contao-toolbox
+ * @author       Christian Schiffler <c.schiffler@cyberspectrum.de>
+ * @copyright    CyberSpectrum
+ * @license      LGPL-3.0+.
+ * @filesource
+ */
+
 namespace CyberSpectrum\Translation\Contao;
 
+use CyberSpectrum\Translation\AbstractTranslationIterator;
 
-class TranslationIterator implements \Iterator
+/**
+ * This class provides an iterator over all language strings in a Contao File.
+ */
+class TranslationIterator extends AbstractTranslationIterator
 {
-	/**
-	 * @var File
-	 */
-	protected $file;
+    /**
+     * The file being iterated.
+     *
+     * @var ContaoFile
+     */
+    protected $file;
 
-	protected $keys;
+    /**
+     * Create a new instance.
+     *
+     * @param ContaoFile $file The Contao file we are working on.
+     */
+    // @codingStandardsIgnoreStart - Method override is not useless, we change the parameter type.
+    public function __construct(ContaoFile $file)
+    {
+        parent::__construct($file);
+    }
+    // @codingStandardsIgnoreEnd
 
-	protected $position = 0;
-
-	/**
-	 * @param File $file the Contao file we are working on.
-	 */
-	public function __construct($file)
-	{
-		$this->position = 0;
-		$this->file     = $file;
-		$this->keys     = $file->getKeys();
-	}
-
-	function rewind()
-	{
-		$this->position = 0;
-	}
-
-	function current()
-	{
-		return new TranslationEntry($this->key(), $this->file);
-	}
-
-	function key()
-	{
-		return $this->keys[$this->position];
-	}
-
-	function next()
-	{
-		++$this->position;
-	}
-
-	function valid()
-	{
-		return isset($this->keys[$this->position]);
-	}
+    /**
+     * {@inheritDoc}
+     */
+    public function current()
+    {
+        return new \CyberSpectrum\Translation\Contao\TranslationEntry($this->key(), $this->file);
+    }
 }

@@ -1,173 +1,132 @@
 <?php
 
+/**
+ * This toolbox provides easy ways to generate .xlf (XLIFF) files from Contao language files, push them to transifex
+ * and pull translations from transifex and convert them back to Contao language files.
+ *
+ * @package      cyberspectrum/contao-toolbox
+ * @author       Christian Schiffler <c.schiffler@cyberspectrum.de>
+ * @copyright    CyberSpectrum
+ * @license      LGPL-3.0+.
+ * @filesource
+ */
+
 namespace CyberSpectrum\Translation\Contao;
 
-
-class ArrayParser implements ParserInterface
+/**
+ * This class implements a simple PHP language array parser.
+ */
+class ArrayParser extends AbstractParser
 {
-	/**
-	 * @var Parser
-	 */
-	protected $parser;
+    /**
+     * The counter.
+     *
+     * @var int
+     */
+    private $counter;
 
-	protected $value;
+    /**
+     * {@inheritDoc}
+     */
+    public function __construct(Parser $parser, $level = 0)
+    {
+        parent::__construct($parser, $level);
 
-	protected $counter;
+        $this->counter = 0;
+    }
 
-	protected $level;
+    /**
+     * {@inheritDoc}
+     */
+    public function parse()
+    {
+        $this->debug(' - enter.');
 
-	public function __construct(Parser $parser, $level = 0)
-	{
-		$this->parser  = $parser;
-		$this->counter = 0;
-		$this->level   = $level;
-	}
+        $this->getNextToken();
 
-	public function debug($message)
-	{
-		$this->parser->debug('ArrayParser ' . $this->level . ' ' . $message);
-	}
+        if (!$this->tokenIs('(')) {
+            $this->bailUnexpectedToken('(');
+        }
 
-	public function pushStack($value)
-	{
-		$this->parser->pushStack($value);
-	}
+        $this->getNextToken();
 
-	public function popStack()
-	{
-		return $this->parser->popStack();
-	}
+        while (true) {
+            // Sub array without key.
+            if ($this->tokenIs(T_ARRAY)) {
+                $this->debug('Sub array without key.');
+                $this->pushStack($this->counter++);
 
-	public function resetStack()
-	{
-		$this->parser->resetStack();
-	}
+                $subparser = new ArrayParser($this->parser, ($this->level + 1));
+                $subparser->parse();
 
-	/**
-	 * Check whether the current token matches the given value.
-	 *
-	 * @param mixed $type The type that is expected, either a string value or a tokenizer id.
-	 *
-	 * @return bool
-	 */
-	public function tokenIs($type)
-	{
-		return $this->parser->tokenIs($type);
-	}
+                $this->popStack();
 
-	public function bailUnexpectedToken($expected = false)
-	{
-		$this->parser->bailUnexpectedToken($expected);
-	}
+                if ($this->tokenIs(',')) {
+                    $this->getNextToken();
 
-	public function getToken()
-	{
-		return $this->parser->getToken();
-	}
+                    continue;
+                }
+                if ($this->tokenIs(')')) {
+                    $this->debug('closing bracket.');
+                    $this->getNextToken();
 
-	public function getNextToken($searchfor = false)
-	{
-		$this->parser->getNextToken($searchfor);
-	}
+                    break;
+                }
+            } else {
+                $subparser = new StringValue($this->parser, ($this->level + 1));
+                $subparser->parse();
 
-	public function parse()
-	{
-		$this->debug(' - enter.');
+                $key = $subparser->getValue();
 
-		$this->getNextToken();
+                $this->debug('key: ' . var_export($key, true));
 
-		if (!$this->tokenIs('('))
-		{
-			$this->bailUnexpectedToken('(');
-		}
+                if ($this->tokenIs(T_DOUBLE_ARROW)) {
+                    // We MUST have an key when double arrow is encountered.
+                    if ($key === null) {
+                        $this->bailUnexpectedToken();
+                    }
 
-		$this->getNextToken();
+                    $this->pushStack($key);
 
-		while (true)
-		{
-			// Sub array without key.
-			if ($this->tokenIs(T_ARRAY))
-			{
-				$this->debug('Sub array without key.');
-				$this->pushStack($this->counter++);
+                    $this->getNextToken();
 
-				$subparser = new ArrayParser($this->parser, $this->level+1);
-				$subparser->parse();
 
-				$this->popStack();
+                    if ($this->tokenIs(T_ARRAY)) {
+                        // Sub array with key.
+                        $this->debug('Sub array with key.');
+                        $subparser = new ArrayParser($this->parser, ($this->level + 1));
+                        $subparser->parse();
+                    } else {
+                        // String item with key.
+                        $this->debug('String item with key.');
+                        $subparser = new StringValue($this->parser, ($this->level + 1));
+                        $subparser->parse();
 
-				if ($this->tokenIs(','))
-				{
-					$this->getNextToken();
-				}
-				elseif ($this->tokenIs(')'))
-				{
-					$this->debug('closing bracket.');
-					$this->getNextToken();
-					break;
-				}
-			}
-			else
-			{
-				$subparser = new StringValue($this->parser, $this->level+1);
-				$subparser->parse();
+                        $this->parser->setValue($this->parser->getStack(), $subparser->getValue());
+                    }
 
-				$key = $subparser->getValue();
+                    $this->popStack();
+                } elseif ($this->tokenIs(',') || $this->tokenIs(')')) {
+                // String item without key.
+                    $this->debug('String item without key.');
+                    $this->pushStack($this->counter++);
+                    $this->parser->setValue($this->parser->getStack(), $key);
+                    $this->popStack();
+                }
 
-				$this->debug('key: ' . var_export($key, true));
+                if ($this->tokenIs(',')) {
+                    $this->getNextToken();
 
-				if ($this->tokenIs(T_DOUBLE_ARROW))
-				{
-					// We MUST have an key when double arrow is encountered.
-					if ($key === null)
-					{
-						$this->bailUnexpectedToken();
-					}
+                    continue;
+                }
+                if ($this->tokenIs(')')) {
+                    $this->debug('closing bracket.');
+                    $this->getNextToken();
 
-					$this->pushStack($key);
-
-					$this->getNextToken();
-
-					// Sub array with key.
-					if ($this->tokenIs(T_ARRAY))
-					{
-						$this->debug('Sub array with key.');
-						$subparser = new ArrayParser($this->parser, $this->level+1);
-						$subparser->parse();
-					}
-					// String item with key.
-					else
-					{
-						$this->debug('String item with key.');
-						$subparser = new StringValue($this->parser, $this->level+1);
-						$subparser->parse();
-
-						$this->parser->setValue($this->parser->getStack(), $subparser->getValue());
-					}
-
-					$this->popStack();
-				}
-				// String item without key.
-				elseif ($this->tokenIs(',') || $this->tokenIs(')'))
-				{
-					$this->debug('String item without key.');
-					$this->pushStack($this->counter++);
-					$this->parser->setValue($this->parser->getStack(), $key);
-					$this->popStack();
-				}
-
-				if ($this->tokenIs(','))
-				{
-					$this->getNextToken();
-				}
-				elseif ($this->tokenIs(')'))
-				{
-					$this->debug('closing bracket.');
-					$this->getNextToken();
-					break;
-				}
-			}
-		}
-		$this->debug(' - exit.');
-	}
+                    break;
+                }
+            }
+        }
+        $this->debug(' - exit.');
+    }
 }

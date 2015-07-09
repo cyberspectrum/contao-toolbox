@@ -1,136 +1,225 @@
 <?php
 
+/**
+ * This toolbox provides easy ways to generate .xlf (XLIFF) files from Contao language files, push them to transifex
+ * and pull translations from transifex and convert them back to Contao language files.
+ *
+ * @package      cyberspectrum/contao-toolbox
+ * @author       Christian Schiffler <c.schiffler@cyberspectrum.de>
+ * @author       Yanick Witschi <yanick.witschi@terminal42.ch>
+ * @author       Tristan Lins <tristan.lins@bit3.de>
+ * @copyright    CyberSpectrum
+ * @license      LGPL-3.0+.
+ * @filesource
+ */
+
 namespace CyberSpectrum\Command\Transifex;
 
-use CyberSpectrum\Transifex\Transport;
 use CyberSpectrum\Command\CommandBase;
-use Symfony\Component\Console\Input\InputArgument;
+use CyberSpectrum\Transifex\Transport;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * This class is the base command implementation for all commands interfacing with transifex.
+ */
 class TransifexBase extends CommandBase
 {
-	protected $api;
+    /**
+     * The transport client.
+     *
+     * @var Transport
+     */
+    private $api;
 
-	protected function getApi()
-	{
-		return $this->api;
-	}
+    /**
+     * Retrieve the transport client.
+     *
+     * @return Transport
+     */
+    protected function getApi()
+    {
+        return $this->api;
+    }
 
-	protected function configure()
-	{
-		parent::configure();
+    /**
+     * {@inheritDoc}
+     */
+    protected function configure()
+    {
+        parent::configure();
 
-		$this->addOption('user', 'U', InputOption::VALUE_OPTIONAL, 'Username on transifex, if empty prompt on console.', null);
-		$this->addOption('pass', 'P', InputOption::VALUE_OPTIONAL, 'Password on transifex, if empty prompt on console.', null);
+        $this->addOption(
+            'user',
+            'U',
+            InputOption::VALUE_OPTIONAL,
+            'Username on transifex, if empty prompt on console.',
+            null
+        );
+        $this->addOption(
+            'pass',
+            'P',
+            InputOption::VALUE_OPTIONAL,
+            'Password on transifex, if empty prompt on console.',
+            null
+        );
 
-		$this->setHelp(
-			'NOTE: you can also specify username and password via the environment for automated jobs.' . PHP_EOL .
-			'user: transifexuser=username' . PHP_EOL .
-			'pass: transifexpass=password' . PHP_EOL
-		);
-	}
+        $this->setHelp(
+            'NOTE: you can also specify username and password via the environment for automated jobs.' . PHP_EOL .
+            'user: transifexuser=username' . PHP_EOL .
+            'pass: transifexpass=password' . PHP_EOL
+        );
+    }
 
-	protected function getLanguageBasePath()
-	{
-		$path = realpath($this->txlang);
-		if (!$path)
-		{
-			return $this->txlang;
-		}
-		return $path;
-	}
+    /**
+     * {@inheritDoc}
+     */
+    protected function getLanguageBasePath()
+    {
+        $path = realpath($this->txlang);
+        if (!$path) {
+            return $this->txlang;
+        }
 
+        return $path;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     protected function isNotFileToSkip($basename)
     {
         return is_array($this->skipFiles) ? !in_array(substr($basename, 0, -4), $this->skipFiles) : true;
     }
 
-	protected function getAllTxFiles($language)
-	{
-		$iterator = new \DirectoryIterator($this->txlang. DIRECTORY_SEPARATOR . $language);
+    /**
+     * Retrieve all XLIFF for a given language.
+     *
+     * @param string $language The language to search the xliff files in.
+     *
+     * @return string[]
+     */
+    protected function getAllTxFiles($language)
+    {
+        $iterator = new \DirectoryIterator($this->txlang . DIRECTORY_SEPARATOR . $language);
 
-		$files = array();
-		while ($iterator->valid())
-		{
-			if (!$iterator->isDot()
+        $files = array();
+        while ($iterator->valid()) {
+            if (!$iterator->isDot()
                 && $iterator->isFile()
                 && $iterator->getExtension() == 'xlf'
-                && $this->isNotFileToSkip($iterator->getPathname()))
-			{
-				$files[$iterator->getPathname()] = $iterator->getFilename();
-			}
-			$iterator->next();
-		}
+                && $this->isNotFileToSkip($iterator->getPathname())
+            ) {
+                $files[$iterator->getPathname()] = $iterator->getFilename();
+            }
+            $iterator->next();
+        }
 
-		return $files;
-	}
+        return $files;
+    }
 
-	protected function initialize(InputInterface $input, OutputInterface $output)
-	{
-		parent::initialize($input, $output);
+    /**
+     * {@inheritDoc}
+     *
+     * @throws
+     */
+    protected function initialize(InputInterface $input, OutputInterface $output)
+    {
+        parent::initialize($input, $output);
 
-		$user = $input->getOption('user');
-		if (!$user)
-		{
-			if ($user = $this->getTransifexConfigValue('/user'))
-			{
-				$this->writelnVerbose($output, 'Using transifex user specified in config.');
-			}
-			elseif ($user = getenv('transifexuser'))
-			{
-				$this->writelnVerbose($output, 'Using transifex user specified in environment.');
-			}
-			elseif ($input->isInteractive())
-			{
-				/** @var \Symfony\Component\Console\Helper\DialogHelper $dialog */
-				$dialog = $this->getHelperSet()->get('dialog');
+        $user = $this->getUser($input, $output);
+        if (empty($user)) {
+            $this->writelnAlways($output, '<error>Error: no transifex user specified, exiting.</error>');
+        }
 
-				if (!($user = $dialog->ask($output, 'Transifex user:')))
-				{
-					$this->writelnAlways($output, '<error>Error: no transifex user specified, exiting.</error>');
-					return;
-				}
-			}
-			else
-			{
-				throw new \RuntimeException('Error: you must either specify an username on the commandline or run interactive.');
-			}
-		}
+        $pass = $this->getPassword($input, $output);
+        if (empty($pass)) {
+            $this->writelnAlways($output, '<error>Error: no transifex user password specified, exiting.</error>');
+        }
 
-		$pass = $input->getOption('pass');
+        $this->api = new Transport($user, $pass);
+    }
 
-		if (!$pass)
-		{
-			if ($pass = $this->getTransifexConfigValue('/pass'))
-			{
-				$this->writelnVerbose($output, 'Using transifex password specified in config.');
-			}
-			elseif ($pass = getenv('transifexpass'))
-			{
-				$this->writelnVerbose($output, 'Using transifex password specified in environment.');
-			}
-			elseif ($input->isInteractive())
-			{
-				/** @var \Symfony\Component\Console\Helper\DialogHelper $dialog */
-				$dialog = $this->getHelperSet()->get('dialog');
+    /**
+     * Retrieve the user name.
+     *
+     * @param InputInterface  $input  An InputInterface instance.
+     *
+     * @param OutputInterface $output An OutputInterface instance.
+     *
+     * @return string|null
+     *
+     * @throws \RuntimeException If no username could be determined..
+     */
+    private function getUser(InputInterface $input, OutputInterface $output)
+    {
+        if ($user = $input->getOption('user')) {
+            return $user;
+        }
+        if ($user = $this->getTransifexConfigValue('/user')) {
+            $this->writelnVerbose($output, 'Using transifex user specified in config.');
 
-				if (!($pass = $dialog->askHiddenResponse($output, 'Transifex password:')))
-				{
-					$this->writelnAlways($output, '<error>Error: no transifex user password specified, exiting.</error>');
-					return;
-				}
-			}
-			else
-			{
-				throw new \RuntimeException('Error: you must either specify an username on the commandline or run interactive.');
-			}
-		}
+            return $user;
+        }
+        if ($user = getenv('transifexuser')) {
+            $this->writelnVerbose($output, 'Using transifex user specified in environment.');
 
-		if ($user && $pass)
-		{
-			$this->api = new Transport($user, $pass);
-		}
-	}
+            return $user;
+        }
+        if ($input->isInteractive()) {
+            /** @var \Symfony\Component\Console\Helper\DialogHelper $dialog */
+            $dialog = $this->getHelperSet()->get('dialog');
+
+            if ($user = $dialog->ask($output, 'Transifex user:')) {
+                return $user;
+            }
+
+            return null;
+        }
+
+        throw new \RuntimeException(
+            'Error: you must either specify an username on the commandline or run interactive.'
+        );
+    }
+
+    /**
+     * Retrieve the password.
+     *
+     * @param InputInterface  $input  An InputInterface instance.
+     *
+     * @param OutputInterface $output An OutputInterface instance.
+     *
+     * @return string|null
+     *
+     * @throws \RuntimeException If no password could be determined..
+     */
+    private function getPassword(InputInterface $input, OutputInterface $output)
+    {
+        if ($pass = $input->getOption('pass')) {
+            return $pass;
+        }
+        if ($pass = $this->getTransifexConfigValue('/pass')) {
+            $this->writelnVerbose($output, 'Using transifex password specified in config.');
+
+            return $pass;
+        }
+        if ($pass = getenv('transifexpass')) {
+            $this->writelnVerbose($output, 'Using transifex password specified in environment.');
+
+            return $pass;
+        }
+        if ($input->isInteractive()) {
+            /** @var \Symfony\Component\Console\Helper\DialogHelper $dialog */
+            $dialog = $this->getHelperSet()->get('dialog');
+
+            if ($pass = $dialog->askHiddenResponse($output, 'Transifex password:')) {
+                return $pass;
+            }
+
+            return null;
+        }
+
+        throw new \RuntimeException('Error: you must either specify a password on the commandline or run interactive.');
+    }
 }
