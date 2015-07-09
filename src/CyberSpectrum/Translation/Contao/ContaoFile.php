@@ -6,7 +6,6 @@
  *
  * @package      cyberspectrum/contao-toolbox
  * @author       Christian Schiffler <c.schiffler@cyberspectrum.de>
- * @author       Tristan Lins <tristan.lins@bit3.de>
  * @copyright    CyberSpectrum
  * @license      LGPL-3.0+.
  * @filesource
