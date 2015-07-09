@@ -157,31 +157,10 @@ class Parser implements ParserInterface
             $this->getNextToken();
 
             if ($this->tokenIs('[')) {
-                $this->getNextToken();
-
-                $subparser = new StringValue($this);
-                $subparser->parse();
-
-                if ($subparser->getValue() === null) {
-                    // auto indexed array
-                    if ($this->tokenIs(']')) {
-                        $path = implode('.', $this->keystack);
-
-                        if (!isset($this->autoIndex[$path])) {
-                            $this->autoIndex[$path] = 0;
-                        } else {
-                            $this->autoIndex[$path]++;
-                        }
-
-                        $this->pushStack($this->autoIndex[$path]);
-                    } else {
-                        // invalid code?!
-                        $this->bailUnexpectedToken();
-                    }
-                } else {
-                    $this->pushStack($subparser->getValue());
-                }
-            } elseif ($this->tokenIs('=')) {
+                $this->subParserSquareBracket();
+                continue;
+            }
+            if ($this->tokenIs('=')) {
                 // right hand of the assignment.
                 $this->getNextToken();
 
@@ -189,14 +168,16 @@ class Parser implements ParserInterface
                     $arrayParser = new ArrayParser($this, 1);
                     $arrayParser->parse();
                     $this->debug('After array. ' . var_export($this->getToken(), true));
-                    // $this->getNextToken();
                 } else {
                     $subparser = new StringValue($this);
                     $subparser->parse();
 
                     $this->file->setValue(implode('.', $this->keystack), $subparser->getValue());
                 }
-            } elseif (!$this->tokenIs(']')) {
+
+                continue;
+            }
+            if (!$this->tokenIs(']')) {
                 $this->bailUnexpectedToken();
             }
         }
@@ -204,6 +185,39 @@ class Parser implements ParserInterface
         if ($this->tokenIs(';')) {
             // Reset stack.
             $this->resetStack();
+        }
+    }
+
+    /**
+     * Spawn a sub parser to parse the [] expression.
+     *
+     * @return void
+     */
+    private function subParserSquareBracket()
+    {
+        $this->getNextToken();
+
+        $subparser = new StringValue($this);
+        $subparser->parse();
+
+        if ($subparser->getValue() === null) {
+            // auto indexed array
+            if ($this->tokenIs(']')) {
+                $path = implode('.', $this->keystack);
+
+                if (!isset($this->autoIndex[$path])) {
+                    $this->autoIndex[$path] = 0;
+                } else {
+                    $this->autoIndex[$path]++;
+                }
+
+                $this->pushStack($this->autoIndex[$path]);
+            } else {
+                // invalid code?!
+                $this->bailUnexpectedToken();
+            }
+        } else {
+            $this->pushStack($subparser->getValue());
         }
     }
 
@@ -327,6 +341,11 @@ class Parser implements ParserInterface
         throw new \Exception(sprintf('Unexpected token %s detected.', $this->token));
     }
 
+    /**
+     * Move one token ahead.
+     *
+     * @return void
+     */
     private function advanceToken()
     {
         if (!($this->tokenIs(T_WHITESPACE) || $this->tokenIs(T_DOC_COMMENT))) {
@@ -350,18 +369,40 @@ class Parser implements ParserInterface
     {
         $this->advanceToken();
         if ($searchfor !== false) {
-            while ($this->token) {
-                if ((is_string($searchfor) && ($searchfor == $this->token))
-                    || (is_int($searchfor) && is_array($this->token) && ($searchfor == $this->token[0]))
-                ) {
-                    break;
-                }
-                $this->advanceToken();
-            }
+            $this->skipUntilSearchedToken($searchfor);
         } else {
-            while ($this->tokenIs(T_WHITESPACE) || $this->tokenIs(T_DOC_COMMENT)) {
-                $this->advanceToken();
+            $this->skipWhiteSpaceAndComments();
+        }
+    }
+
+    /**
+     * Skip all tokens until the matched token has been encountered or no more tokens are available.
+     *
+     * @param mixed $searchFor The token to search for.
+     *
+     * @return void
+     */
+    private function skipUntilSearchedToken($searchFor)
+    {
+        while ($this->token) {
+            if ((is_string($searchFor) && ($searchFor == $this->token))
+                || (is_int($searchFor) && is_array($this->token) && ($searchFor == $this->token[0]))
+            ) {
+                break;
             }
+            $this->advanceToken();
+        }
+    }
+
+    /**
+     * Skip until the next non whitespace and doc comment.
+     *
+     * @return void
+     */
+    private function skipWhiteSpaceAndComments()
+    {
+        while ($this->tokenIs(T_WHITESPACE) || $this->tokenIs(T_DOC_COMMENT)) {
+            $this->advanceToken();
         }
     }
 }
