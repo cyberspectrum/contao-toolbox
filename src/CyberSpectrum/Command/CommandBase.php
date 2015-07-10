@@ -76,9 +76,9 @@ abstract class CommandBase extends Command
     protected $skipFiles;
 
     /**
-     * The transifex configuration.
+     * The transifex configuration prefix in the config.
      *
-     * @var array
+     * @var string
      */
     protected $transifexconfig;
 
