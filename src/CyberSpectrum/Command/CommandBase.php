@@ -385,56 +385,13 @@ abstract class CommandBase extends Command
      */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
-        $this->project         = $input->getOption('projectname');
-        $this->prefix          = $input->getOption('prefix');
-        $this->txlang          = $input->getOption('xliff');
-        $this->ctolang         = $input->getOption('contao');
-        $this->baselanguage    = $input->getOption('base-language');
-        $this->skipFiles       = $input->getOption('skip-files') ? explode(',', $input->getOption('skip-files')) : null;
         $this->transifexconfig = $input->getOption('transifex-config');
-
-        $this->checkValidSlug($this->project);
-        $this->checkValidSlug($this->prefix);
-
-        if (!$this->project) {
-            $this->project = $this->getTransifexConfigValue('/project');
-
-            if (!$this->project) {
-                throw new \RuntimeException('Error: unable to determine transifex project name.');
-            }
-
-            $this->writelnVerbose($output, sprintf('<info>automatically using project: %s</info>', $this->project));
-        }
-
-        if ($this->prefix === null) {
-            $this->prefix = $this->getTransifexConfigValue('/prefix');
-
-            if ($this->prefix === null) {
-                throw new \RuntimeException('Error: unable to determine transifex prefix.');
-            }
-            $this->writelnVerbose($output, sprintf('<info>automatically using prefix: %s</info>', $this->prefix));
-        }
-
-        if ($this->txlang === null) {
-            $this->txlang = $this->getTransifexConfigValue('/languages_tx');
-
-            if ($this->txlang === null) {
-                throw new \RuntimeException('Error: unable to determine transifex root folder.');
-            }
-            $this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $this->txlang));
-        }
-
-        if ($this->ctolang === null) {
-            $this->ctolang = $this->getTransifexConfigValue('/languages_cto');
-
-            if ($this->ctolang === null) {
-                throw new \RuntimeException('Error: unable to determine contao language root folder.');
-            }
-            $this->writelnVerbose(
-                $output,
-                sprintf('<info>automatically using Contao language folder: %s</info>', $this->ctolang)
-            );
-        }
+        $this->setProject($input, $output);
+        $this->setPrefix($input, $output);
+        $this->setXliffDirectory($input, $output);
+        $this->setContaoLanguageDirectory($input, $output);
+        $this->baselanguage = $input->getOption('base-language');
+        $this->skipFiles    = $input->getOption('skip-files') ? explode(',', $input->getOption('skip-files')) : null;
 
         if (!$this->skipFiles) {
             $this->skipFiles = $this->getTransifexConfigValue('/skip_files') ?: array();
@@ -449,5 +406,112 @@ abstract class CommandBase extends Command
         }
 
         $this->determineLanguages($output, $this->getLanguageBasePath(), $activeLanguages);
+    }
+
+    /**
+     * Set the project, either from command line parameter or from config.
+     *
+     * @param InputInterface  $input  The input to use.
+     *
+     * @param OutputInterface $output The output to use.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException When the value can not be determined.
+     */
+    private function setProject(InputInterface $input, OutputInterface $output)
+    {
+        $this->project = $input->getOption('projectname');
+        if (!$this->project) {
+            $this->project = $this->getTransifexConfigValue('/project');
+
+            if (!$this->project) {
+                throw new \RuntimeException('Error: unable to determine transifex project name.');
+            }
+
+            $this->writelnVerbose($output, sprintf('<info>automatically using project: %s</info>', $this->project));
+        }
+
+        $this->checkValidSlug($this->project);
+    }
+
+    /**
+     * Set the prefix, either from command line parameter or from config.
+     *
+     * @param InputInterface  $input  The input to use.
+     *
+     * @param OutputInterface $output The output to use.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException When the value can not be determined.
+     */
+    private function setPrefix(InputInterface $input, OutputInterface $output)
+    {
+        $this->prefix = $input->getOption('prefix');
+
+        if ($this->prefix === null) {
+            $this->prefix = $this->getTransifexConfigValue('/prefix');
+
+            if ($this->prefix === null) {
+                throw new \RuntimeException('Error: unable to determine transifex prefix.');
+            }
+            $this->writelnVerbose($output, sprintf('<info>automatically using prefix: %s</info>', $this->prefix));
+        }
+
+        $this->checkValidSlug($this->prefix);
+    }
+
+    /**
+     * Set the xliff directory, either from command line parameter or from config.
+     *
+     * @param InputInterface  $input  The input to use.
+     *
+     * @param OutputInterface $output The output to use.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException When the value can not be determined.
+     */
+    private function setXliffDirectory(InputInterface $input, OutputInterface $output)
+    {
+        $this->txlang = $input->getOption('xliff');
+
+        if ($this->txlang === null) {
+            $this->txlang = $this->getTransifexConfigValue('/languages_tx');
+
+            if ($this->txlang === null) {
+                throw new \RuntimeException('Error: unable to determine transifex root folder.');
+            }
+            $this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $this->txlang));
+        }
+    }
+
+    /**
+     * Set the contao language file directory, either from command line parameter or from config.
+     *
+     * @param InputInterface  $input  The input to use.
+     *
+     * @param OutputInterface $output The output to use.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException When the value can not be determined.
+     */
+    private function setContaoLanguageDirectory(InputInterface $input, OutputInterface $output)
+    {
+        $this->ctolang = $input->getOption('contao');
+
+        if ($this->ctolang === null) {
+            $this->ctolang = $this->getTransifexConfigValue('/languages_cto');
+
+            if ($this->ctolang === null) {
+                throw new \RuntimeException('Error: unable to determine contao language root folder.');
+            }
+            $this->writelnVerbose(
+                $output,
+                sprintf('<info>automatically using Contao language folder: %s</info>', $this->ctolang)
+            );
+        }
     }
 }
