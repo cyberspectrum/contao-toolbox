@@ -100,18 +100,22 @@ class DownloadTransifex extends TransifexBase
     /**
      * Handle a single resource.
      *
-     * @param Resource        $resource        The resource to process.
+     * @param TranslationResource $resource        The resource to process.
      *
-     * @param string          $translationMode The translation mode.
+     * @param string              $translationMode The translation mode.
      *
-     * @param bool            $allLanguages    Boolean flag if all languages shall be fetched.
+     * @param bool                $allLanguages    Boolean flag if all languages shall be fetched.
      *
-     * @param OutputInterface $output          The output interface to use.
+     * @param OutputInterface     $output          The output interface to use.
      *
      * @return void
      */
-    private function handleResource(TranslationResource $resource, $translationMode, $allLanguages, OutputInterface $output)
-    {
+    private function handleResource(
+        TranslationResource $resource,
+        $translationMode,
+        $allLanguages,
+        OutputInterface $output
+    ) {
         if (substr($resource->getSlug(), 0, strlen($this->prefix)) != $this->prefix) {
             $this->writelnVerbose(
                 $output,
@@ -132,40 +136,59 @@ class DownloadTransifex extends TransifexBase
 
         foreach (array_keys($resource->getAvailableLanguages()) as $code) {
             // We are using 2char iso 639-1 in Contao - what a pity.
-            if ($this->isHandlingLanguage($code, $allLanguages)) {
-                $this->writeln($output, sprintf('Updating language <info>%s</info>', $code));
-                // Pull it.
-                $data = $resource->fetchTranslation($code, $translationMode);
-                if ($data) {
-                    $local = $this->getLocalXliffFile($resource, $code);
+            if (!$this->isHandlingLanguage($code, $allLanguages)) {
+                $this->writelnVerbose($output, sprintf('skipping language <info>%s</info>', $code));
+                continue;
+            }
 
-                    $new = new XliffFile(null);
-                    $new->loadXML($data);
+            $this->handleLanguage($resource, $code, $translationMode, $output);
+        }
+    }
 
-                    foreach ($new->getKeys() as $key) {
-                        if ($value = $new->getSource($key)) {
-                            $local->setSource($key, $value);
-                            if ($value = $new->getTarget($key)) {
-                                $local->setTarget($key, $value);
-                            }
-                        }
-                    }
-                    foreach (array_diff($new->getKeys(), $local->getKeys()) as $key) {
-                        $this->writeln(
-                            $output,
-                            sprintf('Language key <info>%s</info> seems to be orphaned, please check.', $key)
-                        );
-                    }
+    /**
+     * Handle a language for a resource.
+     *
+     * @param TranslationResource $resource        The resource to process.
+     *
+     * @param string              $code            The language code.
+     *
+     * @param string              $translationMode The translation mode.
+     *
+     * @param OutputInterface     $output          The output interface to use.
+     *
+     * @return void
+     */
+    private function handleLanguage(TranslationResource $resource, $code, $translationMode, OutputInterface $output)
+    {
+        $this->writeln($output, sprintf('Updating language <info>%s</info>', $code));
+        // Pull it.
+        $data = $resource->fetchTranslation($code, $translationMode);
+        if ($data) {
+            $local = $this->getLocalXliffFile($resource, $code);
 
-                    if ($local->getKeys()) {
-                        if (!is_dir(dirname($local->getFileName()))) {
-                            mkdir(dirname($local->getFileName()), 0755, true);
-                        }
-                        $local->save();
+            $new = new XliffFile(null);
+            $new->loadXML($data);
+
+            foreach ($new->getKeys() as $key) {
+                if ($value = $new->getSource($key)) {
+                    $local->setSource($key, $value);
+                    if ($value = $new->getTarget($key)) {
+                        $local->setTarget($key, $value);
                     }
                 }
-            } else {
-                $this->writelnVerbose($output, sprintf('skipping language <info>%s</info>', $code));
+            }
+            foreach (array_diff($new->getKeys(), $local->getKeys()) as $key) {
+                $this->writeln(
+                    $output,
+                    sprintf('Language key <info>%s</info> seems to be orphaned, please check.', $key)
+                );
+            }
+
+            if ($local->getKeys()) {
+                if (!is_dir(dirname($local->getFileName()))) {
+                    mkdir(dirname($local->getFileName()), 0755, true);
+                }
+                $local->save();
             }
         }
     }
@@ -195,9 +218,9 @@ class DownloadTransifex extends TransifexBase
     /**
      * Create a xliff instance for the passed resource.
      *
-     * @param Resource $resource     The resource.
+     * @param TranslationResource $resource     The resource.
      *
-     * @param string   $languageCode The language code.
+     * @param string              $languageCode The language code.
      *
      * @return XliffFile
      */
