@@ -52,4 +52,20 @@ class ParserTest extends TestCase
         $this->assertEquals('a-e-1', $file->getValue('a.e.0'));
         $this->assertEquals('a-e-2', $file->getValue('a.e.1'));
     }
+
+    /**
+     * Test the parsing.
+     *
+     * @return void
+     */
+    public function testParseShortArray()
+    {
+        $file = new ContaoFile($this->getFixturesPath() . 'contao-parse3-short-array.php');
+        $this->assertEquals(5, count($file->getKeys()));
+        $this->assertEquals('a-a-1', $file->getValue('a.a.0'));
+        $this->assertEquals('a-a-2', $file->getValue('a.a.1'));
+        $this->assertEquals('a-b-1', $file->getValue('a.b.0'));
+        $this->assertEquals('a-b-2', $file->getValue('a.b.1'));
+        $this->assertEquals('a-b-c', $file->getValue('a.b.c'));
+    }
 }

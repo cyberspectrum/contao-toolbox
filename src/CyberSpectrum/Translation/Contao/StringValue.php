@@ -66,7 +66,7 @@ class StringValue extends AbstractParser
      */
     private function isIgnoredToken()
     {
-        return $this->tokenIs('.') || $this->tokenIs(T_COMMENT);
+        return $this->tokenIs('.') || $this->tokenIs(T_COMMENT) || $this->tokenIs(T_DOC_COMMENT);
     }
 
     /**

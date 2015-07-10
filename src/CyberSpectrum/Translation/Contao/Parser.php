@@ -164,7 +164,7 @@ class Parser implements ParserInterface
                 // right hand of the assignment.
                 $this->getNextToken();
 
-                if ($this->tokenIs(T_ARRAY)) {
+                if ($this->tokenIs(T_ARRAY) || $this->tokenIs('[')) {
                     $arrayParser = new ArrayParser($this, 1);
                     $arrayParser->parse();
                     $this->debug('After array. ' . var_export($this->getToken(), true));

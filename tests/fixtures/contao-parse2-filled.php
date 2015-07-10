@@ -28,7 +28,7 @@ $GLOBALS['TL_LANG']['a']['e'] = array(
 );
 
 $GLOBALS['TL_LANG']['a']['f'] = array(
-    'a-f-1',
+    'a-f-1', /** doc comment */
     'a-f' . /* comment */
     '-2'
 );
