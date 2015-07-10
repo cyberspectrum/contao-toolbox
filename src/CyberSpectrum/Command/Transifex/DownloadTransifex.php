@@ -76,18 +76,6 @@ class DownloadTransifex extends TransifexBase
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        if (!$this->project) {
-            $this->writelnAlways($output, '<error>No project set, exiting.</error>');
-
-            return;
-        }
-
-        if (!$this->getApi()) {
-            $this->writelnAlways($output, '<error>No API received, exiting.</error>');
-
-            return;
-        }
-
         $translationMode = $input->getOption('mode');
 
         // HOTFIX: translated actually appears to be "translator".
