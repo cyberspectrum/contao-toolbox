@@ -19,9 +19,73 @@ namespace CyberSpectrum\Translation;
 abstract class AbstractFile implements \IteratorAggregate
 {
     /**
+     * Debug flag.
+     *
+     * @var bool
+     */
+    private $debug = false;
+
+    /**
+     * The debug messages.
+     *
+     * @var string[]
+     */
+    private $debugMessages = array();
+
+    /**
+     * Create a new instance.
+     *
+     * @param bool $debug The debug flag. True to enable debugging, false otherwise.
+     */
+    public function __construct($debug = false)
+    {
+        $this->debug = $debug;
+    }
+
+    /**
      * Retrieve a list of all language keys.
      *
      * @return array
      */
     abstract public function getKeys();
+
+    /**
+     * Write a debug message.
+     *
+     * @param string $message The message.
+     *
+     * @return AbstractFile
+     */
+    public function debug($message)
+    {
+        if ($this->debug) {
+            $this->debugMessages[] = $message;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Enable or disable debugging.
+     *
+     * @param bool $enabled The new value for debugging.
+     *
+     * @return AbstractFile
+     */
+    public function setDebugging($enabled = true)
+    {
+        $this->debug = $enabled;
+
+        return $this;
+    }
+
+    /**
+     * Retrieve the debug messages.
+     *
+     * @return string[]
+     */
+    public function getDebugMessages()
+    {
+        return $this->debugMessages;
+    }
 }

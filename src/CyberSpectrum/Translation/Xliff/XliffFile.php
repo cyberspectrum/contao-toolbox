@@ -78,9 +78,12 @@ class XliffFile extends AbstractFile
      * Create a new instance.
      *
      * @param string $filename The filename to use.
+     *
+     * @param bool   $debug    The debug flag. True to enable debugging, false otherwise.
      */
-    public function __construct($filename)
+    public function __construct($filename, $debug = false)
     {
+        parent::__construct($debug);
         $this->filename = $filename;
 
         $this->doc                     = new \DOMDocument('1.0', 'UTF-8');

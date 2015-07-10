@@ -130,6 +130,10 @@ class ConvertToXliff extends ConvertBase
 
             $src  = new ContaoFile($srcFile);
             $base = new ContaoFile($basFile);
+            if ($output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG) {
+                $src->setDebugging();
+                $base->setDebugging();
+            }
 
             $dstDir = $this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language;
             if (!is_dir($dstDir)) {

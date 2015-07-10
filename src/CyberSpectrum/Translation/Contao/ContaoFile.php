@@ -73,9 +73,12 @@ class ContaoFile extends AbstractFile
      * Create a new instance.
      *
      * @param string $filename The filename.
+     *
+     * @param bool   $debug    The debug flag. True to enable debugging, false otherwise.
      */
-    public function __construct($filename)
+    public function __construct($filename, $debug = false)
     {
+        parent::__construct($debug);
         $this->filename = $filename;
         $this->language = basename(dirname($filename));
 
@@ -84,19 +87,6 @@ class ContaoFile extends AbstractFile
         } else {
             $this->createBasicDocument();
         }
-    }
-
-    /**
-     * Write a debug message.
-     *
-     * @param string $message The message.
-     *
-     * @return void
-     */
-    public function debug($message)
-    {
-        // FIXME: put a real debugging method here.
-        // echo $message . "\n";
     }
 
     /**
