@@ -128,12 +128,8 @@ class ConvertToXliff extends ConvertBase
             $dstFile            = $domain . '.xlf';
             $destinationFiles[] = $dstFile;
 
-            $src  = new ContaoFile($srcFile);
-            $base = new ContaoFile($basFile);
-            if ($output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG) {
-                $src->setDebugging();
-                $base->setDebugging();
-            }
+            $src  = new ContaoFile($srcFile, ($output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG));
+            $base = new ContaoFile($basFile, ($output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG));
 
             $dstDir = $this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language;
             if (!is_dir($dstDir)) {
@@ -155,6 +151,11 @@ class ConvertToXliff extends ConvertBase
             $this->convert($output, $src, $dest, $base);
             if (is_file($dstDir . DIRECTORY_SEPARATOR . $dstFile) || $dest->getKeys()) {
                 $dest->save();
+            }
+
+            if ($output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG) {
+                $output->writeln($src->getDebugMessages());
+                $output->writeln($base->getDebugMessages());
             }
         }
 
