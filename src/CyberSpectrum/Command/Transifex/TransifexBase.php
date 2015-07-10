@@ -34,12 +34,30 @@ class TransifexBase extends CommandBase
     private $api;
 
     /**
+     * The user name.
+     *
+     * @var string
+     */
+    private $user;
+
+    /**
+     * The password.
+     *
+     * @var string
+     */
+    private $password;
+
+    /**
      * Retrieve the transport client.
      *
      * @return Transport
      */
     protected function getApi()
     {
+        if (!$this->api) {
+            $this->api = new Transport($this->user, $this->password);
+        }
+
         return $this->api;
     }
 
@@ -128,17 +146,8 @@ class TransifexBase extends CommandBase
     {
         parent::initialize($input, $output);
 
-        $user = $this->getUser($input, $output);
-        if (empty($user)) {
-            $this->writelnAlways($output, '<error>Error: no transifex user specified, exiting.</error>');
-        }
-
-        $pass = $this->getPassword($input, $output);
-        if (empty($pass)) {
-            $this->writelnAlways($output, '<error>Error: no transifex user password specified, exiting.</error>');
-        }
-
-        $this->api = new Transport($user, $pass);
+        $this->user     = $this->getUser($input, $output);
+        $this->password = $this->getPassword($input, $output);
     }
 
     /**
@@ -174,8 +183,6 @@ class TransifexBase extends CommandBase
             if ($user = $dialog->ask($output, 'Transifex user:')) {
                 return $user;
             }
-
-            return null;
         }
 
         throw new \RuntimeException(
@@ -216,8 +223,6 @@ class TransifexBase extends CommandBase
             if ($pass = $dialog->askHiddenResponse($output, 'Transifex password:')) {
                 return $pass;
             }
-
-            return null;
         }
 
         throw new \RuntimeException('Error: you must either specify a password on the commandline or run interactive.');
