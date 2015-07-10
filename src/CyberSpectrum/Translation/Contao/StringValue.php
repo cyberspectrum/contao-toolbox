@@ -34,7 +34,7 @@ class StringValue extends AbstractParser
 
         while (true) {
             // String concatenation.
-            if ($this->tokenIs('.') || $this->tokenIs(T_COMMENT)) {
+            if ($this->isIgnoredToken()) {
                 $this->getNextToken();
                 continue;
             }
@@ -50,19 +50,37 @@ class StringValue extends AbstractParser
                 $this->getNextToken();
                 continue;
             }
-            if (
-                $this->tokenIs(';')
-                || $this->tokenIs(',')
-                || $this->tokenIs(')')
-                || $this->tokenIs(']')
-                || $this->tokenIs(T_DOUBLE_ARROW)
-            ) {
+            if ($this->isEndToken()) {
                 break;
             }
 
             $this->bailUnexpectedToken();
         }
         $this->debug(' - exit.');
+    }
+
+    /**
+     * Check if the current token is any of the ignored tokens.
+     *
+     * @return bool
+     */
+    private function isIgnoredToken()
+    {
+        return $this->tokenIs('.') || $this->tokenIs(T_COMMENT);
+    }
+
+    /**
+     * Check if the current token is a ending token.
+     *
+     * @return bool
+     */
+    private function isEndToken()
+    {
+        return $this->tokenIs(';')
+        || $this->tokenIs(',')
+        || $this->tokenIs(')')
+        || $this->tokenIs(']')
+        || $this->tokenIs(T_DOUBLE_ARROW);
     }
 
     /**
