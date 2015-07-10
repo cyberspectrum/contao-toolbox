@@ -16,7 +16,7 @@ namespace CyberSpectrum\Transifex;
 /**
  * This class abstracts a resource on transifex.
  */
-class Resource extends BaseObject
+class TranslationResource extends BaseObject
 {
     /**
      * The project slug.
@@ -136,7 +136,7 @@ class Resource extends BaseObject
      *
      * @param Project|string $project The project or project slug.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function setProject($project)
     {
@@ -166,7 +166,7 @@ class Resource extends BaseObject
      *
      * @param string $slug The slug name.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function setSlug($slug)
     {
@@ -190,7 +190,7 @@ class Resource extends BaseObject
      *
      * @param string $categories The categories.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function setCategories($categories)
     {
@@ -214,7 +214,7 @@ class Resource extends BaseObject
      *
      * @param string $i18nType The type name.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function setI18nType($i18nType)
     {
@@ -238,7 +238,7 @@ class Resource extends BaseObject
      *
      * @param string $name The name.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function setName($name)
     {
@@ -262,7 +262,7 @@ class Resource extends BaseObject
      *
      * @param string $sourceLanguageCode The language code.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function setSourceLanguageCode($sourceLanguageCode)
     {
@@ -286,7 +286,7 @@ class Resource extends BaseObject
      *
      * @param string $content The file content.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function setContent($content)
     {
@@ -310,7 +310,7 @@ class Resource extends BaseObject
      *
      * @param string $mimetype The MIME type.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function setMimetype($mimetype)
     {
@@ -394,7 +394,7 @@ class Resource extends BaseObject
      *
      * @param array $data The data to initialize from.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function setFromResult($data)
     {
@@ -446,7 +446,7 @@ class Resource extends BaseObject
     /**
      * Create the resource on transifex.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function create()
     {
@@ -468,7 +468,7 @@ class Resource extends BaseObject
     /**
      * Update the content on transifex.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function updateContent()
     {
@@ -491,7 +491,7 @@ class Resource extends BaseObject
     /**
      * Retrieve the details of the resource.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function fetchDetails()
     {
@@ -512,7 +512,7 @@ class Resource extends BaseObject
     /**
      * Fetch the file content.
      *
-     * @return \CyberSpectrum\Transifex\Resource
+     * @return \CyberSpectrum\Transifex\TranslationResource
      */
     public function fetchContent()
     {

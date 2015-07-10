@@ -14,7 +14,7 @@
 namespace CyberSpectrum\Command\Transifex;
 
 use CyberSpectrum\Transifex\Project;
-use CyberSpectrum\Transifex\Resource;
+use CyberSpectrum\Transifex\TranslationResource;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -59,14 +59,14 @@ class UploadTransifex extends TransifexBase
             if (array_key_exists($this->prefix . $noext, $resources)) {
                 // already present, update.
                 $this->writeln($output, sprintf('Updating ressource <info>%s</info>', $this->prefix . $noext));
-                /** @var \CyberSpectrum\Transifex\Resource $resource */
+                /** @var \CyberSpectrum\Transifex\TranslationResource $resource */
                 $resource = $resources[$this->prefix . $noext];
                 $resource->setContent(file_get_contents($file));
                 $resource->updateContent();
             } else {
                 $this->writeln($output, sprintf('Creating new ressource <info>%s</info>', $this->prefix . $noext));
                 // upload new.
-                $resource = new Resource($this->getApi());
+                $resource = new TranslationResource($this->getApi());
                 $resource->setProject($this->project);
                 $resource->setSlug($this->prefix . $noext);
                 $resource->setName($resource->getSlug());

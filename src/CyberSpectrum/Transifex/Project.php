@@ -60,7 +60,7 @@ class Project extends BaseObject
 
         $resources = array();
         foreach ($data as $entry) {
-            $resource = new Resource($this->getTransport());
+            $resource = new TranslationResource($this->getTransport());
             $resource->setProject($this);
             $resource->setFromResult($entry);
             $resources[$resource->getSlug()] = $resource;
@@ -78,7 +78,7 @@ class Project extends BaseObject
      */
     public function getResource($slug)
     {
-        $resource = new Resource($this->getTransport());
+        $resource = new TranslationResource($this->getTransport());
 
         $resource->setProject($this->getSlug());
         $resource->setSlug($slug);

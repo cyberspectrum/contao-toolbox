@@ -14,7 +14,7 @@
 namespace CyberSpectrum\Command\Transifex;
 
 use CyberSpectrum\Transifex\Project;
-use CyberSpectrum\Transifex\Resource;
+use CyberSpectrum\Transifex\TranslationResource;
 use CyberSpectrum\Translation\Xliff\XliffFile;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -110,7 +110,7 @@ class DownloadTransifex extends TransifexBase
      *
      * @return void
      */
-    private function handleResource(Resource $resource, $translationMode, $allLanguages, OutputInterface $output)
+    private function handleResource(TranslationResource $resource, $translationMode, $allLanguages, OutputInterface $output)
     {
         if (substr($resource->getSlug(), 0, strlen($this->prefix)) != $this->prefix) {
             $this->writelnVerbose(
@@ -201,7 +201,7 @@ class DownloadTransifex extends TransifexBase
      *
      * @return XliffFile
      */
-    private function getLocalXliffFile(Resource $resource, $languageCode)
+    private function getLocalXliffFile(TranslationResource $resource, $languageCode)
     {
         $domain    = substr($resource->getSlug(), strlen($this->prefix));
         $localFile = $this->txlang . DIRECTORY_SEPARATOR .
