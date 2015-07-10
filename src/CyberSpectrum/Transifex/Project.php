@@ -74,7 +74,7 @@ class Project extends BaseObject
      *
      * @param string $slug The slug of the resource.
      *
-     * @return Resource
+     * @return TranslationResource
      */
     public function getResource($slug)
     {
