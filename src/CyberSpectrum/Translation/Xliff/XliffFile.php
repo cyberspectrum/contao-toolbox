@@ -155,6 +155,16 @@ class XliffFile extends AbstractFile
     }
 
     /**
+     * Retrieve the filename.
+     *
+     * @return string
+     */
+    public function getFileName()
+    {
+        return $this->filename;
+    }
+
+    /**
      * Set the datatype in this file.
      *
      * See http://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html#datatype
