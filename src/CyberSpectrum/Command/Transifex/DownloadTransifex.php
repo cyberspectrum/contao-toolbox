@@ -14,6 +14,7 @@
 namespace CyberSpectrum\Command\Transifex;
 
 use CyberSpectrum\Transifex\Project;
+use CyberSpectrum\Transifex\Resource;
 use CyberSpectrum\Translation\Xliff\XliffFile;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -83,6 +84,8 @@ class DownloadTransifex extends TransifexBase
             $translationMode = 'translator';
         }
 
+        $allLanguages = ($input->getArgument('languages') == 'all');
+
         $project = new Project($this->getApi());
 
         $project->setSlug($this->project);
@@ -90,85 +93,130 @@ class DownloadTransifex extends TransifexBase
         $resources = $project->getResources();
 
         foreach ($resources as $resource) {
-            /** @var \CyberSpectrum\Transifex\Resource $resource */
-            if (substr($resource->getSlug(), 0, strlen($this->prefix)) != $this->prefix) {
-                $this->writelnVerbose(
-                    $output,
-                    sprintf(
-                        'Received resource <info>%s</info> is not for this repository, ignored.',
-                        $resource->getSlug()
-                    )
-                );
-                continue;
-            }
-            $this->writeln($output, sprintf('Processing resource <info>%s</info>', $resource->getSlug()));
+            $this->handleResource($resource, $translationMode, $allLanguages, $output);
+        }
+    }
 
+    /**
+     * Handle a single resource.
+     *
+     * @param Resource        $resource        The resource to process.
+     *
+     * @param string          $translationMode The translation mode.
+     *
+     * @param bool            $allLanguages    Boolean flag if all languages shall be fetched.
+     *
+     * @param OutputInterface $output          The output interface to use.
+     *
+     * @return void
+     */
+    private function handleResource(Resource $resource, $translationMode, $allLanguages, OutputInterface $output)
+    {
+        if (substr($resource->getSlug(), 0, strlen($this->prefix)) != $this->prefix) {
             $this->writelnVerbose(
                 $output,
-                sprintf('Polling languages from resource <info>%s</info>', $resource->getSlug())
+                sprintf(
+                    'Received resource <info>%s</info> is not for this repository, ignored.',
+                    $resource->getSlug()
+                )
             );
-            $resource->fetchDetails();
+            return;
+        }
+        $this->writeln($output, sprintf('Processing resource <info>%s</info>', $resource->getSlug()));
 
-            $allLanguages = ($input->getArgument('languages') == 'all');
+        $this->writelnVerbose(
+            $output,
+            sprintf('Polling languages from resource <info>%s</info>', $resource->getSlug())
+        );
+        $resource->fetchDetails();
 
-            foreach (array_keys($resource->getAvailableLanguages()) as $code) {
-                // We are using 2char iso 639-1 in Contao - what a pity.
-                if (
-                    (
-                        $allLanguages
-                        || in_array(substr($code, 0, 2), $this->languages)
-                    )
-                    && ($code != $this->baselanguage)
-                ) {
-                    $this->writeln($output, sprintf('Updating language <info>%s</info>', $code));
-                    // Pull it.
-                    $data = $resource->fetchTranslation($code, $translationMode);
-                    if ($data) {
-                        $domain    = substr($resource->getSlug(), strlen($this->prefix));
-                        $localfile = $this->txlang . DIRECTORY_SEPARATOR . substr(
-                            $code,
-                            0,
-                            2
-                        ) . DIRECTORY_SEPARATOR . $domain . '.xlf';
+        foreach (array_keys($resource->getAvailableLanguages()) as $code) {
+            // We are using 2char iso 639-1 in Contao - what a pity.
+            if ($this->isHandlingLanguage($code, $allLanguages)) {
+                $this->writeln($output, sprintf('Updating language <info>%s</info>', $code));
+                // Pull it.
+                $data = $resource->fetchTranslation($code, $translationMode);
+                if ($data) {
+                    $local = $this->getLocalXliffFile($resource, $code);
 
-                        $local = new XliffFile($localfile);
-                        if (!file_exists($localfile)) {
-                            // Set base values.
-                            $local->setDataType('php');
-                            $local->setOriginal($domain);
-                            $local->setSrcLang($this->baselanguage);
-                            $local->setTgtLang(substr($code, 0, 2));
-                        }
+                    $new = new XliffFile(null);
+                    $new->loadXML($data);
 
-                        $new = new XliffFile(null);
-                        $new->loadXML($data);
-
-                        foreach ($new->getKeys() as $key) {
-                            if ($value = $new->getSource($key)) {
-                                $local->setSource($key, $value);
-                                if ($value = $new->getTarget($key)) {
-                                    $local->setTarget($key, $value);
-                                }
+                    foreach ($new->getKeys() as $key) {
+                        if ($value = $new->getSource($key)) {
+                            $local->setSource($key, $value);
+                            if ($value = $new->getTarget($key)) {
+                                $local->setTarget($key, $value);
                             }
-                        }
-                        foreach (array_diff($new->getKeys(), $local->getKeys()) as $key) {
-                            $this->writeln(
-                                $output,
-                                sprintf('Language key <info>%s</info> seems to be orphaned, please check.', $key)
-                            );
-                        }
-
-                        if ($local->getKeys()) {
-                            if (!is_dir(dirname($localfile))) {
-                                mkdir(dirname($localfile), 0755, true);
-                            }
-                            $local->save();
                         }
                     }
-                } else {
-                    $this->writelnVerbose($output, sprintf('skipping language <info>%s</info>', $code));
+                    foreach (array_diff($new->getKeys(), $local->getKeys()) as $key) {
+                        $this->writeln(
+                            $output,
+                            sprintf('Language key <info>%s</info> seems to be orphaned, please check.', $key)
+                        );
+                    }
+
+                    if ($local->getKeys()) {
+                        if (!is_dir(dirname($local->getFileName()))) {
+                            mkdir(dirname($local->getFileName()), 0755, true);
+                        }
+                        $local->save();
+                    }
                 }
+            } else {
+                $this->writelnVerbose($output, sprintf('skipping language <info>%s</info>', $code));
             }
         }
+    }
+
+    /**
+     * Check if we want to handle the given language code.
+     *
+     * @param string $code         The language code.
+     *
+     * @param bool   $allLanguages Flag telling if all languages shall be handled.
+     *
+     * @return bool
+     */
+    private function isHandlingLanguage($code, $allLanguages)
+    {
+        if ($code == $this->baselanguage) {
+            return false;
+        }
+
+        if ($allLanguages) {
+            return true;
+        }
+
+        return in_array(substr($code, 0, 2), $this->languages);
+    }
+
+    /**
+     * Create a xliff instance for the passed resource.
+     *
+     * @param Resource $resource     The resource.
+     *
+     * @param string   $languageCode The language code.
+     *
+     * @return XliffFile
+     */
+    private function getLocalXliffFile(Resource $resource, $languageCode)
+    {
+        $domain    = substr($resource->getSlug(), strlen($this->prefix));
+        $localFile = $this->txlang . DIRECTORY_SEPARATOR .
+            substr($languageCode, 0, 2) . DIRECTORY_SEPARATOR .
+            $domain . '.xlf';
+
+        $local = new XliffFile($localFile);
+        if (!file_exists($localFile)) {
+            // Set base values.
+            $local->setDataType('php');
+            $local->setOriginal($domain);
+            $local->setSrcLang($this->baselanguage);
+            $local->setTgtLang(substr($languageCode, 0, 2));
+        }
+
+        return $local;
     }
 }
