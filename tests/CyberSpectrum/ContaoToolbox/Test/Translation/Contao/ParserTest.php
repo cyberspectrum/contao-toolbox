@@ -26,11 +26,19 @@ class ParserTest extends TestCase
      *
      * @return void
      */
-    public function testParse()
+    public function testParseEmpty()
     {
         $file = new ContaoFile($this->getFixturesPath() . 'contao-parse1-empty-file.php');
         $this->assertEmpty($file->getKeys());
+    }
 
+    /**
+     * Test the parsing.
+     *
+     * @return void
+     */
+    public function testParseFilled()
+    {
         $file = new ContaoFile($this->getFixturesPath() . 'contao-parse2-filled.php');
         $this->assertEquals(12, count($file->getKeys()));
         $this->assertEquals('a-a-1', $file->getValue('a.a.0'));
