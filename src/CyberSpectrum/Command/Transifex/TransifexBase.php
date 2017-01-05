@@ -26,6 +26,7 @@ use CyberSpectrum\Transifex\Transport;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\Question;
 
 /**
  * This class is the base command implementation for all commands interfacing with transifex.
@@ -181,10 +182,9 @@ class TransifexBase extends CommandBase
             return $user;
         }
         if ($input->isInteractive()) {
-            /** @var \Symfony\Component\Console\Helper\DialogHelper $dialog */
-            $dialog = $this->getHelperSet()->get('dialog');
-
-            if ($user = $dialog->ask($output, 'Transifex user:')) {
+            /** @var \Symfony\Component\Console\Helper\QuestionHelper $dialog */
+            $dialog = $this->getHelperSet()->get('question');
+            if ($user = $dialog->ask($input, $output, new Question('Transifex user:'))) {
                 return $user;
             }
         }
@@ -221,10 +221,9 @@ class TransifexBase extends CommandBase
             return $pass;
         }
         if ($input->isInteractive()) {
-            /** @var \Symfony\Component\Console\Helper\DialogHelper $dialog */
-            $dialog = $this->getHelperSet()->get('dialog');
-
-            if ($pass = $dialog->askHiddenResponse($output, 'Transifex password:')) {
+            /** @var \Symfony\Component\Console\Helper\QuestionHelper $dialog */
+            $dialog = $this->getHelperSet()->get('question');
+            if ($pass = $dialog->ask($input, $output, (new Question('Transifex password:'))->setHidden(true))) {
                 return $pass;
             }
         }
