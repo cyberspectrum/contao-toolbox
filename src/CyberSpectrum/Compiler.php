@@ -113,6 +113,7 @@ class Compiler
 
         // disabled for interoperability with systems without gzip ext: $phar->compressFiles(\Phar::GZ);
         unset($phar);
+        chmod($pharFile, 0770);
     }
 
     /**
