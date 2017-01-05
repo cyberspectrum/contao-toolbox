@@ -100,6 +100,9 @@ class Compiler
         if (file_exists(__DIR__ . '/../../vendor/composer/include_paths.php')) {
             $this->addFile($phar, new \SplFileInfo(__DIR__ . '/../../vendor/composer/include_paths.php'));
         }
+        if (file_exists(__DIR__ . '/../../vendor/composer/autoload_static.php')) {
+            $this->addFile($phar, new \SplFileInfo(__DIR__ . '/../../vendor/composer/autoload_static.php'));
+        }
         $this->addFile($phar, new \SplFileInfo(__DIR__ . '/../../vendor/composer/ClassLoader.php'));
         $this->addBinFile($phar);
 
