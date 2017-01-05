@@ -90,7 +90,7 @@ class TranslationResource extends BaseObject
     /**
      * List of available languages (read only).
      *
-     * @var string
+     * @var string[]
      */
     protected $availableLanguages;
 
@@ -348,7 +348,7 @@ class TranslationResource extends BaseObject
     /**
      * Get the available languages.
      *
-     * @return string
+     * @return string[]
      */
     public function getAvailableLanguages()
     {
