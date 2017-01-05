@@ -19,10 +19,9 @@
 
 namespace CyberSpectrum\Transifex;
 
-use Guzzle\Http\Client;
-use Guzzle\Http\EntityBodyInterface;
-use Guzzle\Http\Message\RequestInterface;
-use Guzzle\Http\Message\Response;
+use GuzzleHttp\Client;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * This class abstracts the HTTP transport.
@@ -45,22 +44,26 @@ class Transport
      */
     public function __construct($user, $pass)
     {
-        $this->client = new Client('http://www.transifex.com/api/2/');
-        $this->client->getConfig()->setPath('request.options/auth', array($user, $pass, 'Basic'));
+        $this->client = new Client(
+            [
+                'base_uri' => 'http://www.transifex.com/api/2/',
+                'headers'  => ['Authorization' => 'Basic ' . base64_encode($user . ':' . $pass)]
+            ]
+        );
     }
 
     /**
      * Check the response for an error.
      *
-     * @param Response         $response The response received.
+     * @param ResponseInterface $response The response received.
      *
-     * @param RequestInterface $request  The request sent.
+     * @param string            $url      The request url.
      *
      * @return void
      *
      * @throws \RuntimeException On any error.
      */
-    protected function checkError(Response $response, RequestInterface $request)
+    private function checkError(ResponseInterface $response, $url)
     {
         if (($response->getStatusCode() == 200) || ($response->getStatusCode() == 201)) {
             return;
@@ -68,17 +71,17 @@ class Transport
 
         switch ($response->getHeader('Content-Type')) {
             case 'text/plain':
-                throw new \RuntimeException('Error: ' . $response->getBody(true) . ' URI: ' . $request->getUrl());
+                throw new \RuntimeException('Error: ' . $response->getBody() . ' URI: ' . $url);
             case 'application/json':
-                $error = json_decode($response->getBody(true));
+                $error = json_decode($response->getBody());
                 if (isset($error->message)) {
-                    throw new \RuntimeException($error->message . ' URI: ' . $request->getUrl());
+                    throw new \RuntimeException($error->message . ' URI: ' . $url);
                 }
                 break;
             default:
                 throw new \RuntimeException(
                     'Unknown Error: No error message was returned from the server - Code: ' . $response->getStatusCode(
-                    ) . ' URI: ' . $response->getRequest()->getUrl()
+                    ) . ' URI: ' . $url
                 );
         }
     }
@@ -92,7 +95,7 @@ class Transport
      *
      * @param string     $postcontenttype The content type of the POST data.
      *
-     * @return EntityBodyInterface|null|string
+     * @return StreamInterface|null|string
      */
     public function post($command, $params = null, $postcontenttype = 'application/json')
     {
@@ -105,17 +108,14 @@ class Transport
             $content = json_encode($params);
         }
 
-        $request = $this->client->post($url, $headers, $content);
         try {
-            $response = $request->send();
-            $this->checkError($response, $request);
+            $response = $this->client->post($url, ['headers' => $headers, 'body' => $content]);
         } catch (\Exception $e) {
-            $this->checkError($request->getResponse(), $request);
-
             return null;
         }
+        $this->checkError($response, $url);
 
-        return $response->getBody(true);
+        return $response->getBody();
     }
 
     /**
@@ -127,7 +127,7 @@ class Transport
      *
      * @param string     $postcontenttype The content type of the POST data.
      *
-     * @return EntityBodyInterface|null|string
+     * @return StreamInterface|null|string
      */
     public function put($command, $params = null, $postcontenttype = 'application/json')
     {
@@ -140,17 +140,14 @@ class Transport
             $content = json_encode($params);
         }
 
-        $request = $this->client->put($url, $headers, $content);
         try {
-            $response = $request->send();
-            $this->checkError($response, $request);
+            $response = $this->client->put($url, ['headers' => $headers, 'body' => $content]);
         } catch (\Exception $e) {
-            $this->checkError($request->getResponse(), $request);
-
             return null;
         }
+        $this->checkError($response, $url);
 
-        return $response->getBody(true);
+        return $response->getBody();
     }
 
     /**
@@ -160,7 +157,7 @@ class Transport
      *
      * @param null|string[] $params  The parameters (if any).
      *
-     * @return EntityBodyInterface|null|string
+     * @return StreamInterface|null|string
      */
     public function execute($command, $params = null)
     {
@@ -182,17 +179,14 @@ class Transport
             $url .= '?' . implode('&', $parameters);
         }
 
-        $request = $this->client->get($url);
         try {
-            $response = $request->send();
-            $this->checkError($response, $request);
+            $response = $this->client->get($url);
         } catch (\Exception $e) {
-            $this->checkError($request->getResponse(), $request);
-
             return null;
         }
+        $this->checkError($response, $url);
 
-        return $response->getBody(true);
+        return $response->getBody();
     }
 
     /**
