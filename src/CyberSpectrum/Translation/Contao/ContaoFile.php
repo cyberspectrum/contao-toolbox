@@ -293,7 +293,10 @@ class ContaoFile extends AbstractFile
         $maxlen       = 0;
         $langPrefixes = array();
         foreach ($keys as $key) {
-            $tokens     = explode('.', $key);
+            $tokens = explode('.', $key);
+            if (preg_match('/tl_layout\.[a-z]+\.css\./', $key)) {
+                $tokens = array($tokens[0], $tokens[1] . '.' . $tokens[2], $tokens[3]);
+            }
             $langPrefix = '$GLOBALS[\'TL_LANG\']';
             foreach ($tokens as $token) {
                 $langPrefix .= '[\'' . $token . '\']';
