@@ -1,3 +1,9 @@
+[![Build Status](https://travis-ci.org/cyberspectrum/contao-toolbox.png)](https://travis-ci.org/cyberspectrum/contao-toolbox)
+[![Latest Version tagged](http://img.shields.io/github/tag/cyberspectrum/contao-toolbox.svg)](https://github.com/cyberspectrum/contao-toolbox/tags)
+[![Latest Version on Packagist](http://img.shields.io/packagist/v/cyberspectrum/contao-toolbox.svg)](https://packagist.org/packages/cyberspectrum/contao-toolbox)
+[![Installations via composer per month](http://img.shields.io/packagist/dm/cyberspectrum/contao-toolbox.svg)](https://packagist.org/packages/cyberspectrum/contao-toolbox)
+[![Dependency Status](https://www.versioneye.com/php/cyberspectrum:contao-toolbox/badge.svg)](https://www.versioneye.com/php/cyberspectrum:contao-toolbox)
+
 Contao Toolbox
 ==============
 
