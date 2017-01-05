@@ -27,7 +27,7 @@ use CyberSpectrum\Translation\AbstractFile;
 class XliffFile extends AbstractFile
 {
     /**
-     * xliff Namespace.
+     * The xliff Namespace.
      */
     const NS = 'urn:oasis:names:tc:xliff:document:1.2';
 

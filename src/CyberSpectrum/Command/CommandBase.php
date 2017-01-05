@@ -387,7 +387,7 @@ abstract class CommandBase extends Command
     /**
      * {@inheritDoc}
      *
-     * @throws \RuntimeException when the needed settings can not be determined.
+     * @throws \RuntimeException When the needed settings can not be determined.
      */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {

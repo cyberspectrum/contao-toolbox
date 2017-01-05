@@ -145,8 +145,6 @@ class TransifexBase extends CommandBase
 
     /**
      * {@inheritDoc}
-     *
-     * @throws
      */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {

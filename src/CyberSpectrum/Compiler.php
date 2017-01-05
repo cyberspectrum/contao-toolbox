@@ -109,7 +109,6 @@ class Compiler
         $phar->stopBuffering();
 
         // disabled for interoperability with systems without gzip ext: $phar->compressFiles(\Phar::GZ);
-
         unset($phar);
     }
 
