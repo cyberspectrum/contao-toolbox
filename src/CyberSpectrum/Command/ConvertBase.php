@@ -125,6 +125,9 @@ abstract class ConvertBase extends CommandBase
                 unlink($this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $file);
                 $this->writelnVerbose($output, sprintf('deleting obsolete file <info>%s</info>', $file));
             }
+            // @codingStandardsIgnoreStart - Catch the error when directory is not empty.
+            @rmdir($this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language);
+            // @codingStandardsIgnoreEnd
         }
     }
 

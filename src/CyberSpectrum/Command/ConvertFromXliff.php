@@ -162,6 +162,9 @@ class ConvertFromXliff extends ConvertBase
                     $dest->save();
                 } else {
                     unlink($dstDir . DIRECTORY_SEPARATOR . $dstFile);
+                    // @codingStandardsIgnoreStart - Catch the error when directory is not empty.
+                    @rmdir($dstDir);
+                    // @codingStandardsIgnoreEnd
                 }
             }
         }
