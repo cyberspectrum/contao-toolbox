@@ -1,14 +1,20 @@
 <?php
 
 /**
- * This toolbox provides easy ways to generate .xlf (XLIFF) files from Contao language files, push them to transifex
- * and pull translations from transifex and convert them back to Contao language files.
+ * This file is part of cyberspectrum/contao-toolbox.
  *
- * @package      cyberspectrum/contao-toolbox
- * @author       Christian Schiffler <c.schiffler@cyberspectrum.de>
- * @author       Yanick Witschi <yanick.witschi@terminal42.ch>
- * @copyright    CyberSpectrum
- * @license      LGPL-3.0+.
+ * (c) 2013-2017 CyberSpectrum.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * This project is provided in good faith and hope to be usable by anyone.
+ *
+ * @package    cyberspectrum/contao-toolbox.
+ * @author     Christian Schiffler <c.schiffler@cyberspectrum.de>
+ * @author     Yanick Witschi <yanick.witschi@terminal42.ch>
+ * @copyright  2013-2017 CyberSpectrum.
+ * @license    https://github.com/cyberspectrum/contao-toolbox/blob/master/LICENSE LGPL-3.0
  * @filesource
  */
 
