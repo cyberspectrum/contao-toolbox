@@ -21,8 +21,6 @@
 
 namespace CyberSpectrum\Command;
 
-use CyberSpectrum\Translation\Contao;
-use CyberSpectrum\Translation\Xliff;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;

@@ -20,9 +20,7 @@
 
 namespace CyberSpectrum\Command;
 
-use CyberSpectrum\Translation\Contao;
 use CyberSpectrum\Translation\Contao\ContaoFile;
-use CyberSpectrum\Translation\Xliff;
 use CyberSpectrum\Translation\Xliff\XliffFile;
 use Symfony\Component\Console\Output\OutputInterface;
 

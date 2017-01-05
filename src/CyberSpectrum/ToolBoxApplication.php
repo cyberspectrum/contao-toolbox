@@ -25,7 +25,6 @@ use CyberSpectrum\Command\ConvertFromXliff;
 use CyberSpectrum\Command\ConvertToXliff;
 use CyberSpectrum\Command\Transifex\DownloadTransifex;
 use CyberSpectrum\Command\Transifex\UploadTransifex;
-use Symfony\Component\Console;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Command\HelpCommand;
 use Symfony\Component\Console\Command\ListCommand;
