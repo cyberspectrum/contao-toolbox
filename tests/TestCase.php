@@ -17,7 +17,7 @@
  * @filesource
  */
 
-namespace CyberSpectrum\ContaoToolbox\Test;
+namespace CyberSpectrum\ContaoToolBox\Tests;
 
 /**
  * This class is the test base.
@@ -31,6 +31,6 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
      */
     protected function getFixturesPath()
     {
-        return dirname(dirname(dirname(__DIR__))) . DIRECTORY_SEPARATOR . 'fixtures' . DIRECTORY_SEPARATOR;
+        return __DIR__ . DIRECTORY_SEPARATOR . 'fixtures' . DIRECTORY_SEPARATOR;
     }
 }

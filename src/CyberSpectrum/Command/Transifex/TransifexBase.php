@@ -103,9 +103,9 @@ class TransifexBase extends CommandBase
      */
     protected function getLanguageBasePath()
     {
-        $path = realpath($this->txlang);
+        $path = realpath($this->project->getXliffDirectory());
         if (!$path) {
-            return $this->txlang;
+            return $this->project->getXliffDirectory();
         }
 
         return $path;
@@ -116,7 +116,7 @@ class TransifexBase extends CommandBase
      */
     protected function isNotFileToSkip($basename)
     {
-        return is_array($this->skipFiles) ? !in_array(substr($basename, 0, -4), $this->skipFiles) : true;
+        return !$this->project->isSkippedFile(substr($basename, 0, -4));
     }
 
     /**
@@ -128,7 +128,7 @@ class TransifexBase extends CommandBase
      */
     protected function getAllTxFiles($language)
     {
-        $iterator = new \DirectoryIterator($this->txlang . DIRECTORY_SEPARATOR . $language);
+        $iterator = new \DirectoryIterator($this->project->getXliffDirectory() . DIRECTORY_SEPARATOR . $language);
 
         $files = array();
         while ($iterator->valid()) {

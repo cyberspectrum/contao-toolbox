@@ -65,7 +65,9 @@ abstract class ConvertBase extends CommandBase
      */
     protected function getBaseFiles()
     {
-        $iterator = new \DirectoryIterator($this->getLanguageBasePath() . DIRECTORY_SEPARATOR . $this->baselanguage);
+        $iterator = new \DirectoryIterator(
+            $this->getLanguageBasePath() . DIRECTORY_SEPARATOR . $this->project->getBaseLanguage()
+        );
 
         $files = array();
         while ($iterator->valid()) {
@@ -134,7 +136,7 @@ abstract class ConvertBase extends CommandBase
      */
     protected function isNotFileToSkip($basename)
     {
-        return is_array($this->skipFiles) ? !in_array(substr($basename, 0, -4), $this->skipFiles) : true;
+        return !$this->project->isSkippedFile(substr($basename, 0, -4));
     }
 
     /**
@@ -174,7 +176,7 @@ abstract class ConvertBase extends CommandBase
     {
         $this->getBaseFiles();
 
-        foreach ($this->languages as $lang) {
+        foreach ($this->project->getLanguages() as $lang) {
             $this->processLanguage($output, $lang);
         }
     }

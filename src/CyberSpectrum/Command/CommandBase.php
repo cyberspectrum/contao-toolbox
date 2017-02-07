@@ -20,11 +20,14 @@
 
 namespace CyberSpectrum\Command;
 
+use CyberSpectrum\ContaoToolBox\Locator\LanguageDirectoryLocator;
+use CyberSpectrum\ContaoToolBox\Project;
 use CyberSpectrum\JsonConfig;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -33,53 +36,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 abstract class CommandBase extends Command
 {
     /**
-     * The name of the transifex project.
+     * The project information.
      *
-     * @var string
+     * @var Project
      */
     protected $project;
-
-    /**
-     * The prefix to apply to all language files.
-     *
-     * @var string
-     */
-    protected $prefix;
-
-    /**
-     * Location of the transifex (xliff) directories.
-     *
-     * @var string
-     */
-    protected $txlang;
-
-    /**
-     * Location of the contao language directories.
-     *
-     * @var string
-     */
-    protected $ctolang;
-
-    /**
-     * Name of the base language (i.e. en).
-     *
-     * @var string
-     */
-    protected $baselanguage;
-
-    /**
-     * List of the other languages.
-     *
-     * @var string[]
-     */
-    protected $languages;
-
-    /**
-     * Names of files to skip.
-     *
-     * @var string[]
-     */
-    protected $skipFiles;
 
     /**
      * The transifex configuration prefix in the config.
@@ -348,43 +309,6 @@ abstract class CommandBase extends Command
     abstract protected function isNotFileToSkip($basename);
 
     /**
-     * Determine the list of languages.
-     *
-     * @param OutputInterface $output The output interface to receive log messages.
-     *
-     * @param string          $srcdir The source directory to be examined.
-     *
-     * @param array           $filter The files to be filtered away (to be ignored).
-     *
-     * @return void
-     *
-     * @throws \InvalidArgumentException When the given source directory does not exist, an exception is thrown.
-     */
-    protected function determineLanguages(OutputInterface $output, $srcdir, $filter = array())
-    {
-        if (!is_dir($srcdir)) {
-            throw new \InvalidArgumentException(sprintf('The path %s does not exist.', $srcdir));
-        }
-
-        $this->writelnVerbose($output, sprintf('<info>scanning for languages in: %s</info>', $srcdir));
-        $matches  = array();
-        $iterator = new \DirectoryIterator($srcdir);
-        do {
-            $item = $iterator->getFilename();
-
-            if ((!$iterator->isDot()) && (strlen($item) == 2) && ((!$filter) || in_array($item, $filter))) {
-                $matches[] = $item;
-                $this->writelnVerbose($output, sprintf('<info>using: %s</info>', $item));
-            } elseif (!$iterator->isDot()) {
-                $this->writelnVerbose($output, sprintf('<info>not using: %s</info>', $item));
-            }
-            $iterator->next();
-        } while ($iterator->valid());
-
-        $this->languages = $matches;
-    }
-
-    /**
      * {@inheritDoc}
      *
      * @throws \RuntimeException When the needed settings can not be determined.
@@ -392,18 +316,16 @@ abstract class CommandBase extends Command
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         $this->transifexconfig = $input->getOption('transifex-config');
+        $this->project         = new Project();
         $this->setProject($input, $output);
         $this->setPrefix($input, $output);
         $this->setXliffDirectory($input, $output);
         $this->setContaoLanguageDirectory($input, $output);
-        $this->baselanguage = $input->getOption('base-language');
-        $this->skipFiles    = $input->getOption('skip-files') ? explode(',', $input->getOption('skip-files')) : null;
-
-        if (!$this->skipFiles) {
-            $this->skipFiles = $this->getTransifexConfigValue('/skip_files') ?: array();
-        } else {
-            // Make sure it is an array.
-            $this->skipFiles = array();
+        $this->project->setBaseLanguage($input->getOption('base-language'));
+        if (null !== ($files = $input->getOption('skip-files'))) {
+            $this->project->setSkipFiles(explode(',', $files));
+        } elseif (null !== ($files = $this->getTransifexConfigValue('/skip_files'))) {
+            $this->project->setSkipFiles($files);
         }
 
         $activeLanguages = array();
@@ -411,7 +333,8 @@ abstract class CommandBase extends Command
             $activeLanguages = explode(',', $langs);
         }
 
-        $this->determineLanguages($output, $this->getLanguageBasePath(), $activeLanguages);
+        $locator = new LanguageDirectoryLocator($this->getLanguageBasePath(), new ConsoleLogger($output));
+        $this->project->setLanguages($locator->determineLanguages($activeLanguages));
     }
 
     /**
@@ -427,18 +350,17 @@ abstract class CommandBase extends Command
      */
     private function setProject(InputInterface $input, OutputInterface $output)
     {
-        $this->project = $input->getOption('projectname');
-        if (!$this->project) {
-            $this->project = $this->getTransifexConfigValue('/project');
+        $projectName = $input->getOption('projectname');
+        if (!$projectName) {
+            $projectName = $this->getTransifexConfigValue('/project');
 
-            if (!$this->project) {
+            if (!$projectName) {
                 throw new \RuntimeException('Error: unable to determine transifex project name.');
             }
 
-            $this->writelnVerbose($output, sprintf('<info>automatically using project: %s</info>', $this->project));
+            $this->writelnVerbose($output, sprintf('<info>automatically using project: %s</info>', $projectName));
         }
-
-        $this->checkValidSlug($this->project);
+        $this->project->setProject($projectName);
     }
 
     /**
@@ -454,18 +376,18 @@ abstract class CommandBase extends Command
      */
     private function setPrefix(InputInterface $input, OutputInterface $output)
     {
-        $this->prefix = $input->getOption('prefix');
+        $prefix = $input->getOption('prefix');
 
-        if ($this->prefix === null) {
-            $this->prefix = $this->getTransifexConfigValue('/prefix');
+        if ($prefix === null) {
+            $prefix = $this->getTransifexConfigValue('/prefix');
 
-            if ($this->prefix === null) {
+            if ($prefix === null) {
                 throw new \RuntimeException('Error: unable to determine transifex prefix.');
             }
-            $this->writelnVerbose($output, sprintf('<info>automatically using prefix: %s</info>', $this->prefix));
+            $this->writelnVerbose($output, sprintf('<info>automatically using prefix: %s</info>', $prefix));
         }
 
-        $this->checkValidSlug($this->prefix);
+        $this->project->setPrefix($prefix);
     }
 
     /**
@@ -481,16 +403,18 @@ abstract class CommandBase extends Command
      */
     private function setXliffDirectory(InputInterface $input, OutputInterface $output)
     {
-        $this->txlang = $input->getOption('xliff');
+        $txlang = $input->getOption('xliff');
 
-        if ($this->txlang === null) {
-            $this->txlang = $this->getTransifexConfigValue('/languages_tx');
+        if ($txlang === null) {
+            $txlang = $this->getTransifexConfigValue('/languages_tx');
 
-            if ($this->txlang === null) {
+            if ($txlang === null) {
                 throw new \RuntimeException('Error: unable to determine transifex root folder.');
             }
-            $this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $this->txlang));
+            $this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $txlang));
         }
+
+        $this->project->setXliffDirectory($txlang);
     }
 
     /**
@@ -506,18 +430,20 @@ abstract class CommandBase extends Command
      */
     private function setContaoLanguageDirectory(InputInterface $input, OutputInterface $output)
     {
-        $this->ctolang = $input->getOption('contao');
+        $ctolang = $input->getOption('contao');
 
-        if ($this->ctolang === null) {
-            $this->ctolang = $this->getTransifexConfigValue('/languages_cto');
+        if ($ctolang === null) {
+            $ctolang = $this->getTransifexConfigValue('/languages_cto');
 
-            if ($this->ctolang === null) {
+            if ($ctolang === null) {
                 throw new \RuntimeException('Error: unable to determine contao language root folder.');
             }
             $this->writelnVerbose(
                 $output,
-                sprintf('<info>automatically using Contao language folder: %s</info>', $this->ctolang)
+                sprintf('<info>automatically using Contao language folder: %s</info>', $ctolang)
             );
         }
+
+        $this->project->setContaoDirectory($ctolang);
     }
 }

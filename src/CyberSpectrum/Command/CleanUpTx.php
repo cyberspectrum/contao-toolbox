@@ -50,7 +50,7 @@ class CleanUpTx extends CommandBase
      */
     protected function getLanguageBasePath()
     {
-        return $this->txlang;
+        return $this->project->getXliffDirectory();
     }
 
     /**

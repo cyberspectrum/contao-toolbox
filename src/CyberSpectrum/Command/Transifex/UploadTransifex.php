@@ -46,7 +46,7 @@ class UploadTransifex extends TransifexBase
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        if (!($this->project && $this->getApi())) {
+        if (!($this->project->getProject() && $this->getApi())) {
             $this->writelnAlways($output, '<error>No project set or no API received, exiting.</error>');
 
             return;
@@ -54,29 +54,30 @@ class UploadTransifex extends TransifexBase
 
         $project = new Project($this->getApi());
 
-        $project->setSlug($this->project);
+        $project->setSlug($this->project->getProject());
 
         $resources = $project->getResources();
 
-        $files = $this->getAllTxFiles($this->baselanguage);
+        $files = $this->getAllTxFiles($this->project->getBaseLanguage());
 
+        $prefix = $this->project->getPrefix();
         foreach ($files as $file => $basename) {
             $noext = basename($basename, '.xlf');
-            if (array_key_exists($this->prefix . $noext, $resources)) {
+            if (array_key_exists($prefix . $noext, $resources)) {
                 // already present, update.
-                $this->writeln($output, sprintf('Updating ressource <info>%s</info>', $this->prefix . $noext));
+                $this->writeln($output, sprintf('Updating ressource <info>%s</info>', $prefix . $noext));
                 /** @var \CyberSpectrum\Transifex\TranslationResource $resource */
-                $resource = $resources[$this->prefix . $noext];
+                $resource = $resources[$prefix . $noext];
                 $resource->setContent(file_get_contents($file));
                 $resource->updateContent();
             } else {
-                $this->writeln($output, sprintf('Creating new ressource <info>%s</info>', $this->prefix . $noext));
+                $this->writeln($output, sprintf('Creating new ressource <info>%s</info>', $prefix . $noext));
                 // upload new.
                 $resource = new TranslationResource($this->getApi());
-                $resource->setProject($this->project);
-                $resource->setSlug($this->prefix . $noext);
+                $resource->setProject($this->project->getProject());
+                $resource->setSlug($prefix . $noext);
                 $resource->setName($resource->getSlug());
-                $resource->setSourceLanguageCode($this->baselanguage);
+                $resource->setSourceLanguageCode($this->project->getBaseLanguage());
 
                 $resource->setContent(file_get_contents($file));
 

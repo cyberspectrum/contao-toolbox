@@ -27,11 +27,17 @@
     "symfony/process": "~2.8 | ~3.0"
   },
   "autoload": {
+    "psr-4": {
+      "CyberSpectrum\\ContaoToolBox\\": "src/"
+    },
     "psr-0": {
       "CyberSpectrum": "src/"
     }
   },
   "autoload-dev": {
+    "psr-4": {
+      "CyberSpectrum\\ContaoToolBox\\Tests\\": "tests/"
+    },
     "psr-0": {
       "CyberSpectrum": "tests/"
     }

@@ -47,7 +47,7 @@ class ConvertToXliff extends ConvertBase
      */
     protected function getLanguageBasePath()
     {
-        return $this->ctolang;
+        return $this->project->getContaoDirectory();
     }
 
     /**
@@ -55,7 +55,7 @@ class ConvertToXliff extends ConvertBase
      */
     protected function getDestinationBasePath()
     {
-        return $this->txlang;
+        return $this->project->getXliffDirectory();
     }
 
     /**
@@ -124,7 +124,7 @@ class ConvertToXliff extends ConvertBase
             $this->writelnVerbose($output, sprintf('processing file: <info>%s</info>...', $file));
 
             $basFile = $this->getLanguageBasePath()
-                . DIRECTORY_SEPARATOR . $this->baselanguage . DIRECTORY_SEPARATOR . $file;
+                . DIRECTORY_SEPARATOR . $this->project->getBaseLanguage() . DIRECTORY_SEPARATOR . $file;
             $srcFile = $this->getLanguageBasePath() . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $file;
 
             $domain = basename($file, '.php');
@@ -142,7 +142,7 @@ class ConvertToXliff extends ConvertBase
 
             $dest = new XliffFile($dstDir . DIRECTORY_SEPARATOR . $dstFile);
             $dest->setDataType('php');
-            $dest->setSrcLang($this->baselanguage);
+            $dest->setSrcLang($this->project->getBaseLanguage());
             $dest->setTgtLang($language);
             $dest->setOriginal($domain);
             if (file_exists($srcFile)) {

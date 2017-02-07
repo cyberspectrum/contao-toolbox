@@ -47,7 +47,7 @@ class ConvertFromXliff extends ConvertBase
      */
     protected function getLanguageBasePath()
     {
-        return $this->txlang;
+        return $this->project->getXliffDirectory();
     }
 
     /**
@@ -55,7 +55,7 @@ class ConvertFromXliff extends ConvertBase
      */
     protected function getDestinationBasePath()
     {
-        return $this->ctolang;
+        return $this->project->getContaoDirectory();
     }
 
     /**
@@ -153,7 +153,7 @@ class ConvertFromXliff extends ConvertBase
 
             if ($changed) {
                 $dest->setLanguage($language);
-                $dest->setTransifexProject($this->project);
+                $dest->setTransifexProject($this->project->getProject());
                 $dest->setLastChange($src->getDate());
 
                 if ($dest->getKeys()) {

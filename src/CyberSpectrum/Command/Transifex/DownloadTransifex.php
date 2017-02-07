@@ -94,7 +94,7 @@ class DownloadTransifex extends TransifexBase
 
         $project = new Project($this->getApi());
 
-        $project->setSlug($this->project);
+        $project->setSlug($this->project->getProject());
 
         $resources = $project->getResources();
 
@@ -122,7 +122,8 @@ class DownloadTransifex extends TransifexBase
         $allLanguages,
         OutputInterface $output
     ) {
-        if (substr($resource->getSlug(), 0, strlen($this->prefix)) != $this->prefix) {
+        $prefix = $this->project->getPrefix();
+        if (substr($resource->getSlug(), 0, strlen($prefix)) != $prefix) {
             $this->writelnVerbose(
                 $output,
                 sprintf(
@@ -210,7 +211,7 @@ class DownloadTransifex extends TransifexBase
      */
     private function isHandlingLanguage($code, $allLanguages)
     {
-        if ($code == $this->baselanguage) {
+        if ($code == $this->project->getBaseLanguage()) {
             return false;
         }
 
@@ -218,7 +219,7 @@ class DownloadTransifex extends TransifexBase
             return true;
         }
 
-        return in_array(substr($code, 0, 2), $this->languages);
+        return in_array(substr($code, 0, 2), $this->project->getLanguages());
     }
 
     /**
@@ -232,8 +233,8 @@ class DownloadTransifex extends TransifexBase
      */
     private function getLocalXliffFile(TranslationResource $resource, $languageCode)
     {
-        $domain    = substr($resource->getSlug(), strlen($this->prefix));
-        $localFile = $this->txlang . DIRECTORY_SEPARATOR .
+        $domain    = substr($resource->getSlug(), strlen($this->project->getPrefix()));
+        $localFile = $this->project->getXliffDirectory() . DIRECTORY_SEPARATOR .
             substr($languageCode, 0, 2) . DIRECTORY_SEPARATOR .
             $domain . '.xlf';
 
@@ -242,7 +243,7 @@ class DownloadTransifex extends TransifexBase
             // Set base values.
             $local->setDataType('php');
             $local->setOriginal($domain);
-            $local->setSrcLang($this->baselanguage);
+            $local->setSrcLang($this->project->getBaseLanguage());
             $local->setTgtLang(substr($languageCode, 0, 2));
         }
 

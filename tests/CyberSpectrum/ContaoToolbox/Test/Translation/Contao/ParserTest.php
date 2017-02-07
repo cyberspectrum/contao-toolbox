@@ -19,7 +19,7 @@
 
 namespace CyberSpectrum\ContaoToolbox\Test\Translation\Contao;
 
-use CyberSpectrum\ContaoToolbox\Test\TestCase;
+use CyberSpectrum\ContaoToolBox\Tests\TestCase;
 use CyberSpectrum\Translation\Contao\ContaoFile;
 
 /**
