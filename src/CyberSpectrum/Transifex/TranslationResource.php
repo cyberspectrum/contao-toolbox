@@ -19,6 +19,8 @@
 
 namespace CyberSpectrum\Transifex;
 
+use CyberSpectrum\PhpTransifex\Client;
+
 /**
  * This class abstracts a resource on transifex.
  */
@@ -125,9 +127,9 @@ class TranslationResource extends BaseObject
     /**
      * Create a new instance.
      *
-     * @param Transport $transport The transport.
+     * @param Client $transport The transport.
      */
-    public function __construct(Transport $transport)
+    public function __construct(Client $transport)
     {
         parent::__construct($transport);
 
@@ -456,16 +458,12 @@ class TranslationResource extends BaseObject
      */
     public function create()
     {
-        $params = array(
-            'slug' => $this->ensureParameter('slug'),
-            'name' => $this->ensureParameter('name'),
-            'i18n_type' => $this->ensureParameter('i18nType'),
-            'content' => $this->ensureParameter('content'),
-        );
-
-        $this->post(
-            sprintf('project/%s/resources/', $this->ensureParameter('project')),
-            $params
+        $this->getTransport()->resources()->create(
+            $this->ensureParameter('project'),
+            $this->ensureParameter('name'),
+            $this->ensureParameter('slug'),
+            $this->ensureParameter('i18nType'),
+            ['content' => $this->ensureParameter('content')]
         );
 
         return $this;
@@ -478,17 +476,10 @@ class TranslationResource extends BaseObject
      */
     public function updateContent()
     {
-        $params = array(
-            'content' => $this->ensureParameter('content'),
-        );
-
-        $this->put(
-            sprintf(
-                'project/%s/resource/%s/content/',
-                $this->ensureParameter('project'),
-                $this->ensureParameter('slug')
-            ),
-            $params
+        $this->getTransport()->resource()->upload(
+            $this->ensureParameter('project'),
+            $this->ensureParameter('slug'),
+            $this->ensureParameter('content')
         );
 
         return $this;
@@ -501,13 +492,10 @@ class TranslationResource extends BaseObject
      */
     public function fetchDetails()
     {
-        $response = $this->executeJson(
-            sprintf(
-                'project/%s/resource/%s',
-                $this->ensureParameter('project'),
-                $this->ensureParameter('slug')
-            ),
-            array('details' => '')
+        $response = $this->getTransport()->resource()->show(
+            $this->ensureParameter('project'),
+            $this->ensureParameter('slug'),
+            true
         );
 
         $this->setFromResult($response);
@@ -522,12 +510,9 @@ class TranslationResource extends BaseObject
      */
     public function fetchContent()
     {
-        $response = $this->executeJson(
-            sprintf(
-                'project/%s/resource/%s/content/',
-                $this->ensureParameter('project'),
-                $this->ensureParameter('slug')
-            )
+        $response = $this->getTransport()->resource()->download(
+            $this->ensureParameter('project'),
+            $this->ensureParameter('slug')
         );
 
         $this->setContent($response['content']);
@@ -547,19 +532,11 @@ class TranslationResource extends BaseObject
      */
     public function fetchTranslation($langcode, $mode = 'reviewed')
     {
-        $parameters = array(
-            'file' => '',
-            'mode' => $mode
-        );
-
-        return $this->execute(
-            sprintf(
-                'project/%s/resource/%s/translation/%s',
-                $this->ensureParameter('project'),
-                $this->ensureParameter('slug'),
-                $langcode
-            ),
-            $parameters
+        return $this->getTransport()->translation()->show(
+            $this->ensureParameter('project'),
+            $this->ensureParameter('slug'),
+            $langcode,
+            $mode
         );
     }
 }

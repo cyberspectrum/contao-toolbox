@@ -22,7 +22,7 @@
 namespace CyberSpectrum\Command\Transifex;
 
 use CyberSpectrum\Command\CommandBase;
-use CyberSpectrum\Transifex\Transport;
+use CyberSpectrum\PhpTransifex\Client;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -36,7 +36,7 @@ class TransifexBase extends CommandBase
     /**
      * The transport client.
      *
-     * @var Transport
+     * @var Client
      */
     private $api;
 
@@ -57,12 +57,13 @@ class TransifexBase extends CommandBase
     /**
      * Retrieve the transport client.
      *
-     * @return Transport
+     * @return Client
      */
     protected function getApi()
     {
         if (!$this->api) {
-            $this->api = new Transport($this->user, $this->password);
+            $this->api = new Client();
+            $this->api->authenticate($this->user, $this->password);
         }
 
         return $this->api;

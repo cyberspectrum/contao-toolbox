@@ -19,7 +19,7 @@
 
 namespace CyberSpectrum\Transifex;
 
-use Guzzle\Http\EntityBodyInterface;
+use CyberSpectrum\PhpTransifex\Client;
 
 /**
  * This class provides a base implementation of a transifex object.
@@ -29,16 +29,16 @@ class BaseObject
     /**
      * The transifex client.
      *
-     * @var Transport
+     * @var Client
      */
     private $transport;
 
     /**
      * Create a new instance.
      *
-     * @param Transport $transport The transport to use.
+     * @param Client $transport The transport to use.
      */
-    public function __construct(Transport $transport)
+    public function __construct(Client $transport)
     {
         $this->transport = $transport;
     }
@@ -46,7 +46,7 @@ class BaseObject
     /**
      * Retrieve the transport in use.
      *
-     * @return Transport
+     * @return Client
      */
     protected function getTransport()
     {
@@ -69,65 +69,5 @@ class BaseObject
         }
 
         return $this->$name;
-    }
-
-    /**
-     * Post a command to the API.
-     *
-     * @param string        $command         The command to post.
-     *
-     * @param null|string[] $params          The parameters (if any).
-     *
-     * @param string        $postcontenttype The content type.
-     *
-     * @return EntityBodyInterface|null|string
-     */
-    protected function post($command, $params = null, $postcontenttype = 'application/json')
-    {
-        return $this->transport->post($command, $params, $postcontenttype);
-    }
-
-    /**
-     * Put some data to the API.
-     *
-     * @param string        $command        The command to post.
-     *
-     * @param null|string[] $params         The parameters (if any).
-     *
-     * @param string        $putcontenttype The content type.
-     *
-     * @return EntityBodyInterface|null|string
-     */
-    protected function put($command, $params = null, $putcontenttype = 'application/json')
-    {
-        return $this->transport->put($command, $params, $putcontenttype);
-    }
-
-    /**
-     * Execute a command on the API.
-     *
-     * @param string        $command The command to post.
-     *
-     * @param null|string[] $params  The parameters (if any).
-     *
-     * @return EntityBodyInterface|null|string
-     */
-    protected function execute($command, $params = null)
-    {
-        return $this->transport->execute($command, $params);
-    }
-
-    /**
-     * Execute a command on the API and return the content as json decoded array..
-     *
-     * @param string        $command The command to post.
-     *
-     * @param null|string[] $params  The parameters (if any).
-     *
-     * @return array
-     */
-    protected function executeJson($command, $params = null)
-    {
-        return $this->transport->executeJson($command, $params);
     }
 }

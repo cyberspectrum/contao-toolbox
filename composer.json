@@ -15,9 +15,10 @@
     }
   ],
   "require": {
-    "php": ">=5.5",
+    "php": ">=5.6",
     "symfony/console": "~2.8 | ~3.0",
-    "guzzlehttp/guzzle": "~6.0",
+    "cyberspectrum/php-transifex": "dev-master@dev",
+    "php-http/guzzle6-adapter": "~1.1",
     "symfony/finder": "~2.8 | ~3.0",
     "symfony/filesystem": "~2.8 | ~3.0"
   },

@@ -62,7 +62,7 @@ class Project extends BaseObject
      */
     public function getResources()
     {
-        $data = $this->executeJson(sprintf('project/%s/resources/', $this->ensureParameter('slug')));
+        $data = $this->getTransport()->resources()->all($this->ensureParameter('slug'));
 
         $resources = array();
         foreach ($data as $entry) {
