@@ -17,7 +17,7 @@ if ((!$loader = includeIfExists(__DIR__.'/../vendor/autoload.php')) && (!$loader
     exit(1);
 }
 
-use CyberSpectrum\Compiler;
+use CyberSpectrum\ContaoToolBox\Compiler;
 
 error_reporting(-1);
 

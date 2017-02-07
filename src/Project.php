@@ -12,8 +12,6 @@
  *
  * @package    cyberspectrum/contao-toolbox.
  * @author     Christian Schiffler <c.schiffler@cyberspectrum.de>
- * @author     Yanick Witschi <yanick.witschi@terminal42.ch>
- * @author     Tristan Lins <tristan.lins@bit3.de>
  * @copyright  2013-2017 CyberSpectrum.
  * @license    https://github.com/cyberspectrum/contao-toolbox/blob/master/LICENSE LGPL-3.0
  * @filesource

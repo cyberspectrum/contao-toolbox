@@ -17,11 +17,11 @@ if ((!$loader = includeIfExists(__DIR__.'/../vendor/autoload.php')) && (!$loader
     exit(1);
 }
 
-use CyberSpectrum\ToolBoxApplication;
+use CyberSpectrum\ContaoToolBox\Console\ToolBoxApplication;
 
 error_reporting(-1);
 
-\CyberSpectrum\Util\ErrorHandler::register();
+\CyberSpectrum\ContaoToolBox\Util\ErrorHandler::register();
 
 $console = new ToolBoxApplication();
 $console->run();
