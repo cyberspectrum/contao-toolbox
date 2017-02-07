@@ -1,0 +1,55 @@
+phar: ctb.phar
+
+tasks:
+  - type: add-package
+    name: cyberspectrum/contao-toolbox
+    include_files: &default_include_files
+      - "*.php"
+      - "(LICENSE\\.?.*)"
+      - "%package:cyberspectrum/contao-toolbox%/bin/ctb"
+    exclude_files: &default_exclude_files
+      - "(.*[Tt]ests?\\/*)"
+      - "*tests/*.php"
+    package_override:
+      cyberspectrum/contao-toolbox:
+        include_files:
+          - "%package:cyberspectrum/contao-toolbox%/src/*.php"
+          - "(LICENSE\\.?.*)"
+          - "%package:cyberspectrum/contao-toolbox%/bin/ctb"
+  - type: set-stub
+    stub_file: "%package:cyberspectrum/contao-toolbox%/phar/stub.php"
+
+  - type: composer-autoload
+    optimize: true
+
+rewrites:
+  - files:
+      - "%package:cyberspectrum/contao-toolbox%/bin/ctb"
+    filter:
+      - type: replace
+        "#!/usr/bin/env php": ""
+  - files:
+      - "%package:cyberspectrum/contao-toolbox%/phar/stub.php"
+    filter:
+      - type: replace
+        "@@CTB_MIN_PHP_VERSION@@": "5.6"
+
+      - type: warning-time
+        search: "false && '@WARNING_TIME@'"
+        format: "time() > @@warning_time@@"
+        # 30 * 86400 = 2592000
+        ahead: 2592000
+
+      - type: replace
+        "@package_version@": "%version:cyberspectrum/contao-toolbox%"
+
+      - type: replace
+        "@distribution@": "cyberspectrum/contao-toolbox"
+
+      - type: replace
+        "@release_date@": "%date:cyberspectrum/contao-toolbox%"
+
+  # keep this last
+  - files: "*.php"
+    filter:
+      - type: php-strip

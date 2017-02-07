@@ -23,6 +23,7 @@
     "symfony/filesystem": "~2.8 | ~3.0"
   },
   "require-dev": {
+    "cyberspectrum/pharpiler": "~1.0",
     "phpcq/all-tasks": "~1.1",
     "symfony/process": "~2.8 | ~3.0"
   },
