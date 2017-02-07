@@ -19,8 +19,8 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
-use CyberSpectrum\Transifex\Project;
-use CyberSpectrum\Transifex\TranslationResource;
+use CyberSpectrum\ContaoToolBox\Transifex\Project;
+use CyberSpectrum\ContaoToolBox\Transifex\TranslationResource;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
