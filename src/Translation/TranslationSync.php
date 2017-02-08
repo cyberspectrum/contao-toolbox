@@ -79,6 +79,10 @@ class TranslationSync
             if ($this->destination->get($key) !== ($value = $this->source->get($key))) {
                 $changed = true;
                 $this->logger->info('Updating key <info>{key}</info>.', ['key' => $key]);
+                if (null === $value) {
+                    $this->destination->remove($key);
+                    continue;
+                }
                 $this->destination->set($key, $value);
             }
         }
