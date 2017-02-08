@@ -13,7 +13,7 @@
 >
     <testsuites>
         <testsuite name="tests">
-            <directory>./tests/CyberSpectrum/ContaoToolbox/Test/</directory>
+            <directory>./tests</directory>
         </testsuite>
     </testsuites>
 
