@@ -56,6 +56,16 @@ class StringValueParser extends AbstractParser
                 $this->getNextToken();
                 continue;
             }
+            if ($this->tokenIs(T_STRING)) {
+                $token = $this->getToken();
+                if ('null' !== strtolower($token[1])) {
+                    $this->bailUnexpectedToken();
+                }
+                $this->data[] = null;
+                $this->getNextToken();
+                continue;
+            }
+
             if ($this->isEndToken()) {
                 break;
             }
