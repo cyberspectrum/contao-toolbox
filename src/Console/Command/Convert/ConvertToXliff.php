@@ -21,6 +21,7 @@
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Convert;
 
 use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile as ContaoFile;
+use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -90,27 +91,12 @@ class ConvertToXliff extends ConvertBase
      */
     protected function convert(OutputInterface $output, ContaoFile $src, XLiffFile $dst, ContaoFile $base)
     {
-        $baseKeys = $base->getKeys();
-        foreach ($baseKeys as $key) {
-            if (!($basVal = $base->getValue($key))) {
-                $dst->remove($key);
-                continue;
-            }
-            $dst->setSource($key, $basVal);
-            if (($value = $src->getValue($key)) !== null) {
-                $dst->setTarget($key, $value);
-            }
-        }
+        // Synchronize all target values from source file to XLIFF file.
+        TranslationSync::syncFrom($src, $dst->setMode('target'), false, new ConsoleLogger($output));
 
-        foreach ($dst->getKeys() as $key) {
-            if (!in_array($key, $baseKeys)) {
-                $this->writelnVerbose(
-                    $output,
-                    sprintf('Language key <info>%s</info> is not present in the source. Removing it.', $key)
-                );
-                $dst->remove($key);
-            }
-        }
+        // Synchronize all source values from base file to XLIFF file and remove obsolete keys in destination that
+        // are not present in base file anymore.
+        TranslationSync::syncFrom($base, $dst->setMode('source'), true, new ConsoleLogger($output));
     }
 
     /**
@@ -156,7 +142,7 @@ class ConvertToXliff extends ConvertBase
             $dest->setDate($time);
 
             $this->convert($output, $src, $dest, $base);
-            if (is_file($dstDir . DIRECTORY_SEPARATOR . $dstFile) || $dest->getKeys()) {
+            if (is_file($dstDir . DIRECTORY_SEPARATOR . $dstFile) || $dest->keys()) {
                 $dest->save();
             }
         }

@@ -21,6 +21,7 @@
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Convert;
 
 use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile;
+use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -76,36 +77,6 @@ class ConvertFromXliff extends ConvertBase
     }
 
     /**
-     * Convert the source file to the destination file.
-     *
-     * @param XLiffFile  $src The source XLIFF file.
-     *
-     * @param ContaoFile $dst The destination Contao file.
-     *
-     * @return bool
-     */
-    protected function convert(XLiffFile $src, ContaoFile $dst)
-    {
-        $changed = false;
-
-        foreach ($src->getKeys() as $key) {
-            if (($value = $src->getTarget($key)) !== null) {
-                if ($dst->getValue($key) != $value) {
-                    $changed = true;
-                    $dst->setValue($key, $value);
-                }
-            } else {
-                if ($dst->getValue($key) !== null) {
-                    $changed = true;
-                    $dst->removeValue($key);
-                }
-            }
-        }
-
-        return $changed;
-    }
-
-    /**
      * {@inheritDoc}
      *
      * @throws \InvalidArgumentException When an unexpected domain has been found in the xliff file.
@@ -151,14 +122,14 @@ class ConvertFromXliff extends ConvertBase
 
             $dest = new ContaoFile($dstDir . DIRECTORY_SEPARATOR . $dstFile, $logger);
 
-            $changed = $this->convert($src, $dest);
+            $changed = TranslationSync::syncFrom($src->setMode('target'), $dest, true, new ConsoleLogger($output));
 
             if ($changed) {
                 $dest->setLanguage($language);
                 $dest->setTransifexProject($this->project->getProject());
                 $dest->setLastChange($src->getDate());
 
-                if ($dest->getKeys()) {
+                if ($dest->keys()) {
                     $dest->save();
                 } else {
                     unlink($dstDir . DIRECTORY_SEPARATOR . $dstFile);

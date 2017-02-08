@@ -21,6 +21,7 @@ namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
 use CyberSpectrum\ContaoToolBox\Transifex\Project;
 use CyberSpectrum\ContaoToolBox\Transifex\TranslationResource;
+use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -171,27 +172,19 @@ class DownloadTransifex extends TransifexBase
         // Pull it.
         $data = $resource->fetchTranslation($code, $translationMode);
         if ($data) {
-            $local = $this->getLocalXliffFile($resource, $code);
+            $local  = $this->getLocalXliffFile($resource, $code);
+            $logger = new ConsoleLogger($output);
 
-            $new = new XliffFile(null, new ConsoleLogger($output));
+            $new = new XliffFile(null, $logger);
             $new->loadXML($data);
 
-            foreach ($new->getKeys() as $key) {
-                if ($value = $new->getSource($key)) {
-                    $local->setSource($key, $value);
-                    if ($value = $new->getTarget($key)) {
-                        $local->setTarget($key, $value);
-                    }
-                }
-            }
-            foreach (array_diff($new->getKeys(), $local->getKeys()) as $key) {
-                $this->writeln(
-                    $output,
-                    sprintf('Language key <info>%s</info> seems to be orphaned, please check.', $key)
-                );
-            }
+            // Update all target values.
+            TranslationSync::syncFrom($new->setMode('target'), $local->setMode('target'), false, $logger);
+            // Update all source values.
+            // TODO: refactor this to a real initialization from base values in getLocalXliffFile().
+            TranslationSync::syncFrom($new->setMode('source'), $local->setMode('source'), true, $logger);
 
-            if ($local->getKeys()) {
+            if ($local->keys()) {
                 if (!is_dir(dirname($local->getFileName()))) {
                     mkdir(dirname($local->getFileName()), 0755, true);
                 }
