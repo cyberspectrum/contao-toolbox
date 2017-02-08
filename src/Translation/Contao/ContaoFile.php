@@ -244,60 +244,6 @@ class ContaoFile extends AbstractFile
     }
 
     /**
-     * Set a value.
-     *
-     * @param string $key   The language key.
-     *
-     * @param string $value The language value.
-     *
-     * @return void
-     *
-     * @deprecated
-     */
-    public function setValue($key, $value)
-    {
-        $this->set($key, $value);
-    }
-
-    /**
-     * Retrieve a language value.
-     *
-     * @param string $key The language key.
-     *
-     * @return null|string
-     *
-     * @deprecated
-     */
-    public function getValue($key)
-    {
-        return $this->get($key);
-    }
-
-    /**
-     * Remove a language value.
-     *
-     * @param string $key The language string to remove.
-     *
-     * @return void
-     *
-     * @deprecated
-     */
-    public function removeValue($key)
-    {
-        $this->remove($key);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated
-     */
-    public function getKeys()
-    {
-        return $this->keys();
-    }
-
-    /**
      * Parse a language file into language strings.
      *
      * @return void

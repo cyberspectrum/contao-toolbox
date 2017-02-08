@@ -27,13 +27,6 @@ use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractTranslationIterator;
 class TranslationIterator extends AbstractTranslationIterator
 {
     /**
-     * The file being iterated.
-     *
-     * @var ContaoFile
-     */
-    protected $file;
-
-    /**
      * Create a new instance.
      *
      * @param ContaoFile $file The Contao file we are working on.

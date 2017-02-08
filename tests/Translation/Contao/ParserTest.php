@@ -35,7 +35,7 @@ class ParserTest extends TestCase
     public function testParseEmpty()
     {
         $file = new ContaoFile($this->getFixturesPath() . 'contao-parse1-empty-file.php');
-        $this->assertEmpty($file->getKeys());
+        $this->assertEmpty($file->keys());
     }
 
     /**
@@ -46,17 +46,17 @@ class ParserTest extends TestCase
     public function testParseFilled()
     {
         $file = new ContaoFile($this->getFixturesPath() . 'contao-parse2-filled.php');
-        $this->assertEquals(12, count($file->getKeys()));
-        $this->assertEquals('a-a-1', $file->getValue('a.a.0'));
-        $this->assertEquals('a-a-2', $file->getValue('a.a.1'));
-        $this->assertEquals('a-b-1', $file->getValue('a.b.0'));
-        $this->assertEquals('a-b-2', $file->getValue('a.b.1'));
-        $this->assertEquals('a-c-1', $file->getValue('a.c.0'));
-        $this->assertEquals('a-c-2', $file->getValue('a.c.1'));
-        $this->assertEquals('a-d-1', $file->getValue('a.d.0'));
-        $this->assertEquals('a-d-2', $file->getValue('a.d.1'));
-        $this->assertEquals('a-e-1', $file->getValue('a.e.0'));
-        $this->assertEquals('a-e-2', $file->getValue('a.e.1'));
+        $this->assertEquals(12, count($file->keys()));
+        $this->assertEquals('a-a-1', $file->get('a.a.0'));
+        $this->assertEquals('a-a-2', $file->get('a.a.1'));
+        $this->assertEquals('a-b-1', $file->get('a.b.0'));
+        $this->assertEquals('a-b-2', $file->get('a.b.1'));
+        $this->assertEquals('a-c-1', $file->get('a.c.0'));
+        $this->assertEquals('a-c-2', $file->get('a.c.1'));
+        $this->assertEquals('a-d-1', $file->get('a.d.0'));
+        $this->assertEquals('a-d-2', $file->get('a.d.1'));
+        $this->assertEquals('a-e-1', $file->get('a.e.0'));
+        $this->assertEquals('a-e-2', $file->get('a.e.1'));
     }
 
     /**
@@ -67,11 +67,11 @@ class ParserTest extends TestCase
     public function testParseShortArray()
     {
         $file = new ContaoFile($this->getFixturesPath() . 'contao-parse3-short-array.php');
-        $this->assertEquals(5, count($file->getKeys()));
-        $this->assertEquals('a-a-1', $file->getValue('a.a.0'));
-        $this->assertEquals('a-a-2', $file->getValue('a.a.1'));
-        $this->assertEquals('a-b-1', $file->getValue('a.b.0'));
-        $this->assertEquals('a-b-2', $file->getValue('a.b.1'));
-        $this->assertEquals('a-b-c', $file->getValue('a.b.c'));
+        $this->assertEquals(5, count($file->keys()));
+        $this->assertEquals('a-a-1', $file->get('a.a.0'));
+        $this->assertEquals('a-a-2', $file->get('a.a.1'));
+        $this->assertEquals('a-b-1', $file->get('a.b.0'));
+        $this->assertEquals('a-b-2', $file->get('a.b.1'));
+        $this->assertEquals('a-b-c', $file->get('a.b.c'));
     }
 }

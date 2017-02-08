@@ -162,7 +162,7 @@ class Parser implements ParserInterface
      */
     public function setValue($key, $value)
     {
-        $this->file->setValue($key, $value);
+        $this->file->set($key, $value);
     }
 
     /**
@@ -191,7 +191,7 @@ class Parser implements ParserInterface
                     $subparser = new StringValueParser($this);
                     $subparser->parse();
 
-                    $this->file->setValue(implode('.', $this->keystack), $subparser->getValue());
+                    $this->file->set(implode('.', $this->keystack), $subparser->getValue());
                 }
 
                 continue;

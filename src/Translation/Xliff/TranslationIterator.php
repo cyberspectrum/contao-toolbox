@@ -27,13 +27,6 @@ use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractTranslationIterator;
 class TranslationIterator extends AbstractTranslationIterator
 {
     /**
-     * The file we belong to.
-     *
-     * @var XliffFile
-     */
-    protected $file;
-
-    /**
      * Create a new instance.
      *
      * @param XliffFile $file The Xliff file we are working on.

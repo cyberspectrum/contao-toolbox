@@ -51,5 +51,8 @@ abstract class AbstractFile implements \IteratorAggregate, TranslationFileInterf
      *
      * @deprecated
      */
-    abstract public function getKeys();
+    public function getKeys()
+    {
+        return $this->keys();
+    }
 }

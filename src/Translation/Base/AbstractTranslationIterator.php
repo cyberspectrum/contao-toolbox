@@ -27,7 +27,7 @@ abstract class AbstractTranslationIterator implements \Iterator
     /**
      * The file we belong to.
      *
-     * @var AbstractFile
+     * @var TranslationFileInterface
      */
     protected $file;
 
@@ -48,13 +48,13 @@ abstract class AbstractTranslationIterator implements \Iterator
     /**
      * Create a new instance.
      *
-     * @param AbstractFile $file The Xliff file we are working on.
+     * @param TranslationFileInterface $file The file we are working on.
      */
-    public function __construct(AbstractFile $file)
+    public function __construct(TranslationFileInterface $file)
     {
         $this->position = 0;
         $this->file     = $file;
-        $this->keys     = $file->getKeys();
+        $this->keys     = $file->keys();
     }
 
     /**
