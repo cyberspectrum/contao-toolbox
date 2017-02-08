@@ -90,11 +90,19 @@ class TransifexBase extends CommandBase
             'Password on transifex, if empty prompt on console.',
             null
         );
+        $this->addOption(
+            'token',
+            'T',
+            InputOption::VALUE_REQUIRED,
+            'Token for transifex.',
+            null
+        );
 
         $this->setHelp(
             'NOTE: you can also specify username and password via the environment for automated jobs.' . PHP_EOL .
             'user: transifexuser=username' . PHP_EOL .
-            'pass: transifexpass=password' . PHP_EOL
+            'pass: transifexpass=password' . PHP_EOL .
+            'token: transifextoken=token' . PHP_EOL
         );
     }
 
@@ -152,8 +160,41 @@ class TransifexBase extends CommandBase
     {
         parent::initialize($input, $output);
 
-        $this->user     = $this->getUser($input, $output);
-        $this->password = $this->getPassword($input, $output);
+        $this->password = null;
+        if (null === ($this->user = $this->getToken($input, $output))) {
+            $this->user     = $this->getUser($input, $output);
+            $this->password = $this->getPassword($input, $output);
+        }
+    }
+
+    /**
+     * Retrieve the transifex token.
+     *
+     * @param InputInterface  $input  An InputInterface instance.
+     *
+     * @param OutputInterface $output An OutputInterface instance.
+     *
+     * @return string|null
+     *
+     * @throws \RuntimeException If no username could be determined..
+     */
+    private function getToken(InputInterface $input, OutputInterface $output)
+    {
+        if ($user = $input->getOption('token')) {
+            return $user;
+        }
+        if ($user = $this->getTransifexConfigValue('/token')) {
+            $this->writelnVerbose($output, 'Using transifex token specified in config.');
+
+            return $user;
+        }
+        if ($user = getenv('transifextoken')) {
+            $this->writelnVerbose($output, 'Using transifex token specified in environment.');
+
+            return $user;
+        }
+
+        return null;
     }
 
     /**
