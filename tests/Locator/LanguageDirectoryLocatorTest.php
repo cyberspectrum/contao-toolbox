@@ -17,7 +17,7 @@
  * @filesource
  */
 
-namespace CyberSpectrum\ContaoToolBox\Test\Locator;
+namespace CyberSpectrum\ContaoToolBox\Tests\Locator;
 
 use CyberSpectrum\ContaoToolBox\Locator\LanguageDirectoryLocator;
 use CyberSpectrum\ContaoToolBox\Tests\TestCase;
