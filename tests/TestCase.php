@@ -19,11 +19,31 @@
 
 namespace CyberSpectrum\ContaoToolBox\Tests;
 
+use Symfony\Component\Filesystem\Filesystem;
+
 /**
  * This class is the test base.
  */
 abstract class TestCase extends \PHPUnit_Framework_TestCase
 {
+    /**
+     * Temporary working dir.
+     *
+     * @var string
+     */
+    private $workDir;
+
+    /**
+     * {@inheritdoc}
+     */
+    public function tearDown()
+    {
+        if (isset($this->workDir)) {
+            $filesystem = new Filesystem();
+            $filesystem->remove($this->workDir);
+        }
+    }
+
     /**
      * Retrieve the path to the fixtures.
      *
@@ -33,4 +53,45 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
     {
         return __DIR__ . DIRECTORY_SEPARATOR . 'fixtures' . DIRECTORY_SEPARATOR;
     }
+
+    /**
+     * Create and return the path to a temp dir.
+     *
+     * @return string
+     */
+    protected function getTempDir()
+    {
+        if (!isset($this->workDir)) {
+            $temp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('contao-toolbox-test');
+            mkdir($temp, 0777, true);
+            $this->workDir = $temp;
+        }
+
+        return $this->workDir;
+    }
+
+    /**
+     * Retrieve the path of a temp file within the temp dir of the test.
+     *
+     * @param string $name             Optional name of the file.
+     *
+     * @param bool   $forceDirectories Optional flag if the parenting dirs should be created.
+     *
+     * @return string
+     */
+    public function getTempFile($name = '', $forceDirectories = true)
+    {
+        if ('' === $name) {
+            $name = uniqid();
+        }
+
+        $path = $this->getTempDir() . DIRECTORY_SEPARATOR . $name;
+
+        if ($forceDirectories && !is_dir($dir = dirname($path))) {
+            mkdir($dir, 0777, true);
+        }
+
+        return $path;
+    }
+
 }
