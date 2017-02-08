@@ -22,7 +22,7 @@ namespace CyberSpectrum\ContaoToolBox\Translation\Contao\PhpParser;
 /**
  * This class parses a string value.
  */
-class StringValue extends AbstractParser
+class StringValueParser extends AbstractParser
 {
     /**
      * The values.

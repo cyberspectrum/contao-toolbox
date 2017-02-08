@@ -100,7 +100,7 @@ class ArrayParser extends AbstractParser
      */
     private function parseItem()
     {
-        $subparser = new StringValue($this->parser, ($this->level + 1));
+        $subparser = new StringValueParser($this->parser, ($this->level + 1));
         $subparser->parse();
 
         $key = $subparser->getValue();
@@ -155,7 +155,7 @@ class ArrayParser extends AbstractParser
         } else {
             // String item with key.
             $this->debug('String item with key.');
-            $subparser = new StringValue($this->parser, ($this->level + 1));
+            $subparser = new StringValueParser($this->parser, ($this->level + 1));
             $subparser->parse();
 
             $this->parser->setValue($this->parser->getStack(), $subparser->getValue());

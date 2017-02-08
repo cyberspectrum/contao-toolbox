@@ -188,7 +188,7 @@ class Parser implements ParserInterface
                     $arrayParser->parse();
                     $this->debug('After array. ' . var_export($this->getToken(), true));
                 } else {
-                    $subparser = new StringValue($this);
+                    $subparser = new StringValueParser($this);
                     $subparser->parse();
 
                     $this->file->setValue(implode('.', $this->keystack), $subparser->getValue());
@@ -216,7 +216,7 @@ class Parser implements ParserInterface
     {
         $this->getNextToken();
 
-        $subparser = new StringValue($this);
+        $subparser = new StringValueParser($this);
         $subparser->parse();
 
         if ($subparser->getValue() === null) {
