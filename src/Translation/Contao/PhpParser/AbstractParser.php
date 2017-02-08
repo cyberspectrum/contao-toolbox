@@ -52,9 +52,13 @@ abstract class AbstractParser implements ParserInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Pass a debug message to the parenting parser.
+     *
+     * @param string $message The debug message.
+     *
+     * @return void
      */
-    public function debug($message)
+    protected function debug($message)
     {
         $this->parser->debug(__CLASS__ . ' ' . $this->level . ' ' . $message);
     }

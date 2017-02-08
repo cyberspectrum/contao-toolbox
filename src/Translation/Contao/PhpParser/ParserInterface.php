@@ -25,15 +25,6 @@ namespace CyberSpectrum\ContaoToolBox\Translation\Contao\PhpParser;
 interface ParserInterface
 {
     /**
-     * Pass a debug message to the parenting parser.
-     *
-     * @param string $message The debug message.
-     *
-     * @return void
-     */
-    public function debug($message);
-
-    /**
      * Push a value on the stack of the parenting parser.
      *
      * @param mixed $value The value to push on the stack.

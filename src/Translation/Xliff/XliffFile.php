@@ -20,6 +20,7 @@
 namespace CyberSpectrum\ContaoToolBox\Translation\Xliff;
 
 use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractFile;
+use Psr\Log\LoggerInterface;
 
 /**
  * This class represents a XLIFF translation file.
@@ -83,13 +84,13 @@ class XliffFile extends AbstractFile
     /**
      * Create a new instance.
      *
-     * @param string $filename The filename to use.
+     * @param string          $filename The filename to use.
      *
-     * @param bool   $debug    The debug flag. True to enable debugging, false otherwise.
+     * @param LoggerInterface $logger   The logger to use.
      */
-    public function __construct($filename, $debug = false)
+    public function __construct($filename, LoggerInterface $logger = null)
     {
-        parent::__construct($debug);
+        parent::__construct($logger);
         $this->filename = $filename;
 
         $this->doc                     = new \DOMDocument('1.0', 'UTF-8');

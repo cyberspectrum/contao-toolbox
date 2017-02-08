@@ -21,6 +21,7 @@
 namespace CyberSpectrum\ContaoToolBox\Translation\Contao\PhpParser;
 
 use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile;
+use Psr\Log\LoggerInterface;
 
 /**
  * This class implements a generic parser.
@@ -33,6 +34,13 @@ class Parser implements ParserInterface
      * @var ContaoFile
      */
     protected $file;
+
+    /**
+     * The logger to use.
+     *
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * The tokens contained in the parser.
@@ -72,11 +80,14 @@ class Parser implements ParserInterface
     /**
      * Create a new instance.
      *
-     * @param ContaoFile $file The file to parse.
+     * @param ContaoFile      $file   The file to parse.
+     *
+     * @param LoggerInterface $logger The logger to use.
      */
-    public function __construct($file)
+    public function __construct(ContaoFile $file, LoggerInterface $logger)
     {
-        $this->file = $file;
+        $this->file   = $file;
+        $this->logger = $logger;
     }
 
     /**
@@ -88,7 +99,7 @@ class Parser implements ParserInterface
      */
     public function debug($message)
     {
-        $this->file->debug($message);
+        $this->logger->debug($message);
     }
 
     /**

@@ -19,6 +19,9 @@
 
 namespace CyberSpectrum\ContaoToolBox\Translation\Base;
 
+use CyberSpectrum\ContaoToolBox\Util\DelegatingLogger;
+use Psr\Log\LoggerInterface;
+
 /**
  * This class provides an abstract base implementation of translation files.
  */
@@ -27,25 +30,18 @@ abstract class AbstractFile implements \IteratorAggregate
     /**
      * Debug flag.
      *
-     * @var bool
+     * @var LoggerInterface
      */
-    private $debug = false;
-
-    /**
-     * The debug messages.
-     *
-     * @var string[]
-     */
-    private $debugMessages = array();
+    protected $logger;
 
     /**
      * Create a new instance.
      *
-     * @param bool $debug The debug flag. True to enable debugging, false otherwise.
+     * @param LoggerInterface $logger The logger to use.
      */
-    public function __construct($debug = false)
+    public function __construct(LoggerInterface $logger = null)
     {
-        $this->debug = $debug;
+        $this->logger = new DelegatingLogger($logger);
     }
 
     /**
@@ -54,44 +50,4 @@ abstract class AbstractFile implements \IteratorAggregate
      * @return array
      */
     abstract public function getKeys();
-
-    /**
-     * Write a debug message.
-     *
-     * @param string $message The message.
-     *
-     * @return AbstractFile
-     */
-    public function debug($message)
-    {
-        if ($this->debug) {
-            $this->debugMessages[] = $message;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Enable or disable debugging.
-     *
-     * @param bool $enabled The new value for debugging.
-     *
-     * @return AbstractFile
-     */
-    public function setDebugging($enabled = true)
-    {
-        $this->debug = $enabled;
-
-        return $this;
-    }
-
-    /**
-     * Retrieve the debug messages.
-     *
-     * @return string[]
-     */
-    public function getDebugMessages()
-    {
-        return $this->debugMessages;
-    }
 }

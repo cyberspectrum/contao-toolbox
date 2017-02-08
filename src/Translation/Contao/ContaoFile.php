@@ -21,6 +21,7 @@ namespace CyberSpectrum\ContaoToolBox\Translation\Contao;
 
 use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractFile;
 use CyberSpectrum\ContaoToolBox\Translation\Contao\PhpParser\Parser;
+use Psr\Log\LoggerInterface;
 
 /**
  * This class implements a Contao language file handler.
@@ -79,13 +80,13 @@ class ContaoFile extends AbstractFile
     /**
      * Create a new instance.
      *
-     * @param string $filename The filename.
+     * @param string          $filename The filename.
      *
-     * @param bool   $debug    The debug flag. True to enable debugging, false otherwise.
+     * @param LoggerInterface $logger   The logger to use.
      */
-    public function __construct($filename, $debug = false)
+    public function __construct($filename, LoggerInterface $logger = null)
     {
-        parent::__construct($debug);
+        parent::__construct($logger);
         $this->filename = $filename;
         $this->language = basename(dirname($filename));
 
@@ -213,7 +214,7 @@ class ContaoFile extends AbstractFile
     public function setValue($key, $value)
     {
         $this->langstrings[$key] = $value;
-        $this->debug('SetValue ' . $key . ' => ' . $value);
+        $this->logger->debug('ContaoFile::setValue {key} => {value}', ['key' => $key, 'value' => $value]);
     }
 
     /**
@@ -276,7 +277,7 @@ class ContaoFile extends AbstractFile
         }
         $this->langstrings = array();
 
-        $parser = new Parser($this);
+        $parser = new Parser($this, $this->logger);
         $parser->setContent($data);
         $parser->parse();
     }
