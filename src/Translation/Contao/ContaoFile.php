@@ -20,6 +20,7 @@
 namespace CyberSpectrum\ContaoToolBox\Translation\Contao;
 
 use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractFile;
+use CyberSpectrum\ContaoToolBox\Translation\Contao\PhpParser\Parser;
 
 /**
  * This class implements a Contao language file handler.

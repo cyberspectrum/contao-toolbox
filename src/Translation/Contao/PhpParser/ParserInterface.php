@@ -17,7 +17,7 @@
  * @filesource
  */
 
-namespace CyberSpectrum\ContaoToolBox\Translation\Contao;
+namespace CyberSpectrum\ContaoToolBox\Translation\Contao\PhpParser;
 
 /**
  * This interface describes generic parsers.
