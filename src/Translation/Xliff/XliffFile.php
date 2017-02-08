@@ -92,11 +92,11 @@ class XliffFile extends AbstractFile
     /**
      * Create a new instance.
      *
-     * @param string          $filename The filename to use.
+     * @param string|null     $filename The filename to use or null when none should be loaded.
      *
      * @param LoggerInterface $logger   The logger to use.
      */
-    public function __construct($filename, LoggerInterface $logger = null)
+    public function __construct($filename = null, LoggerInterface $logger = null)
     {
         parent::__construct($logger);
         $this->filename = $filename;
@@ -233,7 +233,7 @@ class XliffFile extends AbstractFile
     /**
      * Load the file from disk.
      *
-     * @param string $filename The filename.
+     * @param string|null $filename The filename.
      *
      * @return void
      */
