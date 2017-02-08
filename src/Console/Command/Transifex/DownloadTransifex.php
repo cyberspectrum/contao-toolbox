@@ -24,6 +24,7 @@ use CyberSpectrum\ContaoToolBox\Transifex\TranslationResource;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -56,7 +57,6 @@ class DownloadTransifex extends TransifexBase
      */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
-
         parent::initialize($input, $output);
 
         $translationMode = $input->getOption('mode');
@@ -173,7 +173,7 @@ class DownloadTransifex extends TransifexBase
         if ($data) {
             $local = $this->getLocalXliffFile($resource, $code);
 
-            $new = new XliffFile(null);
+            $new = new XliffFile(null, new ConsoleLogger($output));
             $new->loadXML($data);
 
             foreach ($new->getKeys() as $key) {
@@ -238,6 +238,7 @@ class DownloadTransifex extends TransifexBase
             substr($languageCode, 0, 2) . DIRECTORY_SEPARATOR .
             $domain . '.xlf';
 
+        // FIXME: pass logger here.
         $local = new XliffFile($localFile);
         if (!file_exists($localFile)) {
             // Set base values.

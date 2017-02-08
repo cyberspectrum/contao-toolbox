@@ -22,6 +22,7 @@ namespace CyberSpectrum\ContaoToolBox\Console\Command\Convert;
 
 use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -113,6 +114,7 @@ class ConvertFromXliff extends ConvertBase
     {
         $this->writeln($output, sprintf('processing language: <info>%s</info>...', $language));
 
+        $logger           = new ConsoleLogger($output);
         $destinationFiles = array();
         foreach ($this->baseFiles as $file) {
             $this->writelnVerbose($output, sprintf('processing file: <info>%s</info>...', $file));
@@ -124,7 +126,7 @@ class ConvertFromXliff extends ConvertBase
                 continue;
             }
 
-            $src = new XliffFile($srcFile);
+            $src = new XliffFile($srcFile, $logger);
 
             $domain = $src->getOriginal();
 
@@ -147,7 +149,7 @@ class ConvertFromXliff extends ConvertBase
                 mkdir($dstDir, 0755, true);
             }
 
-            $dest = new ContaoFile($dstDir . DIRECTORY_SEPARATOR . $dstFile);
+            $dest = new ContaoFile($dstDir . DIRECTORY_SEPARATOR . $dstFile, $logger);
 
             $changed = $this->convert($src, $dest);
 

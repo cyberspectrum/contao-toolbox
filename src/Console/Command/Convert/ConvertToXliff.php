@@ -22,6 +22,7 @@ namespace CyberSpectrum\ContaoToolBox\Console\Command\Convert;
 
 use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile as ContaoFile;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -119,6 +120,8 @@ class ConvertToXliff extends ConvertBase
     {
         $this->writeln($output, sprintf('processing language: <info>%s</info>...', $language));
 
+        $logger = new ConsoleLogger($output);
+
         $destinationFiles = array();
         foreach ($this->baseFiles as $file) {
             $this->writelnVerbose($output, sprintf('processing file: <info>%s</info>...', $file));
@@ -132,15 +135,15 @@ class ConvertToXliff extends ConvertBase
             $dstFile            = $domain . '.xlf';
             $destinationFiles[] = $dstFile;
 
-            $src  = new ContaoFile($srcFile, ($output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG));
-            $base = new ContaoFile($basFile, ($output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG));
+            $src  = new ContaoFile($srcFile, $logger);
+            $base = new ContaoFile($basFile, $logger);
 
             $dstDir = $this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language;
             if (!is_dir($dstDir)) {
                 mkdir($dstDir, 0755, true);
             }
 
-            $dest = new XliffFile($dstDir . DIRECTORY_SEPARATOR . $dstFile);
+            $dest = new XliffFile($dstDir . DIRECTORY_SEPARATOR . $dstFile, $logger);
             $dest->setDataType('php');
             $dest->setSrcLang($this->project->getBaseLanguage());
             $dest->setTgtLang($language);
@@ -155,11 +158,6 @@ class ConvertToXliff extends ConvertBase
             $this->convert($output, $src, $dest, $base);
             if (is_file($dstDir . DIRECTORY_SEPARATOR . $dstFile) || $dest->getKeys()) {
                 $dest->save();
-            }
-
-            if ($output->getVerbosity() >= OutputInterface::VERBOSITY_DEBUG) {
-                $output->writeln($src->getDebugMessages());
-                $output->writeln($base->getDebugMessages());
             }
         }
 
