@@ -98,6 +98,47 @@ class ContaoFile extends AbstractFile
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function keys()
+    {
+        return array_keys($this->langstrings);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return ContaoFile
+     */
+    public function remove($key)
+    {
+        unset($this->langstrings[$key]);
+
+        return $this;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return ContaoFile
+     */
+    public function set($key, $value)
+    {
+        $this->langstrings[$key] = $value;
+        $this->logger->debug('ContaoFile::setValue {key} => {value}', ['key' => $key, 'value' => $value]);
+
+        return $this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function get($key)
+    {
+        return isset($this->langstrings[$key]) ? $this->langstrings[$key] : null;
+    }
+
+    /**
      * Set the project name that this language file belongs to at transifex.
      *
      * @param string $name The project name at transifex, will get used to generate the doc comment url.
@@ -210,11 +251,12 @@ class ContaoFile extends AbstractFile
      * @param string $value The language value.
      *
      * @return void
+     *
+     * @deprecated
      */
     public function setValue($key, $value)
     {
-        $this->langstrings[$key] = $value;
-        $this->logger->debug('ContaoFile::setValue {key} => {value}', ['key' => $key, 'value' => $value]);
+        $this->set($key, $value);
     }
 
     /**
@@ -223,10 +265,12 @@ class ContaoFile extends AbstractFile
      * @param string $key The language key.
      *
      * @return null|string
+     *
+     * @deprecated
      */
     public function getValue($key)
     {
-        return isset($this->langstrings[$key]) ? $this->langstrings[$key] : null;
+        return $this->get($key);
     }
 
     /**
@@ -235,18 +279,22 @@ class ContaoFile extends AbstractFile
      * @param string $key The language string to remove.
      *
      * @return void
+     *
+     * @deprecated
      */
     public function removeValue($key)
     {
-        unset($this->langstrings[$key]);
+        $this->remove($key);
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @deprecated
      */
     public function getKeys()
     {
-        return array_keys($this->langstrings);
+        return $this->keys();
     }
 
     /**

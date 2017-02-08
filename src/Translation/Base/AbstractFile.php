@@ -25,7 +25,7 @@ use Psr\Log\LoggerInterface;
 /**
  * This class provides an abstract base implementation of translation files.
  */
-abstract class AbstractFile implements \IteratorAggregate
+abstract class AbstractFile implements \IteratorAggregate, TranslationFileInterface
 {
     /**
      * Debug flag.
@@ -48,6 +48,8 @@ abstract class AbstractFile implements \IteratorAggregate
      * Retrieve a list of all language keys.
      *
      * @return array
+     *
+     * @deprecated
      */
     abstract public function getKeys();
 }

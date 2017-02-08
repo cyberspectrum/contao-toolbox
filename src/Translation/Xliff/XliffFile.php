@@ -20,6 +20,7 @@
 namespace CyberSpectrum\ContaoToolBox\Translation\Xliff;
 
 use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractFile;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -82,6 +83,13 @@ class XliffFile extends AbstractFile
     protected $date;
 
     /**
+     * The mode we are working in, either "source" or "target".
+     *
+     * @var string
+     */
+    private $mode;
+
+    /**
      * Create a new instance.
      *
      * @param string          $filename The filename to use.
@@ -98,6 +106,106 @@ class XliffFile extends AbstractFile
         $this->doc->formatOutput       = true;
 
         $this->load($filename);
+        $this->mode = 'target';
+    }
+
+    /**
+     * Switch to the passed manipulation mode.
+     *
+     * @param string $mode The mode to use (either 'source' or 'target').
+     *
+     * @return XliffFile
+     *
+     * @throws InvalidArgumentException When an invalid mode has been passed.
+     */
+    public function setMode($mode)
+    {
+        if ('source' !== $mode && 'target' !== $mode) {
+            throw new InvalidArgumentException('Invalid mode provided ' . $mode);
+        }
+
+        $this->mode = $mode;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws \RuntimeException When an empty id is encountered.
+     */
+    public function keys()
+    {
+        /** @var \DOMNodeList $tmp */
+        $transUnits = $this->getXPath()->query('/xliff:xliff/xliff:file/xliff:body/xliff:trans-unit');
+
+        $result = [];
+
+        if ($transUnits->length > 0) {
+            /** @var \DOMElement $element */
+            foreach ($transUnits as $element) {
+                if (!$this->getAttribute($element, 'id')) {
+                    throw new \RuntimeException('Empty Id: ' . var_export($element, true));
+                }
+                $result[] = (string) $this->getAttribute($element, 'id');
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return XliffFile
+     */
+    public function remove($key)
+    {
+        $unit = $this->searchForId($key);
+        if ($unit) {
+            $unit->parentNode->removeChild($unit);
+        }
+
+        return $this;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return XliffFile
+     */
+    public function set($key, $value)
+    {
+        $unit   = $this->searchForId($key, true);
+        $source = $this->getXPathFirstItem('xliff:' . $this->mode, $unit);
+
+        // If already present check
+        if (null === $source) {
+            $source = $unit->appendChild($this->doc->createElementNS(self::NS, $this->mode));
+        } elseif ($source->firstChild) {
+            // If already present, we have to remove the textnode if one exists as otherwise the value will get
+            // appended.
+            $source->removeChild($source->firstChild);
+        }
+
+        $source->appendChild($this->doc->createTextNode($value));
+
+        return $this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function get($key)
+    {
+        $unit = $this->searchForId($key);
+
+        $target = $this->getXPathFirstItem('xliff:' . $this->mode, $unit);
+        if ($target && $target->firstChild) {
+            return $target->firstChild->nodeValue;
+        }
+
+        return null;
     }
 
     /**
@@ -457,23 +565,15 @@ class XliffFile extends AbstractFile
      * @param string $value The value to use.
      *
      * @return void
+     *
+     * @deprecated
      */
     public function setSource($key, $value)
     {
-        $unit = $this->searchForId($key, true);
-
-        $source = $this->getXPathFirstItem('xliff:source', $unit);
-
-        // If already present check
-        if ($source === null) {
-            $source = $unit->appendChild($this->doc->createElementNS(self::NS, 'source'));
-        } elseif ($source->firstChild) {
-            // If already present, we have to remove the textnode if one exists as otherwise the value will get
-            // appended.
-            $source->removeChild($source->firstChild);
-        }
-
-        $source->appendChild($this->doc->createTextNode($value));
+        $mode = $this->mode;
+        $this->setMode('source');
+        $this->set($key, $value);
+        $this->setMode($mode);
     }
 
     /**
@@ -482,17 +582,17 @@ class XliffFile extends AbstractFile
      * @param string $key The key to search for.
      *
      * @return null|string
+     *
+     * @deprecated
      */
     public function getSource($key)
     {
-        $unit = $this->searchForId($key);
+        $mode = $this->mode;
+        $this->setMode('source');
+        $value = $this->get($key);
+        $this->setMode($mode);
 
-        $source = $this->getXPathFirstItem('xliff:source', $unit);
-        if ($source && $source->firstChild) {
-            return $source->firstChild->nodeValue;
-        }
-
-        return null;
+        return $value;
     }
 
     /**
@@ -503,23 +603,15 @@ class XliffFile extends AbstractFile
      * @param string $value The value to use.
      *
      * @return void
+     *
+     * @deprecated
      */
     public function setTarget($key, $value)
     {
-        $unit = $this->searchForId($key, true);
-
-        $target = $this->getXPathFirstItem('xliff:target', $unit);
-
-        // If already present check.
-        if ($target === null) {
-            $target = $unit->appendChild($this->doc->createElementNS(self::NS, 'target'));
-        } elseif ($target->firstChild) {
-            // If already present, we have to remove the textnode if one exists as otherwise the value will get
-            // appended.
-            $target->removeChild($target->firstChild);
-        }
-
-        $target->appendChild($this->doc->createTextNode($value));
+        $mode = $this->mode;
+        $this->setMode('target');
+        $this->set($key, $value);
+        $this->setMode($mode);
     }
 
     /**
@@ -528,34 +620,17 @@ class XliffFile extends AbstractFile
      * @param string $key The key to search for.
      *
      * @return null|string
+     *
+     * @deprecated
      */
     public function getTarget($key)
     {
-        $unit = $this->searchForId($key);
+        $mode = $this->mode;
+        $this->setMode('target');
+        $value = $this->get($key);
+        $this->setMode($mode);
 
-        $target = $this->getXPathFirstItem('xliff:target', $unit);
-        if ($target && $target->firstChild) {
-            return $target->firstChild->nodeValue;
-        }
-
-        return null;
-    }
-
-    /**
-     * Search for an entry with the given id and remove it if found.
-     *
-     * @param string $key The language key to be searched.
-     *
-     * @return XliffFile
-     */
-    public function remove($key)
-    {
-        $unit = $this->searchForId($key);
-        if ($unit) {
-            $unit->parentNode->removeChild($unit);
-        }
-
-        return $this;
+        return $value;
     }
 
     /**
@@ -564,25 +639,12 @@ class XliffFile extends AbstractFile
      * @return array
      *
      * @throws \Exception When an id is empty.
+     *
+     * @deprecated
      */
     public function getKeys()
     {
-        /** @var \DOMNodeList $tmp */
-        $transUnits = $this->getXPath()->query('/xliff:xliff/xliff:file/xliff:body/xliff:trans-unit');
-
-        $result = array();
-
-        if ($transUnits->length > 0) {
-            /** @var \DOMElement $element */
-            foreach ($transUnits as $element) {
-                if (!$this->getAttribute($element, 'id')) {
-                    throw new \Exception('Empty Id: ' . var_export($element, true));
-                }
-                $result[] = (string) $this->getAttribute($element, 'id');
-            }
-        }
-
-        return $result;
+        return $this->keys();
     }
 
     /**
