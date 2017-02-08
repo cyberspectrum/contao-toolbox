@@ -46,8 +46,6 @@ class ArrayParser extends AbstractParser
      */
     public function parse()
     {
-        $this->debug(' - enter.');
-
         if ($this->tokenIs(T_ARRAY)) {
             $this->getNextToken();
 
@@ -75,7 +73,6 @@ class ArrayParser extends AbstractParser
                     continue;
                 }
                 if ($this->tokenIs(')')) {
-                    $this->debug('closing bracket.');
                     $this->getNextToken();
 
                     break;
@@ -88,7 +85,6 @@ class ArrayParser extends AbstractParser
                 break;
             }
         }
-        $this->debug(' - exit.');
     }
 
     /**
@@ -105,13 +101,13 @@ class ArrayParser extends AbstractParser
 
         $key = $subparser->getValue();
 
-        $this->debug('key: ' . var_export($key, true));
 
         if ($this->tokenIs(T_DOUBLE_ARROW)) {
             // We MUST have an key when double arrow is encountered.
             if ($key === null) {
                 $this->bailUnexpectedToken();
             }
+            $this->debug('key: ' . var_export($key, true));
 
             $this->pushStack($key);
             $this->parseValue();
@@ -129,7 +125,6 @@ class ArrayParser extends AbstractParser
             return true;
         }
         if ($this->tokenIs(')') || $this->tokenIs(']')) {
-            $this->debug('closing bracket.');
             $this->getNextToken();
 
             return false;

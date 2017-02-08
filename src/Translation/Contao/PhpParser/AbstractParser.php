@@ -60,7 +60,7 @@ abstract class AbstractParser implements ParserInterface
      */
     protected function debug($message)
     {
-        $this->parser->debug(__CLASS__ . ' ' . $this->level . ' ' . $message);
+        $this->parser->debug(static::class . ' ' . $this->level . ' ' . $message);
     }
 
     /**

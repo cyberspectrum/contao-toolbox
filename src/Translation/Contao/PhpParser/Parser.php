@@ -186,7 +186,6 @@ class Parser implements ParserInterface
                 if ($this->tokenIs(T_ARRAY) || $this->tokenIs('[')) {
                     $arrayParser = new ArrayParser($this, 1);
                     $arrayParser->parse();
-                    $this->debug('After array. ' . var_export($this->getToken(), true));
                 } else {
                     $subparser = new StringValueParser($this);
                     $subparser->parse();

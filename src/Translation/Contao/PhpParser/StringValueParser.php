@@ -36,8 +36,6 @@ class StringValueParser extends AbstractParser
      */
     public function parse()
     {
-        $this->debug(' - enter.');
-
         while (true) {
             // String concatenation.
             if ($this->isIgnoredToken()) {
@@ -72,7 +70,6 @@ class StringValueParser extends AbstractParser
 
             $this->bailUnexpectedToken();
         }
-        $this->debug(' - exit.');
     }
 
     /**
