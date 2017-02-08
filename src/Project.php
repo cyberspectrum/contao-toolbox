@@ -29,49 +29,49 @@ class Project
      *
      * @var string
      */
-    private $project;
+    private $project = '';
 
     /**
      * The prefix to apply to all language files.
      *
      * @var string
      */
-    private $prefix;
+    private $prefix = '';
 
     /**
      * Location of the transifex (xliff) directories.
      *
      * @var string
      */
-    private $xliffDirectory;
+    private $xliffDirectory = '';
 
     /**
      * Location of the contao language directories.
      *
      * @var string
      */
-    private $contaoDirectory;
+    private $contaoDirectory = '';
 
     /**
      * Name of the base language (i.e. en).
      *
      * @var string
      */
-    private $baseLanguage;
+    private $baseLanguage = '';
 
     /**
      * List of the other languages.
      *
      * @var string[]
      */
-    private $languages;
+    private $languages = [];
 
     /**
      * Names of files to skip.
      *
      * @var string[]
      */
-    protected $skipFiles;
+    protected $skipFiles = [];
 
     /**
      * Retrieve project
