@@ -124,7 +124,10 @@ class XliffFile extends AbstractFile
             throw new InvalidArgumentException('Invalid mode provided ' . $mode);
         }
 
-        $this->mode = $mode;
+        if ($mode !== $this->mode) {
+            $this->mode = $mode;
+            $this->logger->debug('Switched XLIFF context to {mode}', ['mode' => $mode]);
+        }
 
         return $this;
     }
