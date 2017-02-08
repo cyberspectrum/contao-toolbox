@@ -365,7 +365,7 @@ class ContaoFile extends AbstractFile
             $buffer .= sprintf(
                 '%s = %s;' . PHP_EOL,
                 $prefix . str_repeat(' ', ($maxlen - strlen($prefix))),
-                var_export($this->getValue($key), true)
+                var_export($this->get($key), true)
             );
         }
         $buffer  .= PHP_EOL;

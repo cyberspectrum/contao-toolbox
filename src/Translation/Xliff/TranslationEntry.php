@@ -58,7 +58,10 @@ class TranslationEntry extends AbstractTranslationEntry
      */
     public function setSource($value)
     {
-        $this->doc->setSource($this->getKey(), $value);
+        $mode = $this->doc->getMode();
+        $this->doc->setMode('source');
+        $this->doc->set($this->getKey(), $value);
+        $this->doc->setMode($mode);
 
         return $this;
     }
@@ -70,7 +73,12 @@ class TranslationEntry extends AbstractTranslationEntry
      */
     public function getSource()
     {
-        return $this->doc->getSource($this->getKey());
+        $mode = $this->doc->getMode();
+        $this->doc->setMode('source');
+        $value = $this->doc->get($this->getKey());
+        $this->doc->setMode($mode);
+
+        return $value;
     }
 
     /**
@@ -82,7 +90,10 @@ class TranslationEntry extends AbstractTranslationEntry
      */
     public function setTarget($value)
     {
-        $this->doc->setTarget($this->getKey(), $value);
+        $mode = $this->doc->getMode();
+        $this->doc->setMode('target');
+        $this->doc->set($this->getKey(), $value);
+        $this->doc->setMode($mode);
 
         return $this;
     }
@@ -94,6 +105,11 @@ class TranslationEntry extends AbstractTranslationEntry
      */
     public function getTarget()
     {
-        return $this->doc->getTarget($this->getKey());
+        $mode = $this->doc->getMode();
+        $this->doc->setMode('target');
+        $value = $this->doc->get($this->getKey());
+        $this->doc->setMode($mode);
+
+        return $value;
     }
 }

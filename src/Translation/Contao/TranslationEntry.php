@@ -58,7 +58,7 @@ class TranslationEntry extends AbstractTranslationEntry
      */
     public function setValue($value)
     {
-        $this->doc->setValue($this->getKey(), $value);
+        $this->doc->set($this->getKey(), $value);
 
         return $this;
     }
@@ -70,6 +70,6 @@ class TranslationEntry extends AbstractTranslationEntry
      */
     public function getValue()
     {
-        return $this->doc->getValue($this->getKey());
+        return $this->doc->get($this->getKey());
     }
 }

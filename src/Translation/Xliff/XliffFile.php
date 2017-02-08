@@ -130,6 +130,16 @@ class XliffFile extends AbstractFile
     }
 
     /**
+     * Retrieve the current file mode.
+     *
+     * @return string
+     */
+    public function getMode()
+    {
+        return $this->mode;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @throws \RuntimeException When an empty id is encountered.
