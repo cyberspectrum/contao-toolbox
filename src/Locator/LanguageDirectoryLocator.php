@@ -80,15 +80,45 @@ class LanguageDirectoryLocator
                 continue;
             }
 
-            if ((strlen($item) == 2) && ((!$filter) || in_array($item, $filter))) {
+            if ($this->isValidLanguageDirectory($item) && !$this->isFiltered($item, $filter)) {
                 $matches[] = $item;
                 $this->logger->info('using {dir}', ['dir' => $item]);
             } else {
-                $this->logger->info('using {dir}', ['dir' => $item]);
+                $this->logger->info('not using {dir}', ['dir' => $item]);
             }
             $iterator->next();
         } while ($iterator->valid());
 
         return $matches;
+    }
+
+    /**
+     * Test if the passed value is a valid handle for a language directory.
+     *
+     * @param string $dirName The name.
+     *
+     * @return bool
+     */
+    private function isValidLanguageDirectory($dirName)
+    {
+        return preg_match('#^[a-z]{2}([-_][a-zA-Z]{0,2})?$#', $dirName);
+    }
+
+    /**
+     * Test if the passed name matches the filter.
+     *
+     * @param string   $dirName The directory name.
+     *
+     * @param string[] $filter  The filtered names.
+     *
+     * @return bool
+     */
+    private function isFiltered($dirName, $filter)
+    {
+        if (empty($filter)) {
+            return false;
+        }
+
+        return in_array($dirName, $filter);
     }
 }
