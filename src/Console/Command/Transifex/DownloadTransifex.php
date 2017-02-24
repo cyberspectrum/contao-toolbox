@@ -19,10 +19,10 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
-use CyberSpectrum\ContaoToolBox\Transifex\Project;
-use CyberSpectrum\ContaoToolBox\Transifex\TranslationResource;
 use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
+use CyberSpectrum\PhpTransifex\Model\ResourceModel;
+use CyberSpectrum\PhpTransifex\PhpTransifex;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
@@ -93,57 +93,54 @@ class DownloadTransifex extends TransifexBase
 
         $allLanguages = ($input->getArgument('languages') == 'all');
 
-        $project = new Project($this->getApi());
+        $transifex = new PhpTransifex($this->getApi());
+        $project   = $transifex->project($this->project->getProject());
 
-        $project->setSlug($this->project->getProject());
+        $resources = $project->resources();
 
-        $resources = $project->getResources();
-
-        foreach ($resources as $resource) {
-            $this->handleResource($resource, $translationMode, $allLanguages, $output);
+        foreach ($resources->names() as $resourceName) {
+            $this->handleResource($resources->get($resourceName), $translationMode, $allLanguages, $output);
         }
     }
 
     /**
      * Handle a single resource.
      *
-     * @param TranslationResource $resource        The resource to process.
+     * @param ResourceModel   $resource        The resource to process.
      *
-     * @param string              $translationMode The translation mode.
+     * @param string          $translationMode The translation mode.
      *
-     * @param bool                $allLanguages    Boolean flag if all languages shall be fetched.
+     * @param bool            $allLanguages    Boolean flag if all languages shall be fetched.
      *
-     * @param OutputInterface     $output          The output interface to use.
+     * @param OutputInterface $output          The output interface to use.
      *
      * @return void
      */
     private function handleResource(
-        TranslationResource $resource,
+        ResourceModel $resource,
         $translationMode,
         $allLanguages,
         OutputInterface $output
     ) {
         $prefix = $this->project->getPrefix();
-        if (substr($resource->getSlug(), 0, strlen($prefix)) != $prefix) {
+        if (substr($resource->slug(), 0, strlen($prefix)) != $prefix) {
             $this->writelnVerbose(
                 $output,
                 sprintf(
                     'Received resource <info>%s</info> is not for this repository, ignored.',
-                    $resource->getSlug()
+                    $resource->slug()
                 )
             );
             return;
         }
-        $this->writeln($output, sprintf('Processing resource <info>%s</info>', $resource->getSlug()));
+        $this->writeln($output, sprintf('Processing resource <info>%s</info>', $resource->slug()));
 
         $this->writelnVerbose(
             $output,
-            sprintf('Polling languages from resource <info>%s</info>', $resource->getSlug())
+            sprintf('Polling languages from resource <info>%s</info>', $resource->slug())
         );
-        $resource->fetchDetails();
 
-        foreach (array_keys($resource->getAvailableLanguages()) as $code) {
-            // We are using 2char iso 639-1 in Contao - what a pity.
+        foreach ($resource->translations()->codes() as $code) {
             if (!$this->isHandlingLanguage($code, $allLanguages)) {
                 $this->writelnVerbose($output, sprintf('skipping language <info>%s</info>', $code));
                 continue;
@@ -156,21 +153,21 @@ class DownloadTransifex extends TransifexBase
     /**
      * Handle a language for a resource.
      *
-     * @param TranslationResource $resource        The resource to process.
+     * @param ResourceModel   $resource        The resource to process.
      *
-     * @param string              $code            The language code.
+     * @param string          $code            The language code.
      *
-     * @param string              $translationMode The translation mode.
+     * @param string          $translationMode The translation mode.
      *
-     * @param OutputInterface     $output          The output interface to use.
+     * @param OutputInterface $output          The output interface to use.
      *
      * @return void
      */
-    private function handleLanguage(TranslationResource $resource, $code, $translationMode, OutputInterface $output)
+    private function handleLanguage(ResourceModel $resource, $code, $translationMode, OutputInterface $output)
     {
         $this->writeln($output, sprintf('Updating language <info>%s</info>', $code));
         // Pull it.
-        $data = $resource->fetchTranslation($code, $translationMode);
+        $data = $resource->translations()->get($code)->contents($translationMode);
         if ($data) {
             $local  = $this->getLocalXliffFile($resource, $code);
             $logger = new ConsoleLogger($output);
@@ -212,23 +209,23 @@ class DownloadTransifex extends TransifexBase
             return true;
         }
 
-        return in_array(substr($code, 0, 2), $this->project->getLanguages());
+        return in_array($code, $this->project->getLanguages());
     }
 
     /**
      * Create a xliff instance for the passed resource.
      *
-     * @param TranslationResource $resource     The resource.
+     * @param ResourceModel $resource     The resource.
      *
-     * @param string              $languageCode The language code.
+     * @param string        $languageCode The language code.
      *
      * @return XliffFile
      */
-    private function getLocalXliffFile(TranslationResource $resource, $languageCode)
+    private function getLocalXliffFile(ResourceModel $resource, $languageCode)
     {
-        $domain    = substr($resource->getSlug(), strlen($this->project->getPrefix()));
+        $domain    = substr($resource->slug(), strlen($this->project->getPrefix()));
         $localFile = $this->project->getXliffDirectory() . DIRECTORY_SEPARATOR .
-            substr($languageCode, 0, 2) . DIRECTORY_SEPARATOR .
+            $languageCode . DIRECTORY_SEPARATOR .
             $domain . '.xlf';
 
         // FIXME: pass logger here.
@@ -238,7 +235,7 @@ class DownloadTransifex extends TransifexBase
             $local->setDataType('php');
             $local->setOriginal($domain);
             $local->setSrcLang($this->project->getBaseLanguage());
-            $local->setTgtLang(substr($languageCode, 0, 2));
+            $local->setTgtLang($languageCode);
         }
 
         return $local;
