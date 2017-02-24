@@ -165,9 +165,13 @@ class DownloadTransifex extends TransifexBase
      */
     private function handleLanguage(ResourceModel $resource, $code, $translationMode, OutputInterface $output)
     {
-        $this->writeln($output, sprintf('Updating language <info>%s</info>', $code));
+        $translation = $resource->translations()->get($code);
+        $this->writeln(
+            $output,
+            sprintf('Updating language <info>%s</info> (%s complete)', $code, $translation->statistic()->completed())
+        );
         // Pull it.
-        $data = $resource->translations()->get($code)->contents($translationMode);
+        $data = $translation->contents($translationMode);
         if ($data) {
             $local  = $this->getLocalXliffFile($resource, $code);
             $logger = new ConsoleLogger($output);
