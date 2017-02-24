@@ -19,8 +19,7 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
-use CyberSpectrum\ContaoToolBox\Transifex\Project;
-use CyberSpectrum\ContaoToolBox\Transifex\TranslationResource;
+use CyberSpectrum\PhpTransifex\PhpTransifex;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -52,37 +51,29 @@ class UploadTransifex extends TransifexBase
             return;
         }
 
-        $project = new Project($this->getApi());
+        $transifex = new PhpTransifex($this->getApi());
+        $project   = $transifex->project($this->project->getProject());
 
-        $project->setSlug($this->project->getProject());
-
-        $resources = $project->getResources();
+        $resources = $project->resources();
 
         $files = $this->getAllTxFiles($this->project->getBaseLanguage());
 
         $prefix = $this->project->getPrefix();
         foreach ($files as $file => $basename) {
             $noext = basename($basename, '.xlf');
-            if (array_key_exists($prefix . $noext, $resources)) {
+            if ($resources->has($prefix . $noext)) {
                 // already present, update.
                 $this->writeln($output, sprintf('Updating ressource <info>%s</info>', $prefix . $noext));
-                /** @var TranslationResource $resource */
-                $resource = $resources[$prefix . $noext];
-                $resource->setContent(file_get_contents($file));
-                $resource->updateContent();
+                $resource = $resources->get($prefix . $noext);
             } else {
                 $this->writeln($output, sprintf('Creating new ressource <info>%s</info>', $prefix . $noext));
                 // upload new.
-                $resource = new TranslationResource($this->getApi());
-                $resource->setProject($this->project->getProject());
-                $resource->setSlug($prefix . $noext);
-                $resource->setName($resource->getSlug());
-                $resource->setSourceLanguageCode($this->project->getBaseLanguage());
-
-                $resource->setContent(file_get_contents($file));
-
-                $resource->create();
+                $resource = $resources->add($prefix . $noext, $prefix . $noext, 'XLIFF');
             }
+            $resource->setContent(file_get_contents($file));
         }
+
+        $this->writeln($output, 'Saving all...');
+        $project->save();
     }
 }
