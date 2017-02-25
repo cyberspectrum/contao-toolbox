@@ -19,6 +19,7 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
+use CyberSpectrum\ContaoToolBox\Transifex\Upload\ContaoResourceUploader;
 use CyberSpectrum\ContaoToolBox\Transifex\Upload\XliffResourceUploader;
 use CyberSpectrum\PhpTransifex\Model\ProjectModel;
 use InvalidArgumentException;
@@ -77,7 +78,7 @@ class UploadTransifex extends TransifexBase
      * @param ConsoleLogger $logger  The logger to use.
      * @param ProjectModel  $project The project.
      *
-     * @return XliffResourceUploader
+     * @return ContaoResourceUploader|XliffResourceUploader
      *
      * @throws InvalidArgumentException When the passed destination is invalid.
      */
@@ -88,6 +89,13 @@ class UploadTransifex extends TransifexBase
                 return new XliffResourceUploader(
                     $project,
                     $this->project->getXliffDirectory(),
+                    $this->project->getBaseLanguage(),
+                    $logger
+                );
+            case 'contao':
+                return new ContaoResourceUploader(
+                    $project,
+                    $this->project->getContaoDirectory(),
                     $this->project->getBaseLanguage(),
                     $logger
                 );
