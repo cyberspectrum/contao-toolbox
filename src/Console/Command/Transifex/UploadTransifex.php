@@ -59,7 +59,7 @@ class UploadTransifex extends TransifexBase
     {
         $project = $this->getPhpTransifex()->project($this->project->getProject());
 
-        $uploader = $this->createuploader($input->getOption('source'), new ConsoleLogger($output), $project);
+        $uploader = $this->createUploader($input->getOption('source'), new ConsoleLogger($output), $project);
         $uploader->setDomainPrefix($this->project->getPrefix());
         if ($skipFiles = $this->project->getSkipFiles()) {
             $uploader->setResourceFilter(function ($resourceSlug) use ($skipFiles) {
@@ -81,7 +81,7 @@ class UploadTransifex extends TransifexBase
      *
      * @throws InvalidArgumentException When the passed destination is invalid.
      */
-    private function createuploader($source, ConsoleLogger $logger, $project)
+    private function createUploader($source, ConsoleLogger $logger, $project)
     {
         switch ($source) {
             case 'xliff':
