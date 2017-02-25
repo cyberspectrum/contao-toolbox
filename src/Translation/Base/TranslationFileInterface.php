@@ -73,4 +73,11 @@ interface TranslationFileInterface
      * @return mixed
      */
     public function getLanguageCode();
+
+    /**
+     * Save the file to disk.
+     *
+     * @return void
+     */
+    public function save();
 }
