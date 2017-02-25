@@ -60,13 +60,6 @@ class Project
     private $baseLanguage = '';
 
     /**
-     * List of the other languages.
-     *
-     * @var string[]
-     */
-    private $languages = [];
-
-    /**
      * Names of files to skip.
      *
      * @var string[]
@@ -198,30 +191,6 @@ class Project
     }
 
     /**
-     * Retrieve languages.
-     *
-     * @return \string[]
-     */
-    public function getLanguages()
-    {
-        return $this->languages;
-    }
-
-    /**
-     * Set languages.
-     *
-     * @param \string[] $languages The new value.
-     *
-     * @return Project
-     */
-    public function setLanguages($languages)
-    {
-        $this->languages = (array) $languages;
-
-        return $this;
-    }
-
-    /**
      * Retrieve files to skip.
      *
      * @return \string[]
@@ -229,18 +198,6 @@ class Project
     public function getSkipFiles()
     {
         return $this->skipFiles;
-    }
-
-    /**
-     * Determine if a file is to be skipped or not.
-     *
-     * @param string $basename The base name of the file to test.
-     *
-     * @return bool
-     */
-    public function isSkippedFile($basename)
-    {
-        return in_array($basename, $this->skipFiles);
     }
 
     /**

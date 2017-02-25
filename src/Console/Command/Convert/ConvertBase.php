@@ -22,8 +22,11 @@
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Convert;
 
 use CyberSpectrum\ContaoToolBox\Console\Command\CommandBase;
+use CyberSpectrum\ContaoToolBox\Converter\AbstractConverter;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -31,20 +34,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 abstract class ConvertBase extends CommandBase
 {
-    /**
-     * Flag determining if obsolete files shall get purged at the end of the run.
-     *
-     * @var bool
-     */
-    protected $cleanup;
-
-    /**
-     * List of base files.
-     *
-     * @var string[]
-     */
-    protected $baseFiles;
-
     /**
      * {@inheritDoc}
      */
@@ -55,134 +44,30 @@ abstract class ConvertBase extends CommandBase
     }
 
     /**
-     * Retrieve the destination base path.
-     *
-     * @return string
-     */
-    abstract protected function getDestinationBasePath();
-
-    /**
      * {@inheritDoc}
-     */
-    protected function getBaseFiles()
-    {
-        $iterator = new \DirectoryIterator(
-            $this->getLanguageBasePath() . DIRECTORY_SEPARATOR . $this->project->getBaseLanguage()
-        );
-
-        $files = array();
-        while ($iterator->valid()) {
-            if (!$iterator->isDot()
-                && $iterator->isFile()
-                && $this->isValidSourceFile($iterator->getPathname())
-                && $this->isNotFileToSkip($iterator->getBasename())
-            ) {
-                $files[] = $iterator->getFilename();
-            }
-            $iterator->next();
-        }
-
-        $this->baseFiles = $files;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    abstract protected function isValidSourceFile($file);
-
-    /**
-     * {@inheritDoc}
-     */
-    abstract protected function isValidDestinationFile($file);
-
-    /**
-     * {@inheritDoc}
-     */
-    abstract protected function processLanguage(OutputInterface $output, $language);
-
-    /**
-     * Cleanup anything that is obsolete now.
-     *
-     * @param OutputInterface $output           The output to use.
-     *
-     * @param string          $language         The language string.
-     *
-     * @param string[]        $destinationFiles The list of destination files.
-     *
-     * @return void
-     */
-    protected function cleanupObsoleteFiles(OutputInterface $output, $language, $destinationFiles)
-    {
-        if ($this->cleanup && ($files = array_diff($this->determinePresentFiles($language), $destinationFiles))) {
-            $this->writeln(
-                $output,
-                sprintf(
-                    'the following obsolete files have been found and will get deleted: <info>%s</info>',
-                    implode(', ', $files)
-                )
-            );
-
-            foreach ($files as $file) {
-                unlink($this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $file);
-                $this->writelnVerbose($output, sprintf('deleting obsolete file <info>%s</info>', $file));
-            }
-            // @codingStandardsIgnoreStart - Catch the error when directory is not empty.
-            @rmdir($this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language);
-            // @codingStandardsIgnoreEnd
-        }
-    }
-
-    /**
-     * Determine if a file is to be skipped or not.
-     *
-     * @param string $basename The base name of the file to test.
-     *
-     * @return bool
-     */
-    protected function isNotFileToSkip($basename)
-    {
-        return !$this->project->isSkippedFile(substr($basename, 0, -4));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function determinePresentFiles($language)
-    {
-        $iterator = new \DirectoryIterator($this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language);
-
-        $files = array();
-        while ($iterator->valid()) {
-            if (!$iterator->isDot() && $iterator->isFile() && $this->isValidDestinationFile($iterator->getPathname())) {
-                $files[] = $iterator->getFilename();
-            }
-            $iterator->next();
-        }
-
-        return $files;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function initialize(InputInterface $input, OutputInterface $output)
-    {
-        parent::initialize($input, $output);
-
-        $this->cleanup = $input->getOption('cleanup');
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->getBaseFiles();
-
-        foreach ($this->project->getLanguages() as $lang) {
-            $this->processLanguage($output, $lang);
+        $converter = $this->createConverter(new ConsoleLogger($output));
+        if ('all' !== ($languages = $input->getArgument('languages'))) {
+            $converter->setOnlyLanguages(explode(',', $languages));
         }
+        if ($skipFiles = $this->project->getSkipFiles()) {
+            $converter->setIgnoredResources($skipFiles);
+        }
+        if ($input->getOption('cleanup')) {
+            $converter->setCleanupObsolete();
+        }
+
+        $converter->convert();
     }
+
+    /**
+     * Create the converter instance.
+     *
+     * @param LoggerInterface $logger The logger instance.
+     *
+     * @return AbstractConverter
+     */
+    abstract protected function createConverter(LoggerInterface $logger);
 }

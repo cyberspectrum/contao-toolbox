@@ -20,11 +20,8 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Convert;
 
-use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile as ContaoFile;
-use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
-use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
-use Symfony\Component\Console\Logger\ConsoleLogger;
-use Symfony\Component\Console\Output\OutputInterface;
+use CyberSpectrum\ContaoToolBox\Converter\FromPhpToXliff;
+use Psr\Log\LoggerInterface;
 
 /**
  * This class converts Contao language files to XLIFF format.
@@ -47,106 +44,13 @@ class ConvertToXliff extends ConvertBase
     /**
      * {@inheritDoc}
      */
-    protected function getLanguageBasePath()
+    protected function createConverter(LoggerInterface $logger)
     {
-        return $this->project->getContaoDirectory();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function getDestinationBasePath()
-    {
-        return $this->project->getXliffDirectory();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function isValidSourceFile($file)
-    {
-        return (substr($file, -4) == '.php');
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function isValidDestinationFile($file)
-    {
-        return (substr($file, -4) == '.xlf');
-    }
-
-    /**
-     * Convert the source file to the destination file.
-     *
-     * @param OutputInterface $output An OutputInterface instance.
-     *
-     * @param ContaoFile      $src    The source Contao file.
-     *
-     * @param XLiffFile       $dst    The destination XLIFF file.
-     *
-     * @param ContaoFile      $base   The base Contao file.
-     *
-     * @return void
-     */
-    protected function convert(OutputInterface $output, ContaoFile $src, XLiffFile $dst, ContaoFile $base)
-    {
-        // Synchronize all target values from source file to XLIFF file.
-        TranslationSync::syncFrom($src, $dst->setMode('target'), false, new ConsoleLogger($output));
-
-        // Synchronize all source values from base file to XLIFF file and remove obsolete keys in destination that
-        // are not present in base file anymore.
-        TranslationSync::syncFrom($base, $dst->setMode('source'), true, new ConsoleLogger($output));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function processLanguage(OutputInterface $output, $language)
-    {
-        $this->writeln($output, sprintf('processing language: <info>%s</info>...', $language));
-
-        $logger = new ConsoleLogger($output);
-
-        $destinationFiles = array();
-        foreach ($this->baseFiles as $file) {
-            $this->writelnVerbose($output, sprintf('processing file: <info>%s</info>...', $file));
-
-            $basFile = $this->getLanguageBasePath()
-                . DIRECTORY_SEPARATOR . $this->project->getBaseLanguage() . DIRECTORY_SEPARATOR . $file;
-            $srcFile = $this->getLanguageBasePath() . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $file;
-
-            $domain = basename($file, '.php');
-
-            $dstFile            = $domain . '.xlf';
-            $destinationFiles[] = $dstFile;
-
-            $src  = new ContaoFile($srcFile, $logger);
-            $base = new ContaoFile($basFile, $logger);
-
-            $dstDir = $this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language;
-            if (!is_dir($dstDir)) {
-                mkdir($dstDir, 0755, true);
-            }
-
-            $dest = new XliffFile($dstDir . DIRECTORY_SEPARATOR . $dstFile, $logger);
-            $dest->setDataType('php');
-            $dest->setSrcLang($this->project->getBaseLanguage());
-            $dest->setTgtLang($language);
-            $dest->setOriginal($domain);
-            if (file_exists($srcFile)) {
-                $time = filemtime($srcFile);
-            } else {
-                $time = filemtime($basFile);
-            }
-            $dest->setDate($time);
-
-            $this->convert($output, $src, $dest, $base);
-            if (is_file($dstDir . DIRECTORY_SEPARATOR . $dstFile) || $dest->keys()) {
-                $dest->save();
-            }
-        }
-
-        $this->cleanupObsoleteFiles($output, $language, $destinationFiles);
+        return new FromPhpToXliff(
+            $this->project->getContaoDirectory(),
+            $this->project->getXliffDirectory(),
+            $this->project->getBaseLanguage(),
+            $logger
+        );
     }
 }

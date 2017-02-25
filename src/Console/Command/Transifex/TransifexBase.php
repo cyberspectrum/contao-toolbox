@@ -90,19 +90,6 @@ class TransifexBase extends CommandBase
     /**
      * {@inheritDoc}
      */
-    protected function getLanguageBasePath()
-    {
-        $path = realpath($this->project->getXliffDirectory());
-        if (!$path) {
-            return $this->project->getXliffDirectory();
-        }
-
-        return $path;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         parent::initialize($input, $output);

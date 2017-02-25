@@ -20,14 +20,12 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command;
 
-use CyberSpectrum\ContaoToolBox\Locator\LanguageDirectoryLocator;
 use CyberSpectrum\ContaoToolBox\Project;
 use CyberSpectrum\ContaoToolBox\Util\JsonConfig;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -116,84 +114,6 @@ abstract class CommandBase extends Command
     }
 
     /**
-     * Write a message to the console if the verbosity is equal or higher than the passed verbosity level.
-     *
-     * @param OutputInterface $output    The output interface to which shall be written.
-     * @param string[]|string $messages  The messages to write.
-     * @param bool            $newline   Flag if a newline shall be written after the messages.
-     * @param int             $type      Type of the message.
-     * @param int             $verbosity The verbosity level for which the messages shall be logged.
-     *
-     * @return void
-     */
-    protected function write(
-        OutputInterface $output,
-        $messages,
-        $newline = false,
-        $type = 0,
-        $verbosity = OutputInterface::VERBOSITY_NORMAL
-    ) {
-        if ($output->getVerbosity() >= $verbosity) {
-            $output->write($messages, $newline, $type);
-        }
-    }
-
-    /**
-     * Write a message to the console if the verbosity is equal or higher than verbose.
-     *
-     * @param OutputInterface $output   The output interface to which shall be written.
-     * @param string[]|string $messages The messages to write.
-     * @param bool            $newline  Flag if a newline shall be written after the messages.
-     * @param int             $type     Type of the message.
-     *
-     * @return void
-     */
-    protected function writeVerbose(OutputInterface $output, $messages, $newline = false, $type = 0)
-    {
-        if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
-            $output->write($messages, $newline, $type);
-        }
-    }
-
-    /**
-     * Write a message always to the console for all verbosity levels higher than quiet.
-     *
-     * @param OutputInterface $output   The output interface to which shall be written.
-     * @param string[]|string $messages The messages to write.
-     * @param bool            $newline  Flag if a newline shall be written after the messages.
-     * @param int             $type     Type of the message.
-     *
-     * @return void
-     */
-    protected function writeAlways(OutputInterface $output, $messages, $newline = false, $type = 0)
-    {
-        if ($output->getVerbosity() >= OutputInterface::VERBOSITY_QUIET) {
-            $output->write($messages, $newline, $type);
-        }
-    }
-
-    /**
-     * Write a message to the console if the verbosity is equal or higher than the passed verbosity level.
-     *
-     * @param OutputInterface $output    The output interface to which shall be written.
-     * @param string[]|string $messages  The messages to write.
-     * @param int             $type      Type of the message.
-     * @param int             $verbosity The verbosity level for which the messages shall be logged.
-     *
-     * @return void
-     */
-    protected function writeln(
-        OutputInterface $output,
-        $messages,
-        $type = 0,
-        $verbosity = OutputInterface::VERBOSITY_NORMAL
-    ) {
-        if ($output->getVerbosity() >= $verbosity) {
-            $output->writeln($messages, $type);
-        }
-    }
-
-    /**
      * Write a message to the console if the verbosity is equal or higher than verbose.
      *
      * @param OutputInterface $output   The output interface to which shall be written.
@@ -205,22 +125,6 @@ abstract class CommandBase extends Command
     protected function writelnVerbose(OutputInterface $output, $messages, $type = 0)
     {
         if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
-            $output->writeln($messages, $type);
-        }
-    }
-
-    /**
-     * Write a message always to the console for all verbosity levels higher than quiet.
-     *
-     * @param OutputInterface $output   The output interface to which shall be written.
-     * @param string[]|string $messages The messages to write.
-     * @param int             $type     Type of the message.
-     *
-     * @return void
-     */
-    protected function writelnAlways(OutputInterface $output, $messages, $type = 0)
-    {
-        if ($output->getVerbosity() >= OutputInterface::VERBOSITY_QUIET) {
             $output->writeln($messages, $type);
         }
     }
@@ -293,13 +197,6 @@ abstract class CommandBase extends Command
     }
 
     /**
-     * Retrieve the base path for languages.
-     *
-     * @return string
-     */
-    abstract protected function getLanguageBasePath();
-
-    /**
      * {@inheritDoc}
      *
      * @throws \RuntimeException When the needed settings can not be determined.
@@ -318,14 +215,6 @@ abstract class CommandBase extends Command
         } elseif (null !== ($files = $this->getTransifexConfigValue('/skip_files'))) {
             $this->project->setSkipFiles($files);
         }
-
-        $activeLanguages = array();
-        if (($langs = $input->getArgument('languages')) != 'all') {
-            $activeLanguages = explode(',', $langs);
-        }
-
-        $locator = new LanguageDirectoryLocator($this->getLanguageBasePath(), new ConsoleLogger($output));
-        $this->project->setLanguages($locator->determineLanguages($activeLanguages));
     }
 
     /**

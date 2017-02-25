@@ -47,14 +47,6 @@ class CleanUpTx extends CommandBase
 
     /**
      * {@inheritDoc}
-     */
-    protected function getLanguageBasePath()
-    {
-        return $this->project->getXliffDirectory();
-    }
-
-    /**
-     * {@inheritDoc}
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
@@ -62,6 +54,6 @@ class CleanUpTx extends CommandBase
     {
         $finder     = new Finder();
         $filesystem = new Filesystem();
-        $filesystem->remove($finder->directories()->in($this->getLanguageBasePath()));
+        $filesystem->remove($finder->directories()->in($this->project->getXliffDirectory()));
     }
 }

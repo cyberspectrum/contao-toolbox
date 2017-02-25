@@ -20,11 +20,8 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Convert;
 
-use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile;
-use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
-use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
-use Symfony\Component\Console\Logger\ConsoleLogger;
-use Symfony\Component\Console\Output\OutputInterface;
+use CyberSpectrum\ContaoToolBox\Converter\FromXliffToPhp;
+use Psr\Log\LoggerInterface;
 
 /**
  * This class converts language files from XLIFF format into the Contao PHP array format.
@@ -47,99 +44,14 @@ class ConvertFromXliff extends ConvertBase
     /**
      * {@inheritDoc}
      */
-    protected function getLanguageBasePath()
+    protected function createConverter(LoggerInterface $logger)
     {
-        return $this->project->getXliffDirectory();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function getDestinationBasePath()
-    {
-        return $this->project->getContaoDirectory();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function isValidSourceFile($file)
-    {
-        return (substr($file, -4) == '.xlf');
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function isValidDestinationFile($file)
-    {
-        return (substr($file, -4) == '.php');
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @throws \InvalidArgumentException When an unexpected domain has been found in the xliff file.
-     */
-    protected function processLanguage(OutputInterface $output, $language)
-    {
-        $this->writeln($output, sprintf('processing language: <info>%s</info>...', $language));
-
-        $logger           = new ConsoleLogger($output);
-        $destinationFiles = array();
-        foreach ($this->baseFiles as $file) {
-            $this->writelnVerbose($output, sprintf('processing file: <info>%s</info>...', $file));
-
-            $srcFile = $this->getLanguageBasePath() . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $file;
-
-            // not a file from transifex received yet.
-            if (!file_exists($srcFile)) {
-                continue;
-            }
-
-            $src = new XliffFile($srcFile, $logger);
-
-            $domain = $src->getOriginal();
-
-            if ($domain != basename($file, '.xlf')) {
-                throw new \InvalidArgumentException(
-                    sprintf(
-                        'Unexpected domain "%s" found in file "%s" instead of domain "%s"',
-                        $domain,
-                        $srcFile,
-                        basename($file, '.xlf')
-                    )
-                );
-            }
-
-            $dstFile            = $domain . '.php';
-            $destinationFiles[] = $dstFile;
-
-            $dstDir = $this->getDestinationBasePath() . DIRECTORY_SEPARATOR . $language;
-            if (!is_dir($dstDir)) {
-                mkdir($dstDir, 0755, true);
-            }
-
-            $dest = new ContaoFile($dstDir . DIRECTORY_SEPARATOR . $dstFile, $logger);
-
-            $changed = TranslationSync::syncFrom($src->setMode('target'), $dest, true, new ConsoleLogger($output));
-
-            if ($changed) {
-                $dest->setLanguage($language);
-                $dest->setTransifexProject($this->project->getProject());
-                $dest->setLastChange($src->getDate());
-
-                if ($dest->keys()) {
-                    $dest->save();
-                } else {
-                    unlink($dstDir . DIRECTORY_SEPARATOR . $dstFile);
-                    // @codingStandardsIgnoreStart - Catch the error when directory is not empty.
-                    @rmdir($dstDir);
-                    // @codingStandardsIgnoreEnd
-                }
-            }
-        }
-
-        $this->cleanupObsoleteFiles($output, $language, $destinationFiles);
+        return new FromXliffToPhp(
+            $this->project->getProject(),
+            $this->project->getContaoDirectory(),
+            $this->project->getXliffDirectory(),
+            $this->project->getBaseLanguage(),
+            $logger
+        );
     }
 }
