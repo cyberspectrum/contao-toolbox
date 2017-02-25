@@ -76,6 +76,12 @@ class DownloadTransifex extends TransifexBase
         }
         $downloader->setDomainPrefix($this->project->getPrefix());
         $downloader->setTranslationMode($this->getTranslationMode($input));
+        if ($skipFiles = $this->project->getSkipFiles()) {
+            $downloader->setResourceFilter(function ($resourceSlug) use ($skipFiles) {
+                return !in_array($resourceSlug, $skipFiles);
+            });
+        }
+
         $downloader->download();
     }
 

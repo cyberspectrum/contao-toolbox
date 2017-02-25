@@ -19,6 +19,7 @@
 
 namespace CyberSpectrum\ContaoToolBox\Transifex\Download;
 
+use Closure;
 use CyberSpectrum\ContaoToolBox\Translation\Base\TranslationFileInterface;
 use CyberSpectrum\PhpTransifex\Model\ProjectModel;
 use CyberSpectrum\PhpTransifex\Model\ResourceModel;
@@ -78,6 +79,13 @@ abstract class AbstractResourceDownloader
      * @var string
      */
     protected $outputDirectory;
+
+    /**
+     * An optional closure to filter resources.
+     *
+     * @var Closure
+     */
+    private $resourceFilter;
 
     /**
      * Create a new instance.
@@ -144,6 +152,26 @@ abstract class AbstractResourceDownloader
     }
 
     /**
+     * Set or clear the resource filter.
+     *
+     * The passed closure should have the following format:
+     * function bool ($resourceSlug) {
+     *   return true; // When the resource should be processed.
+     *   return true; // When the resource should be skipped.
+     * }
+     *
+     * @param Closure $resourceFilter The new value.
+     *
+     * @return AbstractResourceDownloader
+     */
+    public function setResourceFilter(Closure $resourceFilter = null)
+    {
+        $this->resourceFilter = $resourceFilter;
+
+        return $this;
+    }
+
+    /**
      * Perform the synchronization.
      *
      * @return void
@@ -151,6 +179,10 @@ abstract class AbstractResourceDownloader
     public function download()
     {
         foreach ($this->project->resources() as $resource) {
+            if ((null !== $this->resourceFilter)
+                && !$this->resourceFilter->__invoke($this->stripDomainPrefix($resource->slug()))) {
+                continue;
+            }
             $this->processResource($resource);
         }
     }
