@@ -225,12 +225,20 @@ class XliffFile extends AbstractFile
     public function save()
     {
         if ($this->filename) {
+            if (empty($this->keys()) && file_exists($this->filename)) {
+                $this->logger->notice('File {file} is empty, deleting...', ['file' => $this->filename]);
+                unlink($this->filename);
+                $this->changed = false;
+                return;
+            }
+
             if (!is_dir($directory = dirname($this->filename))) {
                 mkdir($directory, 0755, true);
             }
 
             $this->doc->save($this->filename);
             $this->changed = false;
+            $this->logger->notice('File {file} saved.', ['file' => $this->filename]);
         }
     }
 

@@ -313,6 +313,14 @@ class ContaoFile extends AbstractFile
     public function save()
     {
         $keys = array_keys($this->langstrings);
+
+        if (empty($keys) && file_exists($this->filename)) {
+            $this->logger->notice('File {file} is empty, deleting...', ['file' => $this->filename]);
+            unlink($this->filename);
+            $this->changed = false;
+            return;
+        }
+
         sort($keys);
         if (!is_dir($directory = dirname($this->filename))) {
             mkdir($directory, 0755, true);
@@ -352,6 +360,7 @@ class ContaoFile extends AbstractFile
 
         fclose($resource);
         $this->changed = false;
+        $this->logger->notice('File {file} saved.', ['file' => $this->filename]);
     }
 
     /**
