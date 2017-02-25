@@ -90,6 +90,13 @@ class XliffFile extends AbstractFile
     private $mode;
 
     /**
+     * Flag if the contents have been changed.
+     *
+     * @var bool
+     */
+    private $changed = false;
+
+    /**
      * Create a new instance.
      *
      * @param string|null     $filename The filename to use or null when none should be loaded.
@@ -177,6 +184,7 @@ class XliffFile extends AbstractFile
         $unit = $this->searchForId($key);
         if ($unit) {
             $unit->parentNode->removeChild($unit);
+            $this->changed = true;
         }
 
         return $this;
@@ -195,7 +203,14 @@ class XliffFile extends AbstractFile
         // If already present check
         if (null === $source) {
             $source = $unit->appendChild($this->doc->createElementNS(self::NS, $this->mode));
+            // Mark changed, we add the key here.
+            $this->changed = true;
         } elseif ($source->firstChild) {
+            if ($value === $source->firstChild) {
+                // Nothing changed, we can exit here.
+                return $this;
+            }
+            $this->changed = true;
             // If already present, we have to remove the textnode if one exists as otherwise the value will get
             // appended.
             $source->removeChild($source->firstChild);
@@ -222,6 +237,22 @@ class XliffFile extends AbstractFile
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function isChanged()
+    {
+        return $this->changed;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getLanguageCode()
+    {
+        return $this->getTgtLang();
+    }
+
+    /**
      * Save the contents to disk.
      *
      * @return void
@@ -230,6 +261,7 @@ class XliffFile extends AbstractFile
     {
         if ($this->filename) {
             $this->doc->save($this->filename);
+            $this->changed = false;
         }
     }
 

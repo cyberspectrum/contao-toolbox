@@ -78,6 +78,13 @@ class ContaoFile extends AbstractFile
     protected $keystack = array();
 
     /**
+     * Flag if the contents have been changed.
+     *
+     * @var bool
+     */
+    private $changed = false;
+
+    /**
      * Create a new instance.
      *
      * @param string          $filename The filename.
@@ -112,6 +119,9 @@ class ContaoFile extends AbstractFile
      */
     public function remove($key)
     {
+        if (isset($this->langstrings[$key])) {
+            $this->changed = true;
+        }
         unset($this->langstrings[$key]);
 
         return $this;
@@ -124,8 +134,11 @@ class ContaoFile extends AbstractFile
      */
     public function set($key, $value)
     {
-        $this->langstrings[$key] = $value;
-        $this->logger->debug('ContaoFile::setValue {key} => {value}', ['key' => $key, 'value' => $value]);
+        if ($value !== $this->get($key)) {
+            $this->langstrings[$key] = $value;
+            $this->logger->debug('ContaoFile::setValue {key} => {value}', ['key' => $key, 'value' => $value]);
+            $this->changed = true;
+        }
 
         return $this;
     }
@@ -136,6 +149,22 @@ class ContaoFile extends AbstractFile
     public function get($key)
     {
         return isset($this->langstrings[$key]) ? $this->langstrings[$key] : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function isChanged()
+    {
+        return $this->changed;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getLanguageCode()
+    {
+        return $this->language;
     }
 
     /**
@@ -319,6 +348,7 @@ class ContaoFile extends AbstractFile
         fputs($resource, $buffer);
 
         fclose($resource);
+        $this->changed = false;
     }
 
     /**

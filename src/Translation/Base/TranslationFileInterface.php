@@ -59,4 +59,18 @@ interface TranslationFileInterface
      * @return string
      */
     public function get($key);
+
+    /**
+     * Flag determining if the file contains changes.
+     *
+     * @return bool
+     */
+    public function isChanged();
+
+    /**
+     * Retrieve the language code of this file.
+     *
+     * @return mixed
+     */
+    public function getLanguageCode();
 }
