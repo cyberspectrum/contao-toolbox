@@ -48,41 +48,6 @@ class XliffFile extends AbstractFile
     protected $filename;
 
     /**
-     * The datatype to specify in the Xliff file.
-     *
-     * @var string
-     */
-    protected $datatype = 'php';
-
-    /**
-     * The original data source id - most likely the file name or something like this.
-     *
-     * @var string
-     */
-    protected $original;
-
-    /**
-     * The source language as ISO 639-1 language code.
-     *
-     * @var string
-     */
-    protected $srclang;
-
-    /**
-     * The source language as ISO 639-1 language code.
-     *
-     * @var string
-     */
-    protected $tgtlang;
-
-    /**
-     * The timestamp of last update as unix timestamp.
-     *
-     * @var int
-     */
-    protected $date;
-
-    /**
      * The mode we are working in, either "source" or "target".
      *
      * @var string
