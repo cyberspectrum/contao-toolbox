@@ -213,7 +213,7 @@ abstract class AbstractResourceDownloader
     }
 
     /**
-     * Fetch the xliff files for the passed resource.
+     * Fetch the translation files for the passed resource.
      *
      * @param string $resource The resource slug.
      *
@@ -240,7 +240,7 @@ abstract class AbstractResourceDownloader
     }
 
     /**
-     * Save the passed xliff files.
+     * Save the passed translation files.
      *
      * @param TranslationFileInterface[] $files The files to save.
      *
