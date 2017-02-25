@@ -314,6 +314,9 @@ class ContaoFile extends AbstractFile
     {
         $keys = array_keys($this->langstrings);
         sort($keys);
+        if (!is_dir($directory = dirname($this->filename))) {
+            mkdir($directory, 0755, true);
+        }
 
         $maxlen       = 0;
         $langPrefixes = array();

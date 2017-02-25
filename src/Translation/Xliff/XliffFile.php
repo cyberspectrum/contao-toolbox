@@ -225,6 +225,10 @@ class XliffFile extends AbstractFile
     public function save()
     {
         if ($this->filename) {
+            if (!is_dir($directory = dirname($this->filename))) {
+                mkdir($directory, 0755, true);
+            }
+
             $this->doc->save($this->filename);
             $this->changed = false;
         }
