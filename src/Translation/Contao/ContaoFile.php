@@ -292,8 +292,8 @@ class ContaoFile extends AbstractFile
                 $match,
                 PREG_OFFSET_CAPTURE
             )) {
-                $this->transifexProject = $match[1][0][0];
-                $this->language         = $match[2][0][0];
+                $this->transifexProject = $match[1][0];
+                $this->language         = $match[2][0];
             }
         } else {
             $this->head = $this->getDefaultHead();
