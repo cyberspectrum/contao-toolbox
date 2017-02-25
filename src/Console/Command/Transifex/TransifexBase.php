@@ -122,14 +122,6 @@ class TransifexBase extends CommandBase
     /**
      * {@inheritDoc}
      */
-    protected function isNotFileToSkip($basename)
-    {
-        return !$this->project->isSkippedFile(substr($basename, 0, -4));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         parent::initialize($input, $output);

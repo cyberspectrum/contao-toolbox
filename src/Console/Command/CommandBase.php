@@ -300,15 +300,6 @@ abstract class CommandBase extends Command
     abstract protected function getLanguageBasePath();
 
     /**
-     * Determine if a file is to be skipped or not.
-     *
-     * @param string $basename The base name of the file to test.
-     *
-     * @return bool
-     */
-    abstract protected function isNotFileToSkip($basename);
-
-    /**
      * {@inheritDoc}
      *
      * @throws \RuntimeException When the needed settings can not be determined.

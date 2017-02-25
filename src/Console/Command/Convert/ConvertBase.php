@@ -133,7 +133,11 @@ abstract class ConvertBase extends CommandBase
     }
 
     /**
-     * {@inheritDoc}
+     * Determine if a file is to be skipped or not.
+     *
+     * @param string $basename The base name of the file to test.
+     *
+     * @return bool
      */
     protected function isNotFileToSkip($basename)
     {

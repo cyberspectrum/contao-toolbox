@@ -58,16 +58,6 @@ class CleanUpTx extends CommandBase
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    protected function isNotFileToSkip($basename)
-    {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $finder     = new Finder();
