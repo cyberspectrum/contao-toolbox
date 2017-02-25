@@ -19,10 +19,11 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
-use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
-use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
-use CyberSpectrum\PhpTransifex\Model\ResourceModel;
+use CyberSpectrum\ContaoToolBox\Transifex\Download\ContaoResourceDownloader;
+use CyberSpectrum\ContaoToolBox\Transifex\Download\XliffResourceDownloader;
+use CyberSpectrum\PhpTransifex\Model\ProjectModel;
 use CyberSpectrum\PhpTransifex\PhpTransifex;
+use InvalidArgumentException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
@@ -49,32 +50,14 @@ class DownloadTransifex extends TransifexBase
             'Download mode to use (reviewed, translated, default).',
             'reviewed'
         );
-    }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws \InvalidArgumentException When the translation mode is not reviewed, translated or default.
-     */
-    protected function initialize(InputInterface $input, OutputInterface $output)
-    {
-        parent::initialize($input, $output);
-
-        $translationMode = $input->getOption('mode');
-        $validModes      = array(
-            'reviewed',
-            'translated',
-            'default'
+        $this->addOption(
+            'destination',
+            null,
+            InputOption::VALUE_OPTIONAL,
+            'The download destination to use (either xliff or contao).',
+            'xliff'
         );
-        if (!in_array($translationMode, $validModes)) {
-            throw new \InvalidArgumentException(
-                sprintf(
-                    'Invalid translation mode %s specified. Must be one of %s',
-                    $translationMode,
-                    implode(', ', $validModes)
-                )
-            );
-        }
     }
 
     /**
@@ -84,164 +67,83 @@ class DownloadTransifex extends TransifexBase
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $transifex  = new PhpTransifex($this->getApi());
+        $project    = $transifex->project($this->project->getProject());
+        $downloader = $this->createDownloader($input->getOption('destination'), new ConsoleLogger($output), $project);
+
+        if ('all' !== ($languages = $input->getArgument('languages'))) {
+            $downloader->setAllowedLanguages(explode(',', $languages));
+        }
+        $downloader->setDomainPrefix($this->project->getPrefix());
+        $downloader->setTranslationMode($this->getTranslationMode($input));
+        $downloader->download();
+    }
+
+    /**
+     * Obtain the translation mode to use when downloading.
+     *
+     * @param InputInterface $input An InputInterface instance.
+     *
+     * @return string
+     *
+     * @throws \InvalidArgumentException When the translation mode is not reviewed, translated or default.
+     */
+    private function getTranslationMode(InputInterface $input)
+    {
         $translationMode = $input->getOption('mode');
+        $validModes      = ['reviewed', 'translated', 'default'];
+        if (!in_array($translationMode, $validModes)) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Invalid translation mode %s specified. Must be one of %s',
+                    $translationMode,
+                    implode(', ', $validModes)
+                )
+            );
+        }
 
         // HOTFIX: translated actually appears to be "translator".
         if ($translationMode == 'translated') {
             $translationMode = 'translator';
         }
 
-        $allLanguages = ($input->getArgument('languages') == 'all');
-
-        $transifex = new PhpTransifex($this->getApi());
-        $project   = $transifex->project($this->project->getProject());
-
-        $resources = $project->resources();
-
-        foreach ($resources->names() as $resourceName) {
-            $this->handleResource($resources->get($resourceName), $translationMode, $allLanguages, $output);
-        }
+        return $translationMode;
     }
 
     /**
-     * Handle a single resource.
+     * Create the downloader instance.
      *
-     * @param ResourceModel   $resource        The resource to process.
+     * @param string        $destination The desired destination.
+     * @param ConsoleLogger $logger      The logger to use.
+     * @param ProjectModel  $project     The project.
      *
-     * @param string          $translationMode The translation mode.
+     * @return ContaoResourceDownloader|XliffResourceDownloader
      *
-     * @param bool            $allLanguages    Boolean flag if all languages shall be fetched.
-     *
-     * @param OutputInterface $output          The output interface to use.
-     *
-     * @return void
+     * @throws InvalidArgumentException When the passed destination is invalid.
      */
-    private function handleResource(
-        ResourceModel $resource,
-        $translationMode,
-        $allLanguages,
-        OutputInterface $output
-    ) {
-        $prefix = $this->project->getPrefix();
-        if (substr($resource->slug(), 0, strlen($prefix)) != $prefix) {
-            $this->writelnVerbose(
-                $output,
-                sprintf(
-                    'Received resource <info>%s</info> is not for this repository, ignored.',
-                    $resource->slug()
-                )
-            );
-            return;
-        }
-        $this->writeln($output, sprintf('Processing resource <info>%s</info>', $resource->slug()));
+    private function createDownloader($destination, ConsoleLogger $logger, $project)
+    {
 
-        $this->writelnVerbose(
-            $output,
-            sprintf('Polling languages from resource <info>%s</info>', $resource->slug())
+        switch ($destination) {
+            case 'xliff':
+                return new XliffResourceDownloader(
+                    $project,
+                    $this->project->getXliffDirectory(),
+                    $this->project->getBaseLanguage(),
+                    $logger
+                );
+            case 'contao':
+                return new ContaoResourceDownloader(
+                    $project,
+                    $this->project->getContaoDirectory(),
+                    $this->project->getBaseLanguage(),
+                    $logger
+                );
+            default:
+        }
+
+        throw new InvalidArgumentException(
+            'Invalid download destination: ' . $destination . '. Must be xliff or contao'
         );
-
-        foreach ($resource->translations()->codes() as $code) {
-            if (!$this->isHandlingLanguage($code, $allLanguages)) {
-                $this->writelnVerbose($output, sprintf('skipping language <info>%s</info>', $code));
-                continue;
-            }
-
-            $this->handleLanguage($resource, $code, $translationMode, $output);
-        }
-    }
-
-    /**
-     * Handle a language for a resource.
-     *
-     * @param ResourceModel   $resource        The resource to process.
-     *
-     * @param string          $code            The language code.
-     *
-     * @param string          $translationMode The translation mode.
-     *
-     * @param OutputInterface $output          The output interface to use.
-     *
-     * @return void
-     */
-    private function handleLanguage(ResourceModel $resource, $code, $translationMode, OutputInterface $output)
-    {
-        $translation = $resource->translations()->get($code);
-        $this->writeln(
-            $output,
-            sprintf('Updating language <info>%s</info> (%s complete)', $code, $translation->statistic()->completed())
-        );
-        // Pull it.
-        $data = $translation->contents($translationMode);
-        if ($data) {
-            $local  = $this->getLocalXliffFile($resource, $code);
-            $logger = new ConsoleLogger($output);
-
-            $new = new XliffFile(null, $logger);
-            $new->loadXML($data);
-
-            // Update all target values.
-            TranslationSync::syncFrom($new->setMode('target'), $local->setMode('target'), false, $logger);
-            // Update all source values.
-            // TODO: refactor this to a real initialization from base values in getLocalXliffFile().
-            TranslationSync::syncFrom($new->setMode('source'), $local->setMode('source'), true, $logger);
-
-            if ($local->keys()) {
-                if (!is_dir(dirname($local->getFileName()))) {
-                    mkdir(dirname($local->getFileName()), 0755, true);
-                }
-                $local->save();
-            }
-        }
-    }
-
-    /**
-     * Check if we want to handle the given language code.
-     *
-     * @param string $code         The language code.
-     *
-     * @param bool   $allLanguages Flag telling if all languages shall be handled.
-     *
-     * @return bool
-     */
-    private function isHandlingLanguage($code, $allLanguages)
-    {
-        if ($code == $this->project->getBaseLanguage()) {
-            return false;
-        }
-
-        if ($allLanguages) {
-            return true;
-        }
-
-        return in_array($code, $this->project->getLanguages());
-    }
-
-    /**
-     * Create a xliff instance for the passed resource.
-     *
-     * @param ResourceModel $resource     The resource.
-     *
-     * @param string        $languageCode The language code.
-     *
-     * @return XliffFile
-     */
-    private function getLocalXliffFile(ResourceModel $resource, $languageCode)
-    {
-        $domain    = substr($resource->slug(), strlen($this->project->getPrefix()));
-        $localFile = $this->project->getXliffDirectory() . DIRECTORY_SEPARATOR .
-            $languageCode . DIRECTORY_SEPARATOR .
-            $domain . '.xlf';
-
-        // FIXME: pass logger here.
-        $local = new XliffFile($localFile);
-        if (!file_exists($localFile)) {
-            // Set base values.
-            $local->setDataType('php');
-            $local->setOriginal($domain);
-            $local->setSrcLang($this->project->getBaseLanguage());
-            $local->setTgtLang($languageCode);
-        }
-
-        return $local;
     }
 }
