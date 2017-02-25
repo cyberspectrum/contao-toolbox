@@ -243,6 +243,16 @@ class XliffFile extends AbstractFile
     }
 
     /**
+     * Load the content from a string.
+     *
+     * @return string
+     */
+    public function saveXML()
+    {
+        return $this->doc->saveXML();
+    }
+
+    /**
      * Load the file from disk.
      *
      * @param string|null $filename The filename.
