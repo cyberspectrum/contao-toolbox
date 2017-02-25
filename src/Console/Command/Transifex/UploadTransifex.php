@@ -19,8 +19,13 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
+use CyberSpectrum\ContaoToolBox\Transifex\Upload\XliffResourceUploader;
+use CyberSpectrum\PhpTransifex\Model\ProjectModel;
 use CyberSpectrum\PhpTransifex\PhpTransifex;
+use InvalidArgumentException;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -36,6 +41,14 @@ class UploadTransifex extends TransifexBase
         parent::configure();
         $this->setName('upload-transifex');
         $this->setDescription('Upload xliff translations to transifex.');
+
+        $this->addOption(
+            'source',
+            null,
+            InputOption::VALUE_OPTIONAL,
+            'The upload source to use (either xliff or contao).',
+            'xliff'
+        );
     }
 
     /**
@@ -54,26 +67,43 @@ class UploadTransifex extends TransifexBase
         $transifex = new PhpTransifex($this->getApi());
         $project   = $transifex->project($this->project->getProject());
 
-        $resources = $project->resources();
-
-        $files = $this->getAllTxFiles($this->project->getBaseLanguage());
-
-        $prefix = $this->project->getPrefix();
-        foreach ($files as $file => $basename) {
-            $noext = basename($basename, '.xlf');
-            if ($resources->has($prefix . $noext)) {
-                // already present, update.
-                $this->writeln($output, sprintf('Updating ressource <info>%s</info>', $prefix . $noext));
-                $resource = $resources->get($prefix . $noext);
-            } else {
-                $this->writeln($output, sprintf('Creating new ressource <info>%s</info>', $prefix . $noext));
-                // upload new.
-                $resource = $resources->add($prefix . $noext, $prefix . $noext, 'XLIFF');
-            }
-            $resource->setContent(file_get_contents($file));
+        $uploader = $this->createuploader($input->getOption('source'), new ConsoleLogger($output), $project);
+        $uploader->setDomainPrefix($this->project->getPrefix());
+        if ($skipFiles = $this->project->getSkipFiles()) {
+            $uploader->setResourceFilter(function ($resourceSlug) use ($skipFiles) {
+                return !in_array($resourceSlug, $skipFiles);
+            });
         }
 
-        $this->writeln($output, 'Saving all...');
-        $project->save();
+        $uploader->upload();
+    }
+
+    /**
+     * Create the downloader instance.
+     *
+     * @param string        $source  The desired source.
+     * @param ConsoleLogger $logger  The logger to use.
+     * @param ProjectModel  $project The project.
+     *
+     * @return XliffResourceUploader
+     *
+     * @throws InvalidArgumentException When the passed destination is invalid.
+     */
+    private function createuploader($source, ConsoleLogger $logger, $project)
+    {
+        switch ($source) {
+            case 'xliff':
+                return new XliffResourceUploader(
+                    $project,
+                    $this->project->getXliffDirectory(),
+                    $this->project->getBaseLanguage(),
+                    $logger
+                );
+            default:
+        }
+
+        throw new InvalidArgumentException(
+            'Invalid upload source: ' . $source . '. Must be xliff or contao'
+        );
     }
 }

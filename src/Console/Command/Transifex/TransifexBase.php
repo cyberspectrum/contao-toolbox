@@ -128,32 +128,6 @@ class TransifexBase extends CommandBase
     }
 
     /**
-     * Retrieve all XLIFF for a given language.
-     *
-     * @param string $language The language to search the xliff files in.
-     *
-     * @return string[]
-     */
-    protected function getAllTxFiles($language)
-    {
-        $iterator = new \DirectoryIterator($this->project->getXliffDirectory() . DIRECTORY_SEPARATOR . $language);
-
-        $files = array();
-        while ($iterator->valid()) {
-            if (!$iterator->isDot()
-                && $iterator->isFile()
-                && $iterator->getExtension() == 'xlf'
-                && $this->isNotFileToSkip($iterator->getPathname())
-            ) {
-                $files[$iterator->getPathname()] = $iterator->getFilename();
-            }
-            $iterator->next();
-        }
-
-        return $files;
-    }
-
-    /**
      * {@inheritDoc}
      */
     protected function initialize(InputInterface $input, OutputInterface $output)
