@@ -93,14 +93,17 @@ class TranslationSync
     /**
      * Remove all keys in destination that are not present in source.
      *
-     * @return void
+     * @return bool
      */
     public function cleanUp()
     {
+        $removed = false;
         foreach (array_diff($this->destination->keys(), $this->source->keys()) as $key) {
             $this->logger->info('Removing orphan key <info>{key}</info>.', ['key' => $key]);
             $this->destination->remove($key);
+            $removed = true;
         }
+        return $removed;
     }
 
     /**
@@ -119,11 +122,12 @@ class TranslationSync
         $cleanUp = true,
         LoggerInterface $logger = null
     ) {
-        $sync = new static($source, $destination, $logger);
+        $sync   = new static($source, $destination, $logger);
+        $result = false;
         if ($cleanUp) {
-            $sync->cleanUp();
+            $result = $sync->cleanUp();
         }
 
-        return $sync->sync();
+        return $sync->sync() || $result;
     }
 }
