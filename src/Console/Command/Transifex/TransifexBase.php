@@ -22,7 +22,7 @@
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
 use CyberSpectrum\ContaoToolBox\Console\Command\CommandBase;
-use CyberSpectrum\PhpTransifex\Client;
+use CyberSpectrum\PhpTransifex\PhpTransifex;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -36,37 +36,18 @@ class TransifexBase extends CommandBase
     /**
      * The transport client.
      *
-     * @var Client
+     * @var PhpTransifex
      */
-    private $api;
-
-    /**
-     * The user name.
-     *
-     * @var string
-     */
-    private $user;
-
-    /**
-     * The password.
-     *
-     * @var string
-     */
-    private $password;
+    private $transifex;
 
     /**
      * Retrieve the transport client.
      *
-     * @return Client
+     * @return PhpTransifex
      */
-    protected function getApi()
+    protected function getPhpTransifex()
     {
-        if (!$this->api) {
-            $this->api = new Client();
-            $this->api->authenticate($this->user, $this->password);
-        }
-
-        return $this->api;
+        return $this->transifex;
     }
 
     /**
@@ -126,11 +107,13 @@ class TransifexBase extends CommandBase
     {
         parent::initialize($input, $output);
 
-        $this->password = null;
-        if (null === ($this->user = $this->getToken($input, $output))) {
-            $this->user     = $this->getUser($input, $output);
-            $this->password = $this->getPassword($input, $output);
+        $password = null;
+        if (null === ($user = $this->getToken($input, $output))) {
+            $user     = $this->getUser($input, $output);
+            $password = $this->getPassword($input, $output);
         }
+
+        $this->transifex = PhpTransifex::create($user, $password);
     }
 
     /**

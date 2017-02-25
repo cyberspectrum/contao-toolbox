@@ -22,7 +22,6 @@ namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 use CyberSpectrum\ContaoToolBox\Transifex\Download\ContaoResourceDownloader;
 use CyberSpectrum\ContaoToolBox\Transifex\Download\XliffResourceDownloader;
 use CyberSpectrum\PhpTransifex\Model\ProjectModel;
-use CyberSpectrum\PhpTransifex\PhpTransifex;
 use InvalidArgumentException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -67,8 +66,7 @@ class DownloadTransifex extends TransifexBase
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $transifex  = new PhpTransifex($this->getApi());
-        $project    = $transifex->project($this->project->getProject());
+        $project    = $this->getPhpTransifex()->project($this->project->getProject());
         $downloader = $this->createDownloader($input->getOption('destination'), new ConsoleLogger($output), $project);
 
         if ('all' !== ($languages = $input->getArgument('languages'))) {

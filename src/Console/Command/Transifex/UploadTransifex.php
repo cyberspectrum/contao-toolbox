@@ -21,7 +21,6 @@ namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
 use CyberSpectrum\ContaoToolBox\Transifex\Upload\XliffResourceUploader;
 use CyberSpectrum\PhpTransifex\Model\ProjectModel;
-use CyberSpectrum\PhpTransifex\PhpTransifex;
 use InvalidArgumentException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -58,14 +57,7 @@ class UploadTransifex extends TransifexBase
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        if (!($this->project->getProject() && $this->getApi())) {
-            $this->writelnAlways($output, '<error>No project set or no API received, exiting.</error>');
-
-            return;
-        }
-
-        $transifex = new PhpTransifex($this->getApi());
-        $project   = $transifex->project($this->project->getProject());
+        $project = $this->getPhpTransifex()->project($this->project->getProject());
 
         $uploader = $this->createuploader($input->getOption('source'), new ConsoleLogger($output), $project);
         $uploader->setDomainPrefix($this->project->getPrefix());
