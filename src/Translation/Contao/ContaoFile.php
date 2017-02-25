@@ -105,6 +105,16 @@ class ContaoFile extends AbstractFile
     }
 
     /**
+     * Retrieve the filename.
+     *
+     * @return string
+     */
+    public function getFileName()
+    {
+        return $this->filename;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function keys()
