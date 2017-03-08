@@ -243,9 +243,13 @@ class ContaoFile extends AbstractFile
     protected function getHead()
     {
         $data = $this->head;
+        $time = $this->lastchange;
+        if (null === $time) {
+            $time = time();
+        }
 
         if (preg_match('#last-updated: (.*)#', $data, $match)) {
-            $data = str_replace($match[1], date('c', $this->lastchange), $data);
+            $data = str_replace($match[1], date('c', $time), $data);
         }
 
         if ($this->transifexProject
