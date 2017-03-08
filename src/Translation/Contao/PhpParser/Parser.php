@@ -33,7 +33,7 @@ class Parser implements ParserInterface
      *
      * @var ContaoFile
      */
-    protected $file;
+    private $file;
 
     /**
      * The logger to use.
@@ -162,7 +162,13 @@ class Parser implements ParserInterface
      */
     public function setValue($key, $value)
     {
-        $this->file->set($key, $value);
+        \Closure::bind(
+            function ($key, $value) {
+                $this->langstrings[$key] = $value;
+            },
+            $this->file,
+            $this->file
+        )->__invoke($key, $value);
     }
 
     /**
@@ -190,7 +196,7 @@ class Parser implements ParserInterface
                     $subparser = new StringValueParser($this);
                     $subparser->parse();
 
-                    $this->file->set(implode('.', $this->keystack), $subparser->getValue());
+                    $this->setValue(implode('.', $this->keystack), $subparser->getValue());
                 }
 
                 continue;
