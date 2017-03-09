@@ -197,7 +197,7 @@ abstract class AbstractResourceDownloader
     private function processResource($resource)
     {
         if (substr($resource->slug(), 0, strlen($this->domainPrefix)) != $this->domainPrefix) {
-            $this->logger->notice(
+            $this->logger->info(
                 'Resource {slug} does not match domain prefix {prefix}, skipping...',
                 ['slug' => $resource->slug(), 'prefix' => $this->domainPrefix]
             );
