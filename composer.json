@@ -7,7 +7,7 @@
     "Helper"
   ],
   "homepage": "http://cyberspectrum.de",
-  "license": "LGPL-3.0+",
+  "license": "LGPL-3.0-or-later",
   "authors": [
     {
       "name": "Christian Schiffler",
@@ -15,17 +15,17 @@
     }
   ],
   "require": {
-    "php": ">=5.6",
-    "symfony/console": "~2.8 | ~3.0",
+    "php": "^5.6 | ^7.0",
     "cyberspectrum/php-transifex": "~1.0",
     "php-http/guzzle6-adapter": "~1.1",
-    "symfony/finder": "~2.8 | ~3.0",
-    "symfony/filesystem": "~2.8 | ~3.0"
+    "symfony/console": "~2.8 | ~3.0 | ~4.0",
+    "symfony/finder": "~2.8 | ~3.0 | ~4.0",
+    "symfony/filesystem": "~2.8 | ~3.0 | ~4.0"
   },
   "require-dev": {
     "cyberspectrum/pharpiler": "~1.0",
-    "phpcq/all-tasks": "~1.1",
-    "symfony/process": "~2.8 | ~3.0"
+    "phpcq/all-tasks": "~1.2",
+    "symfony/process": "~2.8 | ~3.0 | ~4.0"
   },
   "autoload": {
     "psr-4": {

@@ -24,7 +24,7 @@ use Symfony\Component\Filesystem\Filesystem;
 /**
  * This class is the test base.
  */
-abstract class TestCase extends \PHPUnit_Framework_TestCase
+abstract class TestCase extends \PHPUnit\Framework\TestCase
 {
     /**
      * Temporary working dir.
@@ -38,7 +38,7 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
      */
     public function tearDown()
     {
-        if (isset($this->workDir)) {
+        if (null !== $this->workDir) {
             $filesystem = new Filesystem();
             $filesystem->remove($this->workDir);
         }
@@ -61,8 +61,8 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
      */
     protected function getTempDir()
     {
-        if (!isset($this->workDir)) {
-            $temp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('contao-toolbox-test');
+        if (null === $this->workDir) {
+            $temp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('contao-toolbox-test', false);
             mkdir($temp, 0777, true);
             $this->workDir = $temp;
         }
@@ -82,7 +82,7 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
     public function getTempFile($name = '', $forceDirectories = true)
     {
         if ('' === $name) {
-            $name = uniqid();
+            $name = uniqid('', false);
         }
 
         $path = $this->getTempDir() . DIRECTORY_SEPARATOR . $name;
@@ -93,5 +93,4 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
 
         return $path;
     }
-
 }
