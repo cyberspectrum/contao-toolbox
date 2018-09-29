@@ -296,9 +296,7 @@ class ContaoFile extends AbstractFile
         $data = file_get_contents($this->filename);
         // Ok, here comes the dirty work.
         // We take everything at the beginning of the file until the closing of the first doc comment.
-        preg_match('#^(.+\*/)#sU', $data, $matches);
-
-        if ($matches && count($matches[0])) {
+        if ((false !== preg_match('#^(.+\*/)#sU', $data, $matches)) && isset($matches[0])) {
             $this->head = $matches[0];
             if (preg_match(
                 '#https://www.transifex.com/projects/p/(.*)/language/(.*)/#',
@@ -336,9 +334,7 @@ class ContaoFile extends AbstractFile
         }
 
         sort($keys);
-        if (!is_dir($directory = dirname($this->filename))) {
-            mkdir($directory, 0755, true);
-        }
+        $this->createPathIfNotExists();
 
         $maxlen       = 0;
         $langPrefixes = array();
@@ -370,7 +366,7 @@ class ContaoFile extends AbstractFile
         }
         $buffer  .= PHP_EOL;
         $resource = fopen($this->filename, 'wb');
-        fputs($resource, $buffer);
+        fwrite($resource, $buffer);
 
         fclose($resource);
         $this->changed = false;
@@ -383,5 +379,22 @@ class ContaoFile extends AbstractFile
     public function getIterator()
     {
         return new TranslationIterator($this);
+    }
+
+    /**
+     * Ensure the configured path exists.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException When the path could not be created.
+     */
+    private function createPathIfNotExists()
+    {
+        if (!is_dir($directory = dirname($this->filename))
+            && !mkdir($directory, 0755, true)
+            && !is_dir($directory)
+        ) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $directory));
+        }
     }
 }
