@@ -52,5 +52,6 @@ class DelegatingLoggerTest extends TestCase
     {
         $logger = new DelegatingLogger();
         $logger->alert('Whoopsie!', ['context' => 'value']);
+        $this->addToAssertionCount(1);
     }
 }
