@@ -80,8 +80,15 @@ class LanguageDirectoryLocatorTest extends TestCase
     {
         $tmp = $this->getTempDir();
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('The path ' . $tmp . DIRECTORY_SEPARATOR . 'languages does not exist.');
+        if (method_exists($this, 'expectException')) {
+            $this->expectException(\InvalidArgumentException::class);
+            $this->expectExceptionMessage('The path ' . $tmp . DIRECTORY_SEPARATOR . 'languages does not exist.');
+        } else {
+            $this->setExpectedException(
+                \InvalidArgumentException::class,
+                'The path ' . $tmp . DIRECTORY_SEPARATOR . 'languages does not exist.'
+            );
+        }
 
         $locator = new LanguageDirectoryLocator($tmp . DIRECTORY_SEPARATOR . 'languages');
 
