@@ -23,5 +23,5 @@ error_reporting(-1);
 
 \CyberSpectrum\ContaoToolBox\Util\ErrorHandler::register();
 
-$console = new ToolBoxApplication();
+$console = new ToolBoxApplication('Contao Toolbox', '@package_version@ (@release_date@)');
 $console->run();

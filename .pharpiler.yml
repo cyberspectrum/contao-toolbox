@@ -40,6 +40,9 @@ rewrites:
         # 30 * 86400 = 2592000
         ahead: 2592000
 
+  - files:
+      - "%package:cyberspectrum/contao-toolbox%/bin/ctb"
+    filter:
       - type: replace
         "@package_version@": "%version:cyberspectrum/contao-toolbox%"
 
