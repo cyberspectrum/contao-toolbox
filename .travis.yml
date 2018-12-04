@@ -6,8 +6,6 @@ php:
   - "7.0"
   - "5.6"
 
-sudo: false
- 
 install:
   - travis_retry composer self-update && composer --version
   - travis_retry composer install --prefer-dist --no-interaction
@@ -15,6 +13,8 @@ install:
 script:
   - ant -keep-going
   - vendor/bin/pharpiler compile
+  - chmod +x ctb.phar
+  - ./ctb.phar
 
 # Hack to make things work again - we can not use a shallow repository.
 git:
