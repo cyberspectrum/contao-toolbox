@@ -57,13 +57,13 @@ class LanguageDirectoryLocator
     /**
      * Determine the list of languages.
      *
-     * @param array $filter The files to be filtered away (to be ignored).
+     * @param array $allowed The languages to be kept.
      *
      * @return string[]
      *
      * @throws \InvalidArgumentException When the given source directory does not exist, an exception is thrown.
      */
-    public function determineLanguages($filter = [])
+    public function determineLanguages($allowed = [])
     {
         if (!is_dir($this->baseDir)) {
             throw new \InvalidArgumentException(sprintf('The path %s does not exist.', $this->baseDir));
@@ -80,7 +80,7 @@ class LanguageDirectoryLocator
                 continue;
             }
 
-            if ($this->isValidLanguageDirectory($item) && !$this->isFiltered($item, $filter)) {
+            if ($this->isValidLanguageDirectory($item) && !$this->isFiltered($item, $allowed)) {
                 $matches[] = $item;
                 $this->logger->info('using {dir}', ['dir' => $item]);
             } else {
@@ -119,6 +119,6 @@ class LanguageDirectoryLocator
             return false;
         }
 
-        return in_array($dirName, $filter);
+        return !in_array($dirName, $filter);
     }
 }

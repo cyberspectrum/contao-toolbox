@@ -65,7 +65,7 @@ class LanguageDirectoryLocatorTest extends TestCase
 
         $locator = new LanguageDirectoryLocator($tmp);
 
-        $result = $locator->determineLanguages(['en']);
+        $result = $locator->determineLanguages(['de', 'de_DE', 'fr']);
         sort($result);
 
         $this->assertSame(['de', 'de_DE', 'fr'], $result);
