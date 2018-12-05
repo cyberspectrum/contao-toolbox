@@ -196,7 +196,7 @@ abstract class AbstractResourceDownloader
      */
     private function processResource($resource)
     {
-        if (substr($resource->slug(), 0, strlen($this->domainPrefix)) != $this->domainPrefix) {
+        if (0 !== strpos($resource->slug(), $this->domainPrefix)) {
             $this->logger->info(
                 'Resource {slug} does not match domain prefix {prefix}, skipping...',
                 ['slug' => $resource->slug(), 'prefix' => $this->domainPrefix]
@@ -232,7 +232,7 @@ abstract class AbstractResourceDownloader
      */
     protected function stripDomainPrefix($resourceSlug)
     {
-        if (substr($resourceSlug, 0, strlen($this->domainPrefix)) != $this->domainPrefix) {
+        if (0 !== strpos($resourceSlug, $this->domainPrefix)) {
             throw new InvalidArgumentException('Slug is not prefixed.');
         }
 

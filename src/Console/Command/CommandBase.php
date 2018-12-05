@@ -59,29 +59,25 @@ abstract class CommandBase extends Command
             'c',
             InputOption::VALUE_REQUIRED,
             'Contao language root directory (base to "en","de" etc.), ' .
-            'if empty it will get read from the composer.json.',
-            null
+            'if empty it will get read from the composer.json.'
         );
         $this->addOption(
             'xliff',
             'x',
             InputOption::VALUE_OPTIONAL,
-            'Xliff root directory (base to "en","de" etc.), if empty it will get read from the composer.json.',
-            null
+            'Xliff root directory (base to "en","de" etc.), if empty it will get read from the composer.json.'
         );
         $this->addOption(
             'projectname',
             'p',
             InputOption::VALUE_OPTIONAL,
-            'The project name, if empty it will get read from the composer.json.',
-            null
+            'The project name, if empty it will get read from the composer.json.'
         );
         $this->addOption(
             'prefix',
             null,
             InputOption::VALUE_OPTIONAL,
-            'The prefix for all language files, if empty it will get read from the composer.json.',
-            null
+            'The prefix for all language files, if empty it will get read from the composer.json.'
         );
         $this->addOption(
             'base-language',
@@ -94,8 +90,7 @@ abstract class CommandBase extends Command
             'skip-files',
             's',
             InputOption::VALUE_OPTIONAL,
-            'Comma delimited list of language files that should be skipped (e.g. "addresses,default").',
-            null
+            'Comma delimited list of language files that should be skipped (e.g. "addresses,default").'
         );
         $this->addOption(
             'transifex-config',
@@ -141,17 +136,17 @@ abstract class CommandBase extends Command
      */
     protected function getConfigValue($name)
     {
-        if (substr($name, 0, 1) != '/') {
+        if (0 !== strpos($name, '/')) {
             $name = '/' . $name;
         }
         $config = new JsonConfig(getcwd() . '/composer.json');
         $value  = $config->getConfigValue('/extra/contao' . $name);
 
         // Fallback to global config.
-        if ($value === null) {
+        if (null === $value) {
             /** @var JsonConfig $config */
             $config = $this->getApplication()->getConfig();
-            if ($config !== null) {
+            if (null !== $config) {
                 $value = $config->getConfigValue($name);
             }
         }
@@ -183,7 +178,7 @@ abstract class CommandBase extends Command
     protected function checkValidSlug($slug)
     {
         if (preg_match_all('#^([a-z,A-Z,0-9,\-,_]*)(.+)?$#', $slug, $matches)
-            && (strlen($matches[2][0]) > 0)
+            && ('' !== $matches[2][0])
         ) {
             throw new \RuntimeException(
                 sprintf(
@@ -258,10 +253,10 @@ abstract class CommandBase extends Command
     {
         $prefix = $input->getOption('prefix');
 
-        if ($prefix === null) {
+        if (null === $prefix) {
             $prefix = $this->getTransifexConfigValue('/prefix');
 
-            if ($prefix === null) {
+            if (null === $prefix) {
                 throw new \RuntimeException('Error: unable to determine transifex prefix.');
             }
             $this->writelnVerbose($output, sprintf('<info>automatically using prefix: %s</info>', $prefix));
@@ -285,10 +280,10 @@ abstract class CommandBase extends Command
     {
         $txlang = $input->getOption('xliff');
 
-        if ($txlang === null) {
+        if (null === $txlang) {
             $txlang = $this->getTransifexConfigValue('/languages_tx');
 
-            if ($txlang === null) {
+            if (null === $txlang) {
                 throw new \RuntimeException('Error: unable to determine transifex root folder.');
             }
             $this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $txlang));
@@ -312,10 +307,10 @@ abstract class CommandBase extends Command
     {
         $ctolang = $input->getOption('contao');
 
-        if ($ctolang === null) {
+        if (null === $ctolang) {
             $ctolang = $this->getTransifexConfigValue('/languages_cto');
 
-            if ($ctolang === null) {
+            if (null === $ctolang) {
                 throw new \RuntimeException('Error: unable to determine contao language root folder.');
             }
             $this->writelnVerbose(

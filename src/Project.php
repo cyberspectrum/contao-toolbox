@@ -226,7 +226,7 @@ class Project
     protected function guardValidSlug($slug)
     {
         if (preg_match_all('#^([a-z,A-Z,0-9,\-,_]*)(.+)?$#', $slug, $matches)
-            && (strlen($matches[2][0]) > 0)
+            && ('' !== $matches[2][0])
         ) {
             throw new \RuntimeException(
                 sprintf(

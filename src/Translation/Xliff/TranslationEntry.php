@@ -23,16 +23,11 @@ use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractTranslationEntry;
 
 /**
  * This class represents a translation entry in a XLIFF file.
+ *
+ * @property XliffFile $doc Defined in parent class.
  */
 class TranslationEntry extends AbstractTranslationEntry
 {
-    /**
-     * The document we are belonging to.
-     *
-     * @var XliffFile
-     */
-    protected $doc;
-
     /**
      * Create a new instance.
      *

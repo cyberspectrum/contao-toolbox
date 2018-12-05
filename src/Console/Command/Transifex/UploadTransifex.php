@@ -64,7 +64,7 @@ class UploadTransifex extends TransifexBase
         $uploader->setDomainPrefix($this->project->getPrefix());
         if ($skipFiles = $this->project->getSkipFiles()) {
             $uploader->setResourceFilter(function ($resourceSlug) use ($skipFiles) {
-                return !in_array($resourceSlug, $skipFiles);
+                return !in_array($resourceSlug, $skipFiles, true);
             });
         }
 

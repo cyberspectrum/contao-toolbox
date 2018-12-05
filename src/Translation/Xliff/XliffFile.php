@@ -221,6 +221,8 @@ class XliffFile extends AbstractFile
      * Save the contents to disk.
      *
      * @return void
+     *
+     * @throws \RuntimeException When the directory can not be created.
      */
     public function save()
     {
@@ -232,8 +234,9 @@ class XliffFile extends AbstractFile
                 return;
             }
 
-            if (!is_dir($directory = dirname($this->filename))) {
-                mkdir($directory, 0755, true);
+            if (!is_dir($directory = dirname($this->filename))
+                && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $directory));
             }
 
             $this->doc->save($this->filename);
@@ -556,12 +559,12 @@ class XliffFile extends AbstractFile
      *
      * @return \DOMNode
      *
-     * @throws \Exception When an empty Id is queried, an Exception is thrown.
+     * @throws \RuntimeException When an empty Id is queried, an Exception is thrown.
      */
     protected function searchForId($identifier, $create = false)
     {
-        if (!strlen($identifier)) {
-            throw new \Exception('Empty Id passed.');
+        if ('' === $identifier) {
+            throw new \RuntimeException('Empty Id passed.');
         }
 
         /** @var \DOMNodeList $transUnits */
@@ -575,7 +578,7 @@ class XliffFile extends AbstractFile
             );
         }
 
-        if ($create && ($transUnit === null)) {
+        if ($create && (null === $transUnit)) {
             $body = $this->getXPathFirstItem('/xliff:xliff/xliff:file/xliff:body');
 
             /** @var $transUnit \DOMElement */

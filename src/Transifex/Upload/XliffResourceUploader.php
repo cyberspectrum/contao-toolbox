@@ -52,6 +52,6 @@ class XliffResourceUploader extends AbstractResourceUploader
     {
         return !$iterator->isDot()
             && $iterator->isFile()
-            && $iterator->getExtension() === 'xlf';
+            && 'xlf' === $iterator->getExtension();
     }
 }

@@ -47,35 +47,35 @@ class Parser implements ParserInterface
      *
      * @var array
      */
-    protected $tokens;
+    private $tokens;
 
     /**
      * The previous token.
      *
      * @var string|int|null|array
      */
-    protected $prevToken;
+    private $prevToken;
 
     /**
      * Index of the previous token.
      *
      * @var int
      */
-    protected $token;
+    private $token;
 
     /**
      * The stack of language keys.
      *
      * @var string[]
      */
-    protected $keystack;
+    private $keystack;
 
     /**
      * The auto index.
      *
      * @var array
      */
-    protected $autoIndex = array();
+    private $autoIndex = array();
 
     /**
      * Create a new instance.
@@ -108,7 +108,7 @@ class Parser implements ParserInterface
     public function pushStack($value)
     {
         if (is_array($value)) {
-            if ($value[0] == T_CONSTANT_ENCAPSED_STRING) {
+            if (T_CONSTANT_ENCAPSED_STRING === $value[0]) {
                 $this->keystack[] = substr($value[1], 1, -1);
             } else {
                 $this->keystack[] = strval($value[1]);
@@ -224,7 +224,7 @@ class Parser implements ParserInterface
         $subparser = new StringValueParser($this);
         $subparser->parse();
 
-        if ($subparser->getValue() === null) {
+        if (null === $subparser->getValue()) {
             // auto indexed array
             if ($this->tokenIs(']')) {
                 $path = implode('.', $this->keystack);
@@ -264,14 +264,14 @@ class Parser implements ParserInterface
     {
         $this->getNextToken(T_VARIABLE);
         while ($this->token) {
-            if (($this->token[0] == T_VARIABLE) && $this->token[1] == '$GLOBALS') {
+            if ((T_VARIABLE === $this->token[0]) && '$GLOBALS' === $this->token[1]) {
                 $this->getNextToken();
                 if ($this->tokenIs('[')) {
                     $this->getNextToken();
 
                     $this->checkIsNotString(T_CONSTANT_ENCAPSED_STRING);
                     // Wrong sub array.
-                    if (substr($this->token[1], 1, -1) != 'TL_LANG') {
+                    if ('TL_LANG' !== substr($this->token[1], 1, -1)) {
                         $this->bailUnexpectedToken(T_CONSTANT_ENCAPSED_STRING);
                     }
 
@@ -295,7 +295,7 @@ class Parser implements ParserInterface
      */
     public function checkIsString($value = false, $expected = false)
     {
-        if (!is_string($this->token) || ($value && ($this->token != $value))) {
+        if (!is_string($this->token) || ($value && ($this->token !== $value))) {
             $this->bailUnexpectedToken($expected);
         }
     }
@@ -311,7 +311,7 @@ class Parser implements ParserInterface
      */
     public function checkIsNotString($value = false, $expected = false)
     {
-        if (is_string($this->token) || ($value && ($this->token[0] != $value))) {
+        if (is_string($this->token) || ($value && ($this->token[0] !== $value))) {
             $this->bailUnexpectedToken($expected);
         }
     }
@@ -326,22 +326,22 @@ class Parser implements ParserInterface
     public function tokenIs($type)
     {
         if (is_string($this->token)) {
-            return ($this->token == $type);
+            return ($this->token === $type);
         }
 
-        return ($this->token[0] == $type);
+        return ($this->token[0] === $type);
     }
 
     /**
      * {@inheritDoc}
      *
-     * @throws \Exception With the unexpected token in the message.
+     * @throws \RuntimeException With the unexpected token in the message.
      */
     public function bailUnexpectedToken($expected = false)
     {
         if (is_array($this->token)) {
             if ($expected) {
-                throw new \Exception(
+                throw new \RuntimeException(
                     sprintf(
                         'Unexpected token %s detected at position %d - value: %s, expected %s',
                         token_name($this->token[0]),
@@ -352,7 +352,7 @@ class Parser implements ParserInterface
                 );
             }
 
-            throw new \Exception(
+            throw new \RuntimeException(
                 sprintf(
                     'Unexpected token %s detected at position %d - value: %s',
                     token_name($this->token[0]),
@@ -362,7 +362,7 @@ class Parser implements ParserInterface
             );
         }
 
-        throw new \Exception(sprintf('Unexpected token %s detected.', $this->token));
+        throw new \RuntimeException(sprintf('Unexpected token %s detected.', $this->token));
     }
 
     /**
@@ -392,7 +392,7 @@ class Parser implements ParserInterface
     public function getNextToken($searchfor = false)
     {
         $this->advanceToken();
-        if ($searchfor !== false) {
+        if (false !== $searchfor) {
             $this->skipUntilSearchedToken($searchfor);
         } else {
             $this->skipWhiteSpaceAndComments();
@@ -409,8 +409,8 @@ class Parser implements ParserInterface
     private function skipUntilSearchedToken($searchFor)
     {
         while ($this->token) {
-            if ((is_string($searchFor) && ($searchFor == $this->token))
-                || (is_int($searchFor) && is_array($this->token) && ($searchFor == $this->token[0]))
+            if ((is_string($searchFor) && ($searchFor === $this->token))
+                || (is_int($searchFor) && is_array($this->token) && ($searchFor === $this->token[0]))
             ) {
                 break;
             }

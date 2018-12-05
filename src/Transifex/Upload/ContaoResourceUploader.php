@@ -81,6 +81,6 @@ class ContaoResourceUploader extends AbstractResourceUploader
     {
         return !$iterator->isDot()
             && $iterator->isFile()
-            && $iterator->getExtension() === 'php';
+            && 'php' === $iterator->getExtension();
     }
 }

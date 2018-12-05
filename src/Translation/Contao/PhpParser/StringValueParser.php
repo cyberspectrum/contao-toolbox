@@ -50,7 +50,7 @@ class StringValueParser extends AbstractParser
             }
             if ($this->tokenIs(T_LNUMBER)) {
                 $token        = $this->getToken();
-                $this->data[] = strval($token[1]);
+                $this->data[] = (string) $token[1];
                 $this->getNextToken();
                 continue;
             }

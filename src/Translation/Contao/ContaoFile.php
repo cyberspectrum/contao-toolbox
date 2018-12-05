@@ -146,7 +146,7 @@ class ContaoFile extends AbstractFile
     {
         if ($value !== $this->get($key)) {
             $this->langstrings[$key] = $value;
-            $this->logger->debug('ContaoFile::setValue {key} => {value}', ['key' => $key, 'value' => $value]);
+            $this->logger->debug('ContaoFile::setValue {key} => {value}', compact('key', 'value'));
             $this->changed = true;
         }
 

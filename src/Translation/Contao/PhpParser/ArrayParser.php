@@ -104,7 +104,7 @@ class ArrayParser extends AbstractParser
 
         if ($this->tokenIs(T_DOUBLE_ARROW)) {
             // We MUST have an key when double arrow is encountered.
-            if ($key === null) {
+            if (null === $key) {
                 $this->bailUnexpectedToken();
             }
             $this->debug('key: ' . var_export($key, true));

@@ -129,7 +129,7 @@ class FromXliffToPhp extends AbstractConverter
 
         $xliff = new XliffFile($srcFile, $this->logger);
 
-        if ($xliff->getOriginal() != $resource) {
+        if ($xliff->getOriginal() !== $resource) {
             throw new InvalidArgumentException(
                 sprintf(
                     'Unexpected domain "%s" found in file "%s" instead of domain "%s"',

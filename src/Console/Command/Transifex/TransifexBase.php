@@ -61,22 +61,19 @@ class TransifexBase extends CommandBase
             'user',
             'U',
             InputOption::VALUE_OPTIONAL,
-            'Username on transifex, if empty prompt on console.',
-            null
+            'Username on transifex, if empty prompt on console.'
         );
         $this->addOption(
             'pass',
             'P',
             InputOption::VALUE_OPTIONAL,
-            'Password on transifex, if empty prompt on console.',
-            null
+            'Password on transifex, if empty prompt on console.'
         );
         $this->addOption(
             'token',
             'T',
             InputOption::VALUE_REQUIRED,
-            'Token for transifex.',
-            null
+            'Token for transifex.'
         );
 
         $this->setHelp(

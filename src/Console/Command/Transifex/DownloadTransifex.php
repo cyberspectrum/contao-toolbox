@@ -76,7 +76,7 @@ class DownloadTransifex extends TransifexBase
         $downloader->setTranslationMode($this->getTranslationMode($input));
         if ($skipFiles = $this->project->getSkipFiles()) {
             $downloader->setResourceFilter(function ($resourceSlug) use ($skipFiles) {
-                return !in_array($resourceSlug, $skipFiles);
+                return !in_array($resourceSlug, $skipFiles, true);
             });
         }
 
@@ -96,7 +96,7 @@ class DownloadTransifex extends TransifexBase
     {
         $translationMode = $input->getOption('mode');
         $validModes      = ['reviewed', 'translated', 'default'];
-        if (!in_array($translationMode, $validModes)) {
+        if (!in_array($translationMode, $validModes, true)) {
             throw new \InvalidArgumentException(
                 sprintf(
                     'Invalid translation mode %s specified. Must be one of %s',
@@ -107,7 +107,7 @@ class DownloadTransifex extends TransifexBase
         }
 
         // HOTFIX: translated actually appears to be "translator".
-        if ($translationMode == 'translated') {
+        if ('translated' === $translationMode) {
             $translationMode = 'translator';
         }
 

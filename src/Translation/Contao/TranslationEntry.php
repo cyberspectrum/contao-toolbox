@@ -27,13 +27,6 @@ use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractTranslationEntry;
 class TranslationEntry extends AbstractTranslationEntry
 {
     /**
-     * The document we are belonging to.
-     *
-     * @var ContaoFile
-     */
-    protected $doc;
-
-    /**
      * Create a new instance.
      *
      * @param string     $key The translation key.

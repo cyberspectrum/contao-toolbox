@@ -47,7 +47,7 @@ class JsonConfig
 
         $this->data = json_decode(file_get_contents($filename), true);
 
-        if ($this->data === null) {
+        if (null === $this->data) {
             throw new \InvalidArgumentException(sprintf('Error parsing %s - %s', $filename, json_last_error()));
         }
     }
@@ -55,9 +55,8 @@ class JsonConfig
     /**
      * Scan to a given value.
      *
-     * @param string $path  The path.
-     *
-     * @param array  $scope The current array scope.
+     * @param string[] $path  The paths.
+     * @param array    $scope The current array scope.
      *
      * @return null|array|string|int
      */

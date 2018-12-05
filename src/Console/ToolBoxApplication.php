@@ -143,7 +143,7 @@ class ToolBoxApplication extends BaseApplication
                         'The APPDATA or CBT_HOME environment variable must be set for cbt to run correctly'
                     );
                 }
-                $home = strtr(getenv('APPDATA'), '\\', '/') . '/CBT';
+                $home = str_replace('\\', '/', getenv('APPDATA')) . '/CBT';
             } else {
                 if (!getenv('HOME')) {
                     throw new \RuntimeException(

@@ -45,12 +45,12 @@ abstract class AbstractTranslationEntry
      *
      * @param AbstractFile $doc The document this entry belongs to.
      *
-     * @throws \Exception When the key is empty.
+     * @throws \RuntimeException When the key is empty.
      */
     public function __construct($key, AbstractFile $doc)
     {
-        if (!strlen($key)) {
-            throw new \Exception('Empty Id passed.');
+        if ('' === $key) {
+            throw new \RuntimeException('Empty Id passed.');
         }
 
         $this->key = $key;
