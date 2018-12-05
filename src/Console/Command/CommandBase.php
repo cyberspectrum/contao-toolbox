@@ -20,6 +20,7 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command;
 
+use CyberSpectrum\ContaoToolBox\Console\ToolBoxApplication;
 use CyberSpectrum\ContaoToolBox\Project;
 use CyberSpectrum\ContaoToolBox\Util\JsonConfig;
 use Symfony\Component\Console\Command\Command;
@@ -33,6 +34,27 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 abstract class CommandBase extends Command
 {
+    /**
+     * The config from ctb.json.
+     *
+     * @var JsonConfig
+     */
+    private $config;
+
+    /**
+     * The composer config.
+     *
+     * @var JsonConfig
+     */
+    private $composer;
+
+    /**
+     * The application config.
+     *
+     * @var JsonConfig
+     */
+    private $appConfig;
+
     /**
      * The project information.
      *
@@ -139,19 +161,28 @@ abstract class CommandBase extends Command
         if (0 !== strpos($name, '/')) {
             $name = '/' . $name;
         }
-        $config = new JsonConfig(getcwd() . '/composer.json');
-        $value  = $config->getConfigValue('/extra/contao' . $name);
 
-        // Fallback to global config.
-        if (null === $value) {
-            /** @var JsonConfig $config */
-            $config = $this->getApplication()->getConfig();
-            if (null !== $config) {
-                $value = $config->getConfigValue($name);
-            }
+        if ($this->config && (null !== $value = $this->config->getConfigValue($name))) {
+            return $value;
         }
 
-        return $value;
+        if ($this->composer && (null !== $value = $this->composer->getConfigValue('/extra/contao' . $name))) {
+            // @codingStandardsIgnoreStart - Deprecations may be silenced.
+            @trigger_error('Deprecated configuration from composer.json in use.' .
+                ' Please move value ' . $name . ' to ctb.json or global configuration.',
+                E_USER_DEPRECATED
+            );
+            // @codingStandardsIgnoreEnd
+            return $value;
+        }
+
+        // Fallback to global config.
+        /** @var JsonConfig $config */
+        if ($this->appConfig && null !== $value = $this->appConfig->getConfigValue($name)) {
+            return $value;
+        }
+
+        return null;
     }
 
     /**
@@ -198,6 +229,16 @@ abstract class CommandBase extends Command
      */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
+        if (file_exists($composer = getcwd() . '/composer.json')) {
+            $this->composer = new JsonConfig($composer);
+        }
+        if (file_exists($composer = getcwd() . '/ctb.json')) {
+            $this->config = new JsonConfig($composer);
+        }
+        if (($application = $this->getApplication()) instanceof ToolBoxApplication) {
+            $this->appConfig = $application->getConfig();
+        }
+
         $this->transifexconfig = $input->getOption('transifex-config');
         $this->project         = new Project();
         $this->setProject($input, $output);
