@@ -20,6 +20,7 @@
 namespace CyberSpectrum\ContaoToolBox\Transifex\Download;
 
 use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile;
+use CyberSpectrum\PhpTransifex\Model\ResourceModel;
 
 /**
  * This class synchronizes all Contao resources from transifex.
@@ -29,15 +30,15 @@ class ContaoResourceDownloader extends AbstractResourceDownloader
     /**
      * Fetch the contao files for the passed resource.
      *
-     * @param string $resource The resource slug.
+     * @param ResourceModel $resource The resource slug.
      *
      * @return ContaoFile[]
      */
-    protected function getFiles($resource)
+    protected function getFiles(ResourceModel $resource)
     {
         $files = [];
         foreach ($this->allowedLanguages as $language) {
-            $files[] = $this->createContaoFile($resource, $language);
+            $files[] = $this->createContaoFile($resource->slug(), $language);
         }
 
         return $files;

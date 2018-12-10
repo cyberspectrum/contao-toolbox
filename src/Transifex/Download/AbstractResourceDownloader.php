@@ -114,11 +114,12 @@ abstract class AbstractResourceDownloader
      */
     public function setAllowedLanguages(array $allowedLanguages = null)
     {
-        // Base language must never be polled.
-        $this->allowedLanguages = array_diff($this->project->languages()->codes(), [$this->baseLanguage]);
+        $this->allowedLanguages = $this->project->languages()->codes();
         if (null !== $allowedLanguages) {
             $this->allowedLanguages = array_intersect($this->allowedLanguages, $allowedLanguages);
         }
+        // Base language must never be polled.
+        $this->allowedLanguages = array_diff($this->allowedLanguages, [$this->baseLanguage]);
 
         return $this;
     }
@@ -204,7 +205,7 @@ abstract class AbstractResourceDownloader
             return;
         }
         $this->logger->notice('Processing resource {slug}', ['slug' => $resource->slug()]);
-        $files = $this->getFiles($resource->slug());
+        $files = $this->getFiles($resource);
         $sync  = new ResourceTranslationDownloader($resource, $files, $this->logger);
         $sync
             ->setTranslationMode($this->translationMode)
@@ -215,11 +216,11 @@ abstract class AbstractResourceDownloader
     /**
      * Fetch the translation files for the passed resource.
      *
-     * @param string $resource The resource slug.
+     * @param ResourceModel $resource The resource slug.
      *
      * @return TranslationFileInterface[]
      */
-    abstract protected function getFiles($resource);
+    abstract protected function getFiles(ResourceModel $resource);
 
     /**
      * Strip the domain prefix from the passed slug.

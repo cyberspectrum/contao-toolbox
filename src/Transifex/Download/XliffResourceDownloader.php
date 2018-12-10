@@ -21,6 +21,7 @@ namespace CyberSpectrum\ContaoToolBox\Transifex\Download;
 
 use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
+use CyberSpectrum\PhpTransifex\Model\ResourceModel;
 use RuntimeException;
 
 /**
@@ -31,24 +32,42 @@ class XliffResourceDownloader extends AbstractResourceDownloader
     /**
      * Fetch the xliff files for the passed resource.
      *
-     * @param string $resource The resource slug.
+     * @param ResourceModel $resource The resource slug.
      *
      * @return XliffFile[]
      *
      * @throws RuntimeException When the base language file is missing.
      */
-    protected function getFiles($resource)
+    protected function getFiles(ResourceModel $resource)
     {
-        $domain    = $this->stripDomainPrefix($resource);
+        $domain    = $this->stripDomainPrefix($slug = $resource->slug());
         $localFile = implode(DIRECTORY_SEPARATOR, [$this->outputDirectory, $this->baseLanguage, $domain . '.xlf']);
+        $baseFile  = new XliffFile($localFile, $this->logger);
         if (!file_exists($localFile)) {
-            throw new RuntimeException('Base language file ' . $localFile . ' is missing, can not proceed.');
+            $baseFile->setDataType('php');
+            $baseFile->setOriginal($domain);
+            $baseFile->setSrcLang($this->baseLanguage);
+            $baseFile->setTgtLang($this->baseLanguage);
         }
-        $baseFile = new XliffFile($localFile, $this->logger);
+
+        $upstream = new XliffFile(null, $this->logger);
+        $upstream->loadXML($resource->content());
+        $sync = new TranslationSync($upstream->setMode('source'), $baseFile->setMode('source'), $this->logger);
+        $sync->cleanUp();
+        $sync->sync();
+        $upstream->setMode('target');
+        $baseFile->setMode('target');
+        $sync->sync();
+        $baseFile->setDate($upstream->getDate());
+
+        if ($baseFile->isChanged()) {
+            $this->logger->notice('Updated base language from transifex.');
+            $baseFile->save();
+        }
 
         $files = [];
         foreach ($this->allowedLanguages as $language) {
-            $files[] = $this->createXliffFile($resource, $language, $baseFile);
+            $files[] = $this->createXliffFile($slug, $language, $baseFile);
         }
 
         return $files;
