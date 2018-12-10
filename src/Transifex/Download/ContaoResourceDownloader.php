@@ -19,14 +19,44 @@
 
 namespace CyberSpectrum\ContaoToolBox\Transifex\Download;
 
+use CyberSpectrum\ContaoToolBox\Translation\Base\TranslationFileInterface;
 use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile;
+use CyberSpectrum\PhpTransifex\Model\ProjectModel;
 use CyberSpectrum\PhpTransifex\Model\ResourceModel;
+use Psr\Log\LoggerInterface;
 
 /**
  * This class synchronizes all Contao resources from transifex.
  */
 class ContaoResourceDownloader extends AbstractResourceDownloader
 {
+    /**
+     * The file header.
+     *
+     * @var string[]
+     */
+    private $fileHeader;
+
+    /**
+     * Create a new instance.
+     *
+     * @param ProjectModel    $project         The project to process.
+     * @param string          $outputDirectory The output directory.
+     * @param string          $baseLanguage    The base language.
+     * @param string[]        $fileHeader      The file header to use.
+     * @param LoggerInterface $logger          The logger to use.
+     */
+    public function __construct(
+        ProjectModel $project,
+        $outputDirectory,
+        $baseLanguage,
+        array $fileHeader,
+        LoggerInterface $logger
+    ) {
+        parent::__construct($project, $outputDirectory, $baseLanguage, $logger);
+        $this->fileHeader = $fileHeader;
+    }
+
     /**
      * Fetch the contao files for the passed resource.
      *
@@ -64,5 +94,20 @@ class ContaoResourceDownloader extends AbstractResourceDownloader
         $file->setLanguage($languageCode);
 
         return $file;
+    }
+
+    /**
+     * Set the file header and date.
+     *
+     * @param TranslationFileInterface $file The file.
+     *
+     * @return void
+     */
+    protected function postProcess(TranslationFileInterface $file): void
+    {
+        parent::postProcess($file);
+        /** @var ContaoFile $file */
+        $file->setFileHeader($this->fileHeader);
+        $file->setLastChange(time());
     }
 }

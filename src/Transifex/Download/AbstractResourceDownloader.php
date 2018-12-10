@@ -241,6 +241,19 @@ abstract class AbstractResourceDownloader
     }
 
     /**
+     * Allows to post process a file.
+     *
+     * @param TranslationFileInterface $file The file.
+     *
+     * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    protected function postProcess(TranslationFileInterface $file): void
+    {
+    }
+
+    /**
      * Save the passed translation files.
      *
      * @param TranslationFileInterface[] $files The files to save.
@@ -251,6 +264,7 @@ abstract class AbstractResourceDownloader
     {
         foreach ($files as $file) {
             if ($file->isChanged()) {
+                $this->postProcess($file);
                 $file->save();
             }
         }
