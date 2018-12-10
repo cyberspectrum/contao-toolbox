@@ -47,7 +47,7 @@ class ConvertFromXliff extends ConvertBase
     protected function createConverter(LoggerInterface $logger)
     {
         return new FromXliffToPhp(
-            $this->project->getProject(),
+            $this->project->getPhpFileHeader(),
             $this->project->getContaoDirectory(),
             $this->project->getXliffDirectory(),
             $this->project->getBaseLanguage(),

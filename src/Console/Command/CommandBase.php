@@ -242,6 +242,7 @@ abstract class CommandBase extends Command
         $this->transifexconfig = $input->getOption('transifex-config');
         $this->project         = new Project();
         $this->setProject($input, $output);
+        $this->setPhpFileHeader();
         $this->setPrefix($input, $output);
         $this->setXliffDirectory($input, $output);
         $this->setContaoLanguageDirectory($input, $output);
@@ -277,6 +278,32 @@ abstract class CommandBase extends Command
             $this->writelnVerbose($output, sprintf('<info>automatically using project: %s</info>', $projectName));
         }
         $this->project->setProject($projectName);
+    }
+
+    /**
+     * Set the php file header from command config of use default.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException When the value can not be determined.
+     */
+    private function setPhpFileHeader()
+    {
+        if (null === $fileHeader = $this->getTransifexConfigValue('/php-file-header')) {
+            $fileHeader = 'Translations are managed using Transifex. To create a new translation
+or to help to maintain an existing one, please register at transifex.com.
+
+@link https://www.transifex.com/signup/?join_project=$$project$$
+
+last-updated: $$lastchanged$$
+';
+        }
+
+        if (is_string($fileHeader)) {
+            $fileHeader = explode("\n", $fileHeader);
+        }
+
+        $this->project->setPhpFileHeader($fileHeader);
     }
 
     /**

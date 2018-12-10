@@ -33,25 +33,25 @@ use Symfony\Component\Finder\Finder;
 class FromXliffToPhp extends AbstractConverter
 {
     /**
-     * The project slug.
+     * The file header.
      *
-     * @var string
+     * @var string[]
      */
-    private $projectSlug;
+    private $fileHeader;
 
     /**
      * Create a new instance.
      *
-     * @param string          $projectSlug  The project slug.
+     * @param string[]        $fileHeader   The file header for php files.
      * @param string          $contaoPath   The root directory for the Contao languages.
      * @param string          $xliffPath    The root directory for the Xliff languages.
      * @param string          $baseLanguage The base language.
      * @param LoggerInterface $logger       The logger to use.
      */
-    public function __construct($projectSlug, $contaoPath, $xliffPath, $baseLanguage, LoggerInterface $logger)
+    public function __construct(array $fileHeader, $contaoPath, $xliffPath, $baseLanguage, LoggerInterface $logger)
     {
         parent::__construct($contaoPath, $xliffPath, $baseLanguage, $logger);
-        $this->projectSlug = (string) $projectSlug;
+        $this->fileHeader = $fileHeader;
     }
 
     /**
@@ -100,7 +100,7 @@ class FromXliffToPhp extends AbstractConverter
 
             if (TranslationSync::syncFrom($src, $destination, true, $this->logger)) {
                 $destination->setLanguage($language);
-                $destination->setTransifexProject($this->projectSlug);
+                $destination->setFileHeader($this->fileHeader);
                 $destination->setLastChange($src->getDate());
                 $destination->save();
             }

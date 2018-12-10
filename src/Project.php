@@ -32,6 +32,13 @@ class Project
     private $project = '';
 
     /**
+     * The php doc header to use in php files.
+     *
+     * @var string[]
+     */
+    private $phpFileHeader = [];
+
+    /**
      * The prefix to apply to all language files.
      *
      * @var string
@@ -88,6 +95,30 @@ class Project
         $this->guardValidSlug($project);
 
         $this->project = (string) $project;
+
+        return $this;
+    }
+
+    /**
+     * Retrieve php file header.
+     *
+     * @return string[]
+     */
+    public function getPhpFileHeader()
+    {
+        return $this->phpFileHeader;
+    }
+
+    /**
+     * Set php file header.
+     *
+     * @param string[] $phpFileHeader The new value.
+     *
+     * @return Project
+     */
+    public function setPhpFileHeader(array $phpFileHeader)
+    {
+        $this->phpFileHeader = $phpFileHeader;
 
         return $this;
     }

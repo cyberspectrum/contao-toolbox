@@ -36,13 +36,6 @@ class ContaoFile extends AbstractFile
     private $filename;
 
     /**
-     * The file header.
-     *
-     * @var string
-     */
-    private $head;
-
-    /**
      * The language strings.
      *
      * @var array
@@ -50,18 +43,18 @@ class ContaoFile extends AbstractFile
     private $langstrings;
 
     /**
+     * The file header to use as phpdoc.
+     *
+     * @var string[]
+     */
+    private $fileHeader;
+
+    /**
      * The language.
      *
      * @var string
      */
     private $language;
-
-    /**
-     * The name of the project on transifex.
-     *
-     * @var string
-     */
-    private $transifexProject;
 
     /**
      * The timestamp when this file has been changed the last time.
@@ -178,15 +171,35 @@ class ContaoFile extends AbstractFile
     }
 
     /**
-     * Set the project name that this language file belongs to at transifex.
+     * Retrieve file header.
      *
-     * @param string $name The project name at transifex, will get used to generate the doc comment url.
-     *
-     * @return void
+     * @return string[]
      */
-    public function setTransifexProject($name)
+    public function getFileHeader(): array
     {
-        $this->transifexProject = $name;
+        return $this->fileHeader ?:
+            [
+                'Translations are managed using Transifex. To create a new translation',
+                'or to help to maintain an existing one, please register at transifex.com.',
+                '',
+                '@link https://www.transifex.com/signup/',
+                '',
+                'last-updated: $$lastchanged$$',
+            ];
+    }
+
+    /**
+     * Set file header.
+     *
+     * @param string[] $fileHeader The new value.
+     *
+     * @return ContaoFile
+     */
+    public function setFileHeader(array $fileHeader): ContaoFile
+    {
+        $this->fileHeader = $fileHeader;
+
+        return $this;
     }
 
     /**
@@ -211,28 +224,8 @@ class ContaoFile extends AbstractFile
     public function setLastChange($timestamp)
     {
         $this->lastchange = $timestamp;
-    }
 
-    /**
-     * Return the default heading.
-     *
-     * @return string
-     */
-    protected function getDefaultHead()
-    {
-        return '<?php
-/**
- * Translations are managed using Transifex. To create a new translation
- * or to help to maintain an existing one, please register at transifex.com.
- *
- * @license http://www.gnu.org/licenses/lgpl-3.0.html LGPL
- *
- * @link https://www.transifex.com/signup/
- * @link https://www.transifex.com/projects/p/$$project$$/language/$$lang$$/
- *
- * last-updated: $$lastchanged$$
- */
-';
+        return $this;
     }
 
     /**
@@ -242,35 +235,18 @@ class ContaoFile extends AbstractFile
      */
     protected function getHead()
     {
-        $data = $this->head;
-        $time = $this->lastchange;
-        if (null === $time) {
+        if (null === $time = $this->lastchange) {
             $time = time();
         }
-
-        if (preg_match('#last-updated: (.*)#', $data, $match)) {
-            $data = str_replace($match[1], date('c', $time), $data);
-        }
-
-        if ($this->transifexProject
-            && preg_match_all(
-                '#https://www.transifex.com/projects/p/.*/language/.*/#',
-                $data,
-                $match,
-                PREG_OFFSET_CAPTURE
-            )
-        ) {
-            $data = substr_replace(
-                $data,
-                sprintf(
-                    'https://www.transifex.com/projects/p/%s/language/%s/',
-                    $this->transifexProject,
-                    $this->language
-                ),
-                $match[0][0][1],
-                strlen($match[0][0][0])
-            );
-        }
+        $year = date('Y', $time);
+        $time = date('c', $time);
+        $data = "<?php\n/**\n" . implode("\n", \array_map(function ($line) use ($time, $year) {
+            return rtrim(' * ' . strtr($line, [
+                    '$$lastchanged$$' => $time,
+                    '$$language$$'    => $this->language,
+                    '$$year$$'        => $year,
+                ]));
+        }, $this->fileHeader)) . "\n */\n";
 
         return $data;
     }
@@ -282,7 +258,6 @@ class ContaoFile extends AbstractFile
      */
     protected function createBasicDocument()
     {
-        $this->head        = $this->getDefaultHead();
         $this->langstrings = array();
     }
 
@@ -294,22 +269,7 @@ class ContaoFile extends AbstractFile
     protected function load()
     {
         $data = file_get_contents($this->filename);
-        // Ok, here comes the dirty work.
-        // We take everything at the beginning of the file until the closing of the first doc comment.
-        if ((false !== preg_match('#^(.+\*/)#sU', $data, $matches)) && isset($matches[0])) {
-            $this->head = $matches[0];
-            if (preg_match(
-                '#https://www.transifex.com/projects/p/(.*)/language/(.*)/#',
-                $this->head,
-                $match,
-                PREG_OFFSET_CAPTURE
-            )) {
-                $this->transifexProject = $match[1][0];
-                $this->language         = $match[2][0];
-            }
-        } else {
-            $this->head = $this->getDefaultHead();
-        }
+
         $this->langstrings = array();
 
         $parser = new Parser($this, $this->logger);
