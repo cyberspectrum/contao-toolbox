@@ -59,7 +59,7 @@ class Parser implements ParserInterface
     /**
      * Index of the previous token.
      *
-     * @var int
+     * @var string|int|null|array
      */
     private $token;
 
@@ -325,6 +325,9 @@ class Parser implements ParserInterface
      */
     public function tokenIs($type)
     {
+        if (null === $this->token) {
+            return false;
+        }
         if (is_string($this->token)) {
             return ($this->token === $type);
         }
