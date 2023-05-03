@@ -22,22 +22,20 @@ namespace CyberSpectrum\ContaoToolBox\Transifex\Upload;
 use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile;
 use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
+use DirectoryIterator;
 
 /**
  * This class is the uploader for Contao resources.
  */
-class ContaoResourceUploader extends AbstractResourceUploader
+final class ContaoResourceUploader extends AbstractResourceUploader
 {
-    /**
-     * {@inheritDoc}
-     */
-    protected function getResourceFiles()
+    protected function getResourceFiles(): array
     {
-        $iterator = new \DirectoryIterator($this->outputDirectory . DIRECTORY_SEPARATOR . $this->baseLanguage);
+        $iterator = new DirectoryIterator($this->outputDirectory . DIRECTORY_SEPARATOR . $this->baseLanguage);
         $files    = [];
         while ($iterator->valid()) {
             if ($this->isValidFile($iterator)) {
-                $slug         = substr($iterator->getFilename(), 0, -4);
+                $slug         = $iterator->getBasename('.' . $iterator->getExtension());
                 $files[$slug] = $this->createXliffFromContao($slug, $iterator->getPathname());
             }
             $iterator->next();
@@ -47,14 +45,12 @@ class ContaoResourceUploader extends AbstractResourceUploader
     }
 
     /**
-     * Create an Xliff file from the passed Contao file.
+     * Create a Xliff file from the passed Contao file.
      *
      * @param string $resourceSlug The resource slug.
      * @param string $filename     The file name.
-     *
-     * @return string
      */
-    private function createXliffFromContao($resourceSlug, $filename)
+    private function createXliffFromContao(string $resourceSlug, string $filename): string
     {
         $contao = new ContaoFile($filename);
         $xliff  = new XliffFile();
@@ -73,11 +69,9 @@ class ContaoResourceUploader extends AbstractResourceUploader
     /**
      * Test if the current file of the iterator is valid.
      *
-     * @param \DirectoryIterator $iterator The iterator.
-     *
-     * @return bool
+     * @param DirectoryIterator $iterator The iterator.
      */
-    private function isValidFile($iterator)
+    private function isValidFile(DirectoryIterator $iterator): bool
     {
         return !$iterator->isDot()
             && $iterator->isFile()

@@ -22,53 +22,56 @@
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
 use CyberSpectrum\ContaoToolBox\Console\Command\CommandBase;
+use CyberSpectrum\PhpTransifex\ApiClient\ClientFactory;
+use CyberSpectrum\PhpTransifex\ApiClient\Generated\Authentication\BearerAuthAuthentication;
+use CyberSpectrum\PhpTransifex\Model\Project;
 use CyberSpectrum\PhpTransifex\PhpTransifex;
+use RuntimeException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\Question;
+
+use function getenv;
+use function is_string;
 
 /**
  * This class is the base command implementation for all commands interfacing with transifex.
  */
 class TransifexBase extends CommandBase
 {
-    /**
-     * The transport client.
-     *
-     * @var PhpTransifex
-     */
-    private $transifex;
+    /** The transport client. */
+    private ?PhpTransifex $transifex = null;
 
     /**
      * Retrieve the transport client.
-     *
-     * @return PhpTransifex
      */
-    protected function getPhpTransifex()
+    protected function getPhpTransifex(): PhpTransifex
     {
+        if (null === $this->transifex) {
+            throw new RuntimeException('No transifex client set - ensure initialize() is called first.');
+        }
+
         return $this->transifex;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function configure()
+    protected function getPhpTransifexProject(): Project
+    {
+        $project          = $this->getProject();
+        $organizationName = $project->getOrganization();
+        $projectName      = $project->getProject();
+
+        return $this
+            ->getPhpTransifex()
+            ->organizations()
+            ->getBySlug($organizationName)
+            ->projects()
+            ->getBySlug($projectName);
+    }
+
+    protected function configure(): void
     {
         parent::configure();
-
-        $this->addOption(
-            'user',
-            'U',
-            InputOption::VALUE_OPTIONAL,
-            'Username on transifex, if empty prompt on console.'
-        );
-        $this->addOption(
-            'pass',
-            'P',
-            InputOption::VALUE_OPTIONAL,
-            'Password on transifex, if empty prompt on console.'
-        );
         $this->addOption(
             'token',
             'T',
@@ -77,132 +80,64 @@ class TransifexBase extends CommandBase
         );
 
         $this->setHelp(
-            'NOTE: you can also specify username and password via the environment for automated jobs.' . PHP_EOL .
-            'user: transifexuser=username' . PHP_EOL .
-            'pass: transifexpass=password' . PHP_EOL .
+            'NOTE: you can also specify token via the environment for automated jobs.' . PHP_EOL .
             'token: transifextoken=token' . PHP_EOL
         );
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function initialize(InputInterface $input, OutputInterface $output)
+    protected function initialize(InputInterface $input, OutputInterface $output): void
     {
         parent::initialize($input, $output);
-
-        $password = null;
-        if (null === ($user = $this->getToken($input, $output))) {
-            $user     = $this->getUser($input, $output);
-            $password = $this->getPassword($input, $output);
-        }
-
-        $this->transifex = PhpTransifex::create($user, $password);
+        $factory = new ClientFactory(
+            new ConsoleLogger($output),
+            [new BearerAuthAuthentication($this->getToken($input, $output))]
+        );
+        $client = $factory->create($factory->createHttpClient());
+        $this->transifex = new PhpTransifex($client);
     }
 
     /**
      * Retrieve the transifex token.
      *
      * @param InputInterface  $input  An InputInterface instance.
-     *
      * @param OutputInterface $output An OutputInterface instance.
      *
-     * @return string|null
-     *
-     * @throws \RuntimeException If no username could be determined..
+     * @throws RuntimeException If no username could be determined..
      */
-    private function getToken(InputInterface $input, OutputInterface $output)
+    private function getToken(InputInterface $input, OutputInterface $output): string
     {
-        if ($user = $input->getOption('token')) {
-            return $user;
+        /** @psalm-suppress MixedAssignment */
+        if ($this->isValidToken($token = $input->getOption('token'))) {
+            return $token;
         }
-        if ($user = $this->getTransifexConfigValue('/token')) {
+        /** @psalm-suppress MixedAssignment */
+        if ($this->isValidToken($token = $this->getTransifexConfigValue('/token'))) {
             $this->writelnVerbose($output, 'Using transifex token specified in config.');
 
-            return $user;
+            return $token;
         }
-        if ($user = getenv('transifextoken')) {
+        if ($this->isValidToken($token = getenv('transifextoken'))) {
             $this->writelnVerbose($output, 'Using transifex token specified in environment.');
 
-            return $user;
+            return $token;
         }
 
-        return null;
+        throw new RuntimeException('Token needed since transifex API 3.0');
     }
 
     /**
-     * Retrieve the user name.
-     *
-     * @param InputInterface  $input  An InputInterface instance.
-     *
-     * @param OutputInterface $output An OutputInterface instance.
-     *
-     * @return string|null
-     *
-     * @throws \RuntimeException If no username could be determined..
+     * @psalm-assert-if-true non-empty-string $value
      */
-    private function getUser(InputInterface $input, OutputInterface $output)
+    private function isValidToken(mixed $value): bool
     {
-        if ($user = $input->getOption('user')) {
-            return $user;
-        }
-        if ($user = $this->getTransifexConfigValue('/user')) {
-            $this->writelnVerbose($output, 'Using transifex user specified in config.');
-
-            return $user;
-        }
-        if ($user = getenv('transifexuser')) {
-            $this->writelnVerbose($output, 'Using transifex user specified in environment.');
-
-            return $user;
-        }
-        if ($input->isInteractive()) {
-            /** @var \Symfony\Component\Console\Helper\QuestionHelper $dialog */
-            $dialog = $this->getHelperSet()->get('question');
-            if ($user = $dialog->ask($input, $output, new Question('Transifex user:'))) {
-                return $user;
-            }
+        if (!is_string($value)) {
+            return false;
         }
 
-        throw new \RuntimeException(
-            'Error: you must either specify an username on the commandline or run interactive.'
-        );
-    }
-
-    /**
-     * Retrieve the password.
-     *
-     * @param InputInterface  $input  An InputInterface instance.
-     *
-     * @param OutputInterface $output An OutputInterface instance.
-     *
-     * @return string|null
-     *
-     * @throws \RuntimeException If no password could be determined..
-     */
-    private function getPassword(InputInterface $input, OutputInterface $output)
-    {
-        if ($pass = $input->getOption('pass')) {
-            return $pass;
-        }
-        if ($pass = $this->getTransifexConfigValue('/pass')) {
-            $this->writelnVerbose($output, 'Using transifex password specified in config.');
-
-            return $pass;
-        }
-        if ($pass = getenv('transifexpass')) {
-            $this->writelnVerbose($output, 'Using transifex password specified in environment.');
-
-            return $pass;
-        }
-        if ($input->isInteractive()) {
-            /** @var \Symfony\Component\Console\Helper\QuestionHelper $dialog */
-            $dialog = $this->getHelperSet()->get('question');
-            if ($pass = $dialog->ask($input, $output, (new Question('Transifex password:'))->setHidden(true))) {
-                return $pass;
-            }
+        if ('' === $value) {
+            return false;
         }
 
-        throw new \RuntimeException('Error: you must either specify a password on the commandline or run interactive.');
+        return true;
     }
 }

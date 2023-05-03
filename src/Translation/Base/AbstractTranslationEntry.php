@@ -19,38 +19,41 @@
 
 namespace CyberSpectrum\ContaoToolBox\Translation\Base;
 
+use RuntimeException;
+
 /**
  * This class represents an abstract translation entry.
+ *
+ * @template TDoc of TranslationFileInterface
  */
 abstract class AbstractTranslationEntry
 {
     /**
-     * The document we are belonging to.
+     * The document we belong to.
      *
-     * @var AbstractFile
+     * @var TDoc
      */
-    protected $doc;
+    protected TranslationFileInterface $doc;
 
     /**
      * The translation key for this entry.
      *
      * @var string
      */
-    protected $key;
+    protected string $key;
 
     /**
      * Create a new instance.
      *
-     * @param string       $key The translation key.
+     * @param string $key The translation key.
+     * @param TDoc   $doc The document this entry belongs to.
      *
-     * @param AbstractFile $doc The document this entry belongs to.
-     *
-     * @throws \RuntimeException When the key is empty.
+     * @throws RuntimeException When the key is empty.
      */
-    public function __construct($key, AbstractFile $doc)
+    public function __construct(string $key, TranslationFileInterface $doc)
     {
         if ('' === $key) {
-            throw new \RuntimeException('Empty Id passed.');
+            throw new RuntimeException('Empty Id passed.');
         }
 
         $this->key = $key;
@@ -59,10 +62,8 @@ abstract class AbstractTranslationEntry
 
     /**
      * Retrieves the key from this entry.
-     *
-     * @return string
      */
-    public function getKey()
+    public function getKey(): string
     {
         return $this->key;
     }

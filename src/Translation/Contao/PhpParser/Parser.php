@@ -20,62 +20,61 @@
 
 namespace CyberSpectrum\ContaoToolBox\Translation\Contao\PhpParser;
 
+use Closure;
 use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * This class implements a generic parser.
+ *
+ * @psalm-import-type TToken from ParserInterface
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class Parser implements ParserInterface
+final class Parser implements ParserInterface
 {
-    /**
-     * The file being parsed.
-     *
-     * @var ContaoFile
-     */
-    private $file;
+    /** The file being parsed. */
+    private ContaoFile $file;
 
-    /**
-     * The logger to use.
-     *
-     * @var LoggerInterface
-     */
-    private $logger;
+    /** @var Closure(string, string): void */
+    private Closure $fileAccessor;
+
+    /** The logger to use. */
+    private LoggerInterface $logger;
 
     /**
      * The tokens contained in the parser.
      *
-     * @var array
+     * Each individual token identifier is either
+     *   - a single character (i.e.: ;, ., &gt;, !, etc...),
+     *   - or a three element array containing the token index in element 0, the string content of the original
+     *     token in element 1 and the line number in element 2.
+     *
+     * @list<TToken>
      */
-    private $tokens;
+    private array $tokens = [];
 
     /**
-     * The previous token.
+     * The current token.
      *
-     * @var string|int|null|array
+     * @var null|TToken
      */
-    private $prevToken;
-
-    /**
-     * Index of the previous token.
-     *
-     * @var string|int|null|array
-     */
-    private $token;
+    private null|string|array $token = null;
 
     /**
      * The stack of language keys.
      *
-     * @var string[]
+     * @var list<string>
      */
-    private $keystack;
+    private array $keyStack = [];
 
     /**
      * The auto index.
      *
-     * @var array
+     * @var array<string, int>
      */
-    private $autoIndex = array();
+    private array $autoIndex = [];
 
     /**
      * Create a new instance.
@@ -88,95 +87,88 @@ class Parser implements ParserInterface
     {
         $this->file   = $file;
         $this->logger = $logger;
+        // This is pretty hacky but works well enough.
+        $fileAccessor = Closure::bind(
+            function (string $key, string $value): void {
+                /** @psalm-scope-this ContaoFile */
+                $this->langstrings[$key] = $value;
+            },
+            $this->file,
+            $this->file
+        );
+        assert($fileAccessor instanceof Closure);
+        /** @psalm-var Closure(string, string): void $fileAccessor */
+
+        $this->fileAccessor = $fileAccessor;
     }
 
     /**
      * Send a debug message to the attached file.
      *
      * @param string $message The message to send.
-     *
-     * @return void
      */
-    public function debug($message)
+    public function debug(string $message): void
     {
         $this->logger->debug($message);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function pushStack($value)
+    public function pushStack(array|string $value): void
     {
         if (is_array($value)) {
             if (T_CONSTANT_ENCAPSED_STRING === $value[0]) {
-                $this->keystack[] = substr($value[1], 1, -1);
+                $this->keyStack[] = substr($value[1], 1, -1);
             } else {
-                $this->keystack[] = strval($value[1]);
+                $this->keyStack[] = strval($value[1]);
             }
         } else {
-            $this->keystack[] = $value;
+            $this->keyStack[] = $value;
         }
-        $this->debug('pushed stack ' . implode('.', $this->keystack));
+        $this->debug('pushed stack ' . implode('.', $this->keyStack));
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function popStack()
+    public function popStack(): string
     {
-        $value = array_pop($this->keystack);
-        $this->debug('popped stack ' . implode('.', $this->keystack));
+        $value = array_pop($this->keyStack);
+        $this->debug('popped stack ' . implode('.', $this->keyStack));
 
         return $value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function resetStack()
+    public function resetStack(): void
     {
-        $this->keystack = array();
+        $this->keyStack = array();
         $this->debug('stack reset');
     }
 
     /**
      * Fetch the stack either as array or as dot separated string.
      *
-     * @param bool|true $imploded If true, the result will be a dot separated string, the stack array otherwise.
+     * @param bool $imploded If true, the result will be a dot separated string, the stack array otherwise.
      *
-     * @return string|\string[]
+     * @return string|list<string>
+     *
+     * @psalm-return ($imploded is true ? string : list<string>)
      */
-    public function getStack($imploded = true)
+    public function getStack(bool $imploded = true): array|string
     {
-        return (bool) $imploded ? implode('.', $this->keystack) : $this->keystack;
+        return $imploded ? implode('.', $this->keyStack) : $this->keyStack;
     }
 
     /**
      * Set a value.
      *
      * @param string $key   The key to set in the file.
-     *
      * @param string $value The value to set.
-     *
-     * @return void
      */
-    public function setValue($key, $value)
+    public function setValue(string $key, string $value): void
     {
-        \Closure::bind(
-            function ($key, $value) {
-                $this->langstrings[$key] = $value;
-            },
-            $this->file,
-            $this->file
-        )->__invoke($key, $value);
+        $this->fileAccessor->__invoke($key, $value);
     }
 
     /**
      * Read a language string from the file.
-     *
-     * @return void
      */
-    private function readLangString()
+    private function readLangString(): void
     {
         while (!$this->tokenIs(';')) {
             $this->getNextToken();
@@ -189,20 +181,20 @@ class Parser implements ParserInterface
                 // right hand of the assignment.
                 $this->getNextToken();
 
-                if ($this->tokenIs(T_ARRAY) || $this->tokenIs('[')) {
+                if ($this->tokenIsAnyOf(T_ARRAY, '[')) {
                     $arrayParser = new ArrayParser($this, 1);
                     $arrayParser->parse();
                 } else {
                     $subparser = new StringValueParser($this);
                     $subparser->parse();
 
-                    $this->setValue(implode('.', $this->keystack), $subparser->getValue());
+                    $this->setValue(implode('.', $this->keyStack), (string) $subparser->getValue());
                 }
 
                 continue;
             }
             if (!$this->tokenIs(']')) {
-                $this->bailUnexpectedToken();
+                $this->bailUnexpectedToken(']');
             }
         }
 
@@ -214,54 +206,57 @@ class Parser implements ParserInterface
 
     /**
      * Spawn a sub parser to parse the [] expression.
-     *
-     * @return void
      */
-    private function subParserSquareBracket()
+    private function subParserSquareBracket(): void
     {
         $this->getNextToken();
 
         $subparser = new StringValueParser($this);
         $subparser->parse();
 
-        if (null === $subparser->getValue()) {
+        if (null === ($value = $subparser->getValue())) {
             // auto indexed array
-            if ($this->tokenIs(']')) {
-                $path = implode('.', $this->keystack);
-
-                if (!isset($this->autoIndex[$path])) {
-                    $this->autoIndex[$path] = 0;
-                } else {
-                    $this->autoIndex[$path]++;
-                }
-
-                $this->pushStack($this->autoIndex[$path]);
-            } else {
+            if (!$this->tokenIs(']')) {
                 // invalid code?!
                 $this->bailUnexpectedToken();
             }
-        } else {
-            $this->pushStack($subparser->getValue());
+            $path = implode('.', $this->keyStack);
+
+            if (!isset($this->autoIndex[$path])) {
+                $this->autoIndex[$path] = 0;
+            } else {
+                $this->autoIndex[$path]++;
+            }
+            $this->pushStack((string) $this->autoIndex[$path]);
+
+            return;
         }
+        $this->pushStack($value);
     }
 
     /**
      * Set the content.
      *
      * @param string $content The PHP text to parse.
-     *
-     * @return void
      */
-    public function setContent($content)
+    public function setContent(string $content): void
     {
         $this->tokens = token_get_all($content);
+        $this->token = null;
+        $this->keyStack = [];
+        $this->autoIndex = [];
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function parse()
+    public function parse(): void
     {
+        $this->advanceToken();
+        // Empty file.
+        if (null === $this->token) {
+            return;
+        }
+
+        $this->tryReadPhpDoc();
+
         $this->getNextToken(T_VARIABLE);
         while ($this->token) {
             if ((T_VARIABLE === $this->token[0]) && '$GLOBALS' === $this->token[1]) {
@@ -285,45 +280,23 @@ class Parser implements ParserInterface
     }
 
     /**
-     * Ensure that the current token is a string.
+     * Ensure the current token is not a string and is of the given value.
      *
-     * @param mixed      $value    The Value that the current token shall have.
-     *
-     * @param bool|mixed $expected The expected token type/value or false if unknown which one was expected.
-     *
-     * @return void
+     * @param null|int $value The value.
      */
-    public function checkIsString($value = false, $expected = false)
+    private function checkIsNotString(?int $value): void
     {
-        if (!is_string($this->token) || ($value && ($this->token !== $value))) {
-            $this->bailUnexpectedToken($expected);
-        }
-    }
-
-    /**
-     * Ensure the current token is not a string and optionally is of the given value.
-     *
-     * @param mixed      $value    Optional the value.
-     *
-     * @param bool|mixed $expected The expected token type/value or false if unknown which one was expected.
-     *
-     * @return void
-     */
-    public function checkIsNotString($value = false, $expected = false)
-    {
-        if (is_string($this->token) || ($value && ($this->token[0] !== $value))) {
-            $this->bailUnexpectedToken($expected);
+        if (null === $this->token || is_string($this->token) || ($value && ($this->token[0] !== $value))) {
+            $this->bailUnexpectedToken();
         }
     }
 
     /**
      * Check whether the current token matches the given value.
      *
-     * @param mixed $type The type that is expected, either a string value or a tokenizer id.
-     *
-     * @return bool
+     * @param string|int $type The type that is expected, either a string value or a tokenizer id.
      */
-    public function tokenIs($type)
+    public function tokenIs(string|int $type): bool
     {
         if (null === $this->token) {
             return false;
@@ -335,27 +308,32 @@ class Parser implements ParserInterface
         return ($this->token[0] === $type);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws \RuntimeException With the unexpected token in the message.
-     */
-    public function bailUnexpectedToken($expected = false)
+    public function tokenIsAnyOf(string|int ...$types): bool
+    {
+        foreach ($types as $type) {
+            if ($this->tokenIs($type)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function bailUnexpectedToken(false|int|string $expected = false): never
     {
         if (is_array($this->token)) {
-            if ($expected) {
-                throw new \RuntimeException(
+            if (false !== $expected) {
+                throw new RuntimeException(
                     sprintf(
                         'Unexpected token %s detected at position %d - value: %s, expected %s',
                         token_name($this->token[0]),
                         $this->token[2],
                         $this->token[1],
-                        token_name($expected)
+                        (is_string($expected) ? $expected : token_name($expected))
                     )
                 );
             }
 
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 sprintf(
                     'Unexpected token %s detected at position %d - value: %s',
                     token_name($this->token[0]),
@@ -365,38 +343,32 @@ class Parser implements ParserInterface
             );
         }
 
-        throw new \RuntimeException(sprintf('Unexpected token %s detected.', $this->token));
+        throw new RuntimeException(sprintf('Unexpected token %s detected.', var_export($this->token, true)));
     }
 
     /**
      * Move one token ahead.
-     *
-     * @return void
      */
-    private function advanceToken()
+    private function advanceToken(): void
     {
-        if (!($this->tokenIs(T_WHITESPACE) || $this->tokenIs(T_DOC_COMMENT))) {
-            $this->prevToken = $this->token;
+        /** @var TToken|false $token */
+        $token = (null !== $this->token) ? next($this->tokens) : reset($this->tokens);
+        if (false === $token) {
+            $token = null;
         }
-        $this->token = next($this->tokens);
+        $this->token = $token;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function getToken()
+    public function getToken(): null|string|array
     {
         return $this->token;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function getNextToken($searchfor = false)
+    public function getNextToken(false|int|string $searchFor = false): void
     {
         $this->advanceToken();
-        if (false !== $searchfor) {
-            $this->skipUntilSearchedToken($searchfor);
+        if (false !== $searchFor) {
+            $this->skipUntilSearchedToken($searchFor);
         } else {
             $this->skipWhiteSpaceAndComments();
         }
@@ -405,14 +377,13 @@ class Parser implements ParserInterface
     /**
      * Skip all tokens until the matched token has been encountered or no more tokens are available.
      *
-     * @param mixed $searchFor The token to search for.
-     *
-     * @return void
+     * @param int|string $searchFor The token to search for.
      */
-    private function skipUntilSearchedToken($searchFor)
+    private function skipUntilSearchedToken(int|string $searchFor): void
     {
         while ($this->token) {
-            if ((is_string($searchFor) && ($searchFor === $this->token))
+            if (
+                (is_string($searchFor) && ($searchFor === $this->token))
                 || (is_int($searchFor) && is_array($this->token) && ($searchFor === $this->token[0]))
             ) {
                 break;
@@ -423,13 +394,40 @@ class Parser implements ParserInterface
 
     /**
      * Skip until the next non whitespace and doc comment.
-     *
-     * @return void
      */
-    private function skipWhiteSpaceAndComments()
+    private function skipWhiteSpaceAndComments(): void
     {
-        while ($this->tokenIs(T_WHITESPACE) || $this->tokenIs(T_DOC_COMMENT)) {
+        while ($this->tokenIsAnyOf(T_WHITESPACE, T_DOC_COMMENT)) {
             $this->advanceToken();
+        }
+    }
+
+    private function tryReadPhpDoc(): void
+    {
+        while ($this->tokenIsAnyOf(T_WHITESPACE)) {
+            $this->advanceToken();
+        }
+        if (!$this->tokenIs(T_OPEN_TAG)) {
+            $this->bailUnexpectedToken(T_OPEN_TAG);
+        }
+        $this->advanceToken();
+        while ($this->tokenIsAnyOf(T_WHITESPACE)) {
+            $this->advanceToken();
+        }
+        // Try to load the php Doc, if any.
+        if ($this->tokenIs(T_DOC_COMMENT)) {
+            assert(is_array($this->token));
+            $phpDoc = [];
+            foreach (explode("\n", $this->token[1]) as $line) {
+                $line = trim($line);
+                if (in_array($line, ['/**', '*/'], true)) {
+                    continue;
+                }
+                $phpDoc[] = ltrim($line, ' *');
+            }
+            unset($line);
+
+            $this->file->setFileHeader($phpDoc);
         }
     }
 }

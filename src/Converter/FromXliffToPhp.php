@@ -27,6 +27,9 @@ use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Finder\Finder;
 
+use function file_exists;
+use function sprintf;
+
 /**
  * This class converts Xliff files to PHP files.
  */
@@ -35,29 +38,31 @@ class FromXliffToPhp extends AbstractConverter
     /**
      * The file header.
      *
-     * @var string[]
+     * @var list<string>
      */
-    private $fileHeader;
+    private array $fileHeader;
 
     /**
      * Create a new instance.
      *
-     * @param string[]        $fileHeader   The file header for php files.
+     * @param list<string>    $fileHeader   The file header for php files.
      * @param string          $contaoPath   The root directory for the Contao languages.
      * @param string          $xliffPath    The root directory for the Xliff languages.
      * @param string          $baseLanguage The base language.
      * @param LoggerInterface $logger       The logger to use.
      */
-    public function __construct(array $fileHeader, $contaoPath, $xliffPath, $baseLanguage, LoggerInterface $logger)
-    {
+    public function __construct(
+        array $fileHeader,
+        string $contaoPath,
+        string $xliffPath,
+        string $baseLanguage,
+        LoggerInterface $logger
+    ) {
         parent::__construct($contaoPath, $xliffPath, $baseLanguage, $logger);
         $this->fileHeader = $fileHeader;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function collectResourceNamesFromBaseLanguage()
+    protected function collectResourceNamesFromBaseLanguage(): array
     {
         $finder = new Finder();
         $finder
@@ -69,25 +74,19 @@ class FromXliffToPhp extends AbstractConverter
 
         $files = [];
         foreach ($finder as $file) {
-            $files[] = basename($file->getFilename(), '.xlf');
+            $files[] = $file->getBasename('.' . $file->getExtension());
         }
 
         return $files;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function collectLanguages()
+    protected function collectLanguages(): array
     {
         $locator = new LanguageDirectoryLocator($this->xliffPath, $this->logger);
         return $locator->determineLanguages($this->onlyLanguages);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function processLanguage($resources, $language)
+    protected function processLanguage(array $resources, string $language): void
     {
         $this->logger->info('processing language: {language}...', ['language' => $language]);
         foreach ($resources as $resource) {
@@ -115,11 +114,9 @@ class FromXliffToPhp extends AbstractConverter
      * @param string $resource The resource name.
      * @param string $language The language code.
      *
-     * @return XliffFile|null
-     *
      * @throws InvalidArgumentException When the domain does not match the original value in the Xliff.
      */
-    private function createSourceXliff($resource, $language)
+    private function createSourceXliff(string $resource, string $language): ?XliffFile
     {
         $srcFile = $this->xliffPath . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $resource . '.xlf';
         // not a file from transifex received yet.
@@ -148,10 +145,8 @@ class FromXliffToPhp extends AbstractConverter
      *
      * @param string $resource The resource name.
      * @param string $language The language code.
-     *
-     * @return ContaoFile
      */
-    private function createDestinationContaoFile($resource, $language)
+    private function createDestinationContaoFile(string $resource, string $language): ContaoFile
     {
         $dstFile = $this->contaoPath . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $resource . '.php';
 

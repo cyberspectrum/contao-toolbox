@@ -29,10 +29,8 @@ class ParserTest extends TestCase
 {
     /**
      * Test the parsing.
-     *
-     * @return void
      */
-    public function testParseEmpty()
+    public function testParseEmpty(): void
     {
         $file = new ContaoFile($this->getFixturesPath() . 'contao-parse1-empty-file.php');
         $this->assertEmpty($file->keys());
@@ -40,10 +38,8 @@ class ParserTest extends TestCase
 
     /**
      * Test the parsing.
-     *
-     * @return void
      */
-    public function testParseFilled()
+    public function testParseFilled(): void
     {
         $file = new ContaoFile($this->getFixturesPath() . 'contao-parse2-filled.php');
         $this->assertCount(12, $file->keys());
@@ -57,14 +53,14 @@ class ParserTest extends TestCase
         $this->assertEquals('a-d-2', $file->get('a.d.1'));
         $this->assertEquals('a-e-1', $file->get('a.e.0'));
         $this->assertEquals('a-e-2', $file->get('a.e.1'));
+        $this->assertEquals('a-f-1', $file->get('a.f.0'));
+        $this->assertEquals('a-f-2', $file->get('a.f.1'));
     }
 
     /**
      * Test the parsing.
-     *
-     * @return void
      */
-    public function testParseShortArray()
+    public function testParseShortArray(): void
     {
         $file = new ContaoFile($this->getFixturesPath() . 'contao-parse3-short-array.php');
         $this->assertCount(5, $file->keys());

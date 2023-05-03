@@ -20,39 +20,28 @@
 namespace CyberSpectrum\ContaoToolBox\Translation\Base;
 
 use CyberSpectrum\ContaoToolBox\Util\DelegatingLogger;
+use IteratorAggregate;
 use Psr\Log\LoggerInterface;
 
 /**
  * This class provides an abstract base implementation of translation files.
+ *
+ * @template TValue
+ * @template-covariant TFile of TranslationFileInterface
+ *
+ * @implements IteratorAggregate<string, TValue>
  */
-abstract class AbstractFile implements \IteratorAggregate, TranslationFileInterface
+abstract class AbstractFile implements IteratorAggregate, TranslationFileInterface
 {
-    /**
-     * Debug flag.
-     *
-     * @var LoggerInterface
-     */
-    protected $logger;
+    protected DelegatingLogger $logger;
 
     /**
      * Create a new instance.
      *
-     * @param LoggerInterface $logger The logger to use.
+     * @param LoggerInterface|null $logger The logger to use.
      */
-    public function __construct(LoggerInterface $logger = null)
+    public function __construct(?LoggerInterface $logger = null)
     {
         $this->logger = new DelegatingLogger($logger);
-    }
-
-    /**
-     * Retrieve a list of all language keys.
-     *
-     * @return array
-     *
-     * @deprecated
-     */
-    public function getKeys()
-    {
-        return $this->keys();
     }
 }

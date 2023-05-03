@@ -24,17 +24,10 @@ namespace CyberSpectrum\ContaoToolBox\Translation\Contao\PhpParser;
  */
 class ArrayParser extends AbstractParser
 {
-    /**
-     * The counter.
-     *
-     * @var int
-     */
-    private $counter;
+    /** The counter. */
+    private int $counter;
 
-    /**
-     * {@inheritDoc}
-     */
-    public function __construct(Parser $parser, $level = 0)
+    public function __construct(Parser $parser, int $level = 0)
     {
         parent::__construct($parser, $level);
 
@@ -44,7 +37,7 @@ class ArrayParser extends AbstractParser
     /**
      * {@inheritDoc}
      */
-    public function parse()
+    public function parse(): void
     {
         if ($this->tokenIs(T_ARRAY)) {
             $this->getNextToken();
@@ -60,7 +53,7 @@ class ArrayParser extends AbstractParser
             // Sub array without key.
             if ($this->tokenIs(T_ARRAY)) {
                 $this->debug('Sub array without key.');
-                $this->pushStack($this->counter++);
+                $this->pushStack((string) ($this->counter++));
 
                 $subparser = new ArrayParser($this->parser, ($this->level + 1));
                 $subparser->parse();
@@ -91,19 +84,16 @@ class ArrayParser extends AbstractParser
      * Parse an array value.
      *
      * Returns true if the parsing shall continue or false if the parsing is done.
-     *
-     * @return bool
      */
-    private function parseItem()
+    private function parseItem(): bool
     {
         $subparser = new StringValueParser($this->parser, ($this->level + 1));
         $subparser->parse();
 
         $key = $subparser->getValue();
 
-
         if ($this->tokenIs(T_DOUBLE_ARROW)) {
-            // We MUST have an key when double arrow is encountered.
+            // We MUST have a key when double arrow is encountered.
             if (null === $key) {
                 $this->bailUnexpectedToken();
             }
@@ -112,10 +102,13 @@ class ArrayParser extends AbstractParser
             $this->pushStack($key);
             $this->parseValue();
             $this->popStack();
-        } elseif ($this->tokenIs(',') || $this->tokenIs(')') || $this->tokenIs(']')) {
+        } elseif ($this->tokenIsAnyOf(',', ')', ']')) {
+            if (!is_string($key)) {
+                $this->bailUnexpectedToken();
+            }
             // String item without key.
             $this->debug('String item without key.');
-            $this->pushStack($this->counter++);
+            $this->pushStack((string) ($this->counter++));
             $this->parser->setValue($this->parser->getStack(), $key);
             $this->popStack();
         }
@@ -124,7 +117,7 @@ class ArrayParser extends AbstractParser
             $this->getNextToken();
             return true;
         }
-        if ($this->tokenIs(')') || $this->tokenIs(']')) {
+        if ($this->tokenIsAnyOf(')', ']')) {
             $this->getNextToken();
 
             return false;
@@ -133,16 +126,12 @@ class ArrayParser extends AbstractParser
         return true;
     }
 
-    /**
-     * Parse the value portion of a key => value array element.
-     *
-     * @return void
-     */
-    private function parseValue()
+    /** Parse the value portion of a key => value array element. */
+    private function parseValue(): void
     {
         $this->getNextToken();
 
-        if ($this->tokenIs(T_ARRAY) || $this->tokenIs('[')) {
+        if ($this->tokenIsAnyOf(T_ARRAY, '[')) {
             // Sub array with key.
             $this->debug('Sub array with key.');
             $subparser = new ArrayParser($this->parser, ($this->level + 1));
@@ -152,8 +141,12 @@ class ArrayParser extends AbstractParser
             $this->debug('String item with key.');
             $subparser = new StringValueParser($this->parser, ($this->level + 1));
             $subparser->parse();
+            $value = $subparser->getValue();
+            if (!is_string($value)) {
+                $this->bailUnexpectedToken();
+            }
 
-            $this->parser->setValue($this->parser->getStack(), $subparser->getValue());
+            $this->parser->setValue($this->parser->getStack(), $value);
         }
     }
 }

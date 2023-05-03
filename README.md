@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/cyberspectrum/contao-toolbox.png)](https://travis-ci.org/cyberspectrum/contao-toolbox)
+[![Build Status](https://github.com/cyberspectrum/contao-toolbox/actions/workflows/diagnostics.yml/badge.svg)](https://github.com/cyberspectrum/contao-toolbox/actions)
 [![Latest Version tagged](http://img.shields.io/github/tag/cyberspectrum/contao-toolbox.svg)](https://github.com/cyberspectrum/contao-toolbox/tags)
 [![Latest Version on Packagist](http://img.shields.io/packagist/v/cyberspectrum/contao-toolbox.svg)](https://packagist.org/packages/cyberspectrum/contao-toolbox)
 [![Installations via composer per month](http://img.shields.io/packagist/dm/cyberspectrum/contao-toolbox.svg)](https://packagist.org/packages/cyberspectrum/contao-toolbox)

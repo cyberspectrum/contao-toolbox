@@ -20,9 +20,12 @@
 namespace CyberSpectrum\ContaoToolBox\Translation\Contao;
 
 use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractTranslationEntry;
+use Exception;
 
 /**
- * This class encapsulates an Contao File translation entry.
+ * This class encapsulates a Contao File translation entry.
+ *
+ * @extends AbstractTranslationEntry<ContaoFile>
  */
 class TranslationEntry extends AbstractTranslationEntry
 {
@@ -33,10 +36,10 @@ class TranslationEntry extends AbstractTranslationEntry
      *
      * @param ContaoFile $doc The document this entry belongs to.
      *
-     * @throws \Exception When the key is empty.
+     * @throws Exception When the key is empty.
      */
     // @codingStandardsIgnoreStart - Method override is not useless, we change the parameter type.
-    public function __construct($key, ContaoFile $doc)
+    public function __construct(string $key, ContaoFile $doc)
     {
         parent::__construct($key, $doc);
     }

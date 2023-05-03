@@ -19,6 +19,8 @@
 
 namespace CyberSpectrum\ContaoToolBox\Util;
 
+use ErrorException;
+
 /**
  * Convert PHP errors into exceptions.
  *
@@ -30,18 +32,15 @@ class ErrorHandler
      * Error handler.
      *
      * @param int    $level   Level of the error raised.
-     *
      * @param string $message Error message.
-     *
      * @param string $file    Filename that the error was raised in.
+     * @param int    $line Line number the error was raised at.
      *
-     * @param int    $line    Line number the error was raised at.
+     * @throws ErrorException For the error.
      *
-     * @throws \ErrorException For the error.
-     *
-     * @return void
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public static function handle($level, $message, $file, $line)
+    public static function handle(int $level, string $message, string $file, int $line): void
     {
         // respect error_reporting being disabled
         if (!error_reporting()) {
@@ -53,21 +52,15 @@ class ErrorHandler
                 "\na legitimately suppressed error that you were not supposed to see.";
         }
 
-        throw new \ErrorException($message, 0, $level, $file, $line);
+        throw new ErrorException($message, 0, $level, $file, $line);
     }
 
     /**
      * Register error handler.
-     *
-     * @return void
      */
-    public static function register()
+    public static function register(): void
     {
-        set_error_handler(
-            array(
-                __CLASS__,
-                'handle'
-            )
-        );
+        /** @psalm-suppress InvalidArgument */
+        set_error_handler([ErrorHandler::class, 'handle']);
     }
 }

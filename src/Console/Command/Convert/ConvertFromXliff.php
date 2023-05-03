@@ -26,12 +26,9 @@ use Psr\Log\LoggerInterface;
 /**
  * This class converts language files from XLIFF format into the Contao PHP array format.
  */
-class ConvertFromXliff extends ConvertBase
+final class ConvertFromXliff extends ConvertBase
 {
-    /**
-     * {@inheritDoc}
-     */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
 
@@ -41,16 +38,14 @@ class ConvertFromXliff extends ConvertBase
         $this->setHelp('Convert the xliff files from the set transifex folder into the contao folder.' . PHP_EOL);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function createConverter(LoggerInterface $logger)
+    protected function createConverter(LoggerInterface $logger): FromXliffToPhp
     {
+        $project = $this->getProject();
         return new FromXliffToPhp(
-            $this->project->getPhpFileHeader(),
-            $this->project->getContaoDirectory(),
-            $this->project->getXliffDirectory(),
-            $this->project->getBaseLanguage(),
+            $project->getPhpFileHeader(),
+            $project->getContaoDirectory(),
+            $project->getXliffDirectory(),
+            $project->getBaseLanguage(),
             $logger
         );
     }

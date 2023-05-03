@@ -28,27 +28,14 @@ use Psr\Log\NullLogger;
  */
 class DelegatingLogger extends AbstractLogger
 {
-    /**
-     * The logger instance.
-     *
-     * @var LoggerInterface
-     */
-    protected $logger;
+    protected LoggerInterface $logger;
 
-    /**
-     * Create a new instance.
-     *
-     * @param LoggerInterface $logger
-     */
-    public function __construct(LoggerInterface $logger = null)
+    public function __construct(?LoggerInterface $logger)
     {
         $this->logger = $logger ?: new NullLogger();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function log($level, $message, array $context = [])
+    public function log($level, $message, array $context = []): void
     {
         $this->logger->log($level, $message, $context);
     }

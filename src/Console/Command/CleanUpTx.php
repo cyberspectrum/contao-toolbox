@@ -28,12 +28,9 @@ use Symfony\Component\Finder\Finder;
 /**
  * This class provides a command to purge the local .tx folder.
  */
-class CleanUpTx extends CommandBase
+final class CleanUpTx extends CommandBase
 {
-    /**
-     * {@inheritDoc}
-     */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
 
@@ -50,10 +47,12 @@ class CleanUpTx extends CommandBase
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $finder     = new Finder();
         $filesystem = new Filesystem();
-        $filesystem->remove($finder->directories()->in($this->project->getXliffDirectory()));
+        $filesystem->remove($finder->directories()->in($this->getProject()->getXliffDirectory()));
+
+        return 0;
     }
 }

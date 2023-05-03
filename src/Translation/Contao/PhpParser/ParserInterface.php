@@ -19,72 +19,71 @@
 
 namespace CyberSpectrum\ContaoToolBox\Translation\Contao\PhpParser;
 
+use RuntimeException;
+
 /**
  * This interface describes generic parsers.
+ *
+ * @psalm-type TToken=string|array{0: int, 1: string, 2: int}
  */
 interface ParserInterface
 {
     /**
      * Push a value on the stack of the parenting parser.
      *
-     * @param mixed $value The value to push on the stack.
-     *
-     * @return void
+     * @param TToken|string $value The value to push on the stack.
      */
-    public function pushStack($value);
+    public function pushStack(array|string $value): void;
 
     /**
      * Pop a value from the stack of the parenting parser.
-     *
-     * @return mixed
      */
-    public function popStack();
+    public function popStack(): mixed;
 
     /**
      * Reset the stack of the parenting parser.
-     *
-     * @return void
      */
-    public function resetStack();
+    public function resetStack(): void;
 
     /**
      * Check whether the current token matches the given value.
      *
-     * @param mixed $type The type that is expected, either a string value or a tokenizer id.
-     *
-     * @return bool
+     * @param string|int $type The type that is expected, either a string value or a tokenizer id.
      */
-    public function tokenIs($type);
+    public function tokenIs(string|int $type): bool;
+
+    /**
+     * Check whether the current token matches the given value.
+     *
+     * @param string|int ...$types The type that is expected, either a string value or a tokenizer id.
+     */
+    public function tokenIsAnyOf(string|int ...$types): bool;
 
     /**
      * Bail with an unexpected token message.
      *
-     * @param bool|false $expected The optionally expected tokens.
+     * @param false|int|string $expected The optionally expected token type.
      *
-     * @return void
+     * @throws RuntimeException With the unexpected token in the message.
      */
-    public function bailUnexpectedToken($expected = false);
+    public function bailUnexpectedToken(false|int|string $expected = false): never;
 
     /**
      * Fetch the next token.
      *
-     * @return mixed
+     * @return null|TToken
      */
-    public function getToken();
+    public function getToken(): null|string|array;
 
     /**
      * Fetch the next token.
      *
-     * @param bool|int $searchFor The token type to search for.
-     *
-     * @return mixed
+     * @param false|int|string $searchFor The token type to search for.
      */
-    public function getNextToken($searchFor = false);
+    public function getNextToken(false|int|string $searchFor = false): void;
 
     /**
      * Start the parsing.
-     *
-     * @return void
      */
-    public function parse();
+    public function parse(): void;
 }

@@ -20,18 +20,15 @@
 namespace CyberSpectrum\ContaoToolBox\Tests;
 
 use Symfony\Component\Filesystem\Filesystem;
+use PHPUnit\Framework\TestCase as BaseTestCase;
 
 /**
  * This class is the test base.
  */
-abstract class TestCase extends \PHPUnit\Framework\TestCase
+abstract class TestCase extends BaseTestCase
 {
-    /**
-     * Temporary working dir.
-     *
-     * @var string
-     */
-    private $workDir;
+    /** Temporary working dir. */
+    private ?string $workDir = null;
 
     /**
      * {@inheritdoc}
@@ -44,25 +41,17 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
         }
     }
 
-    /**
-     * Retrieve the path to the fixtures.
-     *
-     * @return string
-     */
-    protected function getFixturesPath()
+    /** Retrieve the path to the fixtures. */
+    protected function getFixturesPath(): string
     {
         return __DIR__ . DIRECTORY_SEPARATOR . 'fixtures' . DIRECTORY_SEPARATOR;
     }
 
-    /**
-     * Create and return the path to a temp dir.
-     *
-     * @return string
-     */
-    protected function getTempDir()
+    /** Create and return the path to a temp dir. */
+    protected function getTempDir(): ?string
     {
         if (null === $this->workDir) {
-            $temp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('contao-toolbox-test', false);
+            $temp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('contao-toolbox-test');
             mkdir($temp, 0777, true);
             $this->workDir = $temp;
         }
@@ -74,15 +63,12 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
      * Retrieve the path of a temp file within the temp dir of the test.
      *
      * @param string $name             Optional name of the file.
-     *
      * @param bool   $forceDirectories Optional flag if the parenting dirs should be created.
-     *
-     * @return string
      */
-    public function getTempFile($name = '', $forceDirectories = true)
+    public function getTempFile(string $name = '', bool $forceDirectories = true): string
     {
         if ('' === $name) {
-            $name = uniqid('', false);
+            $name = uniqid('ctb-test', false);
         }
 
         $path = $this->getTempDir() . DIRECTORY_SEPARATOR . $name;

@@ -23,56 +23,44 @@ namespace CyberSpectrum\ContaoToolBox\Console\Command;
 use CyberSpectrum\ContaoToolBox\Console\ToolBoxApplication;
 use CyberSpectrum\ContaoToolBox\Project;
 use CyberSpectrum\ContaoToolBox\Util\JsonConfig;
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function array_map;
+use function array_values;
+use function explode;
+use function getcwd;
+use function is_array;
+use function is_string;
+use function sprintf;
+use function str_starts_with;
+use function trigger_error;
+
 /**
  * Abstract base class for all commands.
  */
 abstract class CommandBase extends Command
 {
-    /**
-     * The config from ctb.json.
-     *
-     * @var JsonConfig
-     */
-    private $config;
+    /** The config from ctb.json. */
+    private ?JsonConfig $config = null;
 
-    /**
-     * The composer config.
-     *
-     * @var JsonConfig
-     */
-    private $composer;
+    /** The composer config. */
+    private ?JsonConfig $composer = null;
 
-    /**
-     * The application config.
-     *
-     * @var JsonConfig
-     */
-    private $appConfig;
+    /** The application config. */
+    private ?JsonConfig $appConfig = null;
 
-    /**
-     * The project information.
-     *
-     * @var Project
-     */
-    protected $project;
+    /** The project information. */
+    private ?Project $project;
 
-    /**
-     * The transifex configuration prefix in the config.
-     *
-     * @var string
-     */
-    protected $transifexconfig;
+    /** The transifex configuration prefix in the config. */
+    private string $transifexConfig;
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
 
@@ -133,15 +121,27 @@ abstract class CommandBase extends Command
     /**
      * Write a message to the console if the verbosity is equal or higher than verbose.
      *
-     * @param OutputInterface $output   The output interface to which shall be written.
-     * @param string[]|string $messages The messages to write.
-     * @param int             $type     Type of the message.
-     *
-     * @return void
+     * @param OutputInterface     $output   The output interface to which shall be written.
+     * @param string|list<string> $messages The messages to write.
+     * @param int                 $type     Type of the message.
      */
-    protected function writelnVerbose(OutputInterface $output, $messages, $type = 0)
+    protected function writelnVerbose(OutputInterface $output, array|string $messages, int $type = 0): void
     {
         if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
+            $output->writeln($messages, $type);
+        }
+    }
+
+    /**
+     * Write a message to the console if the verbosity is equal or higher than verbose.
+     *
+     * @param OutputInterface     $output   The output interface to which shall be written.
+     * @param string|list<string> $messages The messages to write.
+     * @param int                 $type     Type of the message.
+     */
+    protected function writeln(OutputInterface $output, array|string $messages, int $type = 0): void
+    {
+        if ($output->getVerbosity() >= OutputInterface::VERBOSITY_NORMAL) {
             $output->writeln($messages, $type);
         }
     }
@@ -156,17 +156,19 @@ abstract class CommandBase extends Command
      *
      * @return mixed
      */
-    protected function getConfigValue($name)
+    protected function getConfigValue(string $name): mixed
     {
-        if (0 !== strpos($name, '/')) {
+        if (!str_starts_with($name, '/')) {
             $name = '/' . $name;
         }
 
+        /** @psalm-suppress MixedAssignment */
         if ($this->config && (null !== $value = $this->config->getConfigValue($name))) {
             return $value;
         }
 
-        if ($this->composer && (null !== $value = $this->composer->getConfigValue('/extra/contao' . $name))) {
+        /** @psalm-suppress MixedAssignment */
+        if (null !== $this->composer && (null !== $value = $this->composer->getConfigValue('/extra/contao' . $name))) {
             // @codingStandardsIgnoreStart - Deprecations may be silenced.
             @trigger_error('Deprecated configuration from composer.json in use.' .
                 ' Please move value ' . $name . ' to ctb.json or global configuration.',
@@ -177,7 +179,7 @@ abstract class CommandBase extends Command
         }
 
         // Fallback to global config.
-        /** @var JsonConfig $config */
+        /** @psalm-suppress MixedAssignment */
         if ($this->appConfig && null !== $value = $this->appConfig->getConfigValue($name)) {
             return $value;
         }
@@ -189,69 +191,51 @@ abstract class CommandBase extends Command
      * Retrieve a config value from the transifex section of the config.
      *
      * @param string $name The name of the config value.
-     *
-     * @return mixed
      */
-    protected function getTransifexConfigValue($name)
+    protected function getTransifexConfigValue(string $name): mixed
     {
-        return $this->getConfigValue('/' . $this->transifexconfig . $name);
-    }
-
-    /**
-     * Check that the passed project slug complies to the transifex restrictions.
-     *
-     * @param string $slug The slug to test.
-     *
-     * @return void
-     *
-     * @throws \RuntimeException When the slug is invalid, an exception is thrown.
-     */
-    protected function checkValidSlug($slug)
-    {
-        if (preg_match_all('#^([a-z,A-Z,0-9,\-,_]*)(.+)?$#', $slug, $matches)
-            && ('' !== $matches[2][0])
-        ) {
-            throw new \RuntimeException(
-                sprintf(
-                    'Error: prefix "%s" is invalid. It must only contain letters, numbers, underscores and hyphens. ' .
-                    'Found problem near: "%s"',
-                    $slug,
-                    $matches[2][0]
-                )
-            );
-        }
+        return $this->getConfigValue('/' . $this->transifexConfig . $name);
     }
 
     /**
      * {@inheritDoc}
      *
-     * @throws \RuntimeException When the needed settings can not be determined.
+     * @throws RuntimeException When the needed settings can not be determined.
      */
-    protected function initialize(InputInterface $input, OutputInterface $output)
+    protected function initialize(InputInterface $input, OutputInterface $output): void
     {
-        if (file_exists($composer = getcwd() . '/composer.json')) {
-            $this->composer = new JsonConfig($composer);
+        if (file_exists($configFile = getcwd() . '/composer.json')) {
+            $this->composer = new JsonConfig($configFile);
         }
-        if (file_exists($composer = getcwd() . '/ctb.json')) {
-            $this->config = new JsonConfig($composer);
+        if (file_exists($configFile = getcwd() . '/ctb.json')) {
+            $this->config = new JsonConfig($configFile);
         }
         if (($application = $this->getApplication()) instanceof ToolBoxApplication) {
             $this->appConfig = $application->getConfig();
         }
 
-        $this->transifexconfig = $input->getOption('transifex-config');
-        $this->project         = new Project();
+        $this->transifexConfig = (string) $input->getOption('transifex-config');
+        $this->project         = $project = new Project();
         $this->setProject($input, $output);
         $this->setPhpFileHeader();
         $this->setPrefix($input, $output);
         $this->setXliffDirectory($input, $output);
         $this->setContaoLanguageDirectory($input, $output);
-        $this->project->setBaseLanguage($input->getOption('base-language'));
-        if (null !== ($files = $input->getOption('skip-files'))) {
-            $this->project->setSkipFiles(explode(',', $files));
-        } elseif (null !== ($files = $this->getTransifexConfigValue('/skip_files'))) {
-            $this->project->setSkipFiles($files);
+        $project->setBaseLanguage((string) $input->getOption('base-language'));
+        /** @psalm-suppress MixedAssignment */
+        if (is_string($files = $input->getOption('skip-files'))) {
+            $project->setSkipFiles(explode(',', $files));
+        } elseif (is_array($files = $this->getTransifexConfigValue('/skip_files'))) {
+            $project->setSkipFiles(array_values(array_map(fn (mixed $value) => (string) $value, $files)));
         }
+    }
+
+    protected function getProject(): Project
+    {
+        if (null === $this->project) {
+            throw new RuntimeException('No project set - ensure initialize() is called first.');
+        }
+        return $this->project;
     }
 
     /**
@@ -261,34 +245,50 @@ abstract class CommandBase extends Command
      *
      * @param OutputInterface $output The output to use.
      *
-     * @return void
-     *
-     * @throws \RuntimeException When the value can not be determined.
+     * @throws RuntimeException When the value can not be determined.
      */
-    private function setProject(InputInterface $input, OutputInterface $output)
+    private function setProject(InputInterface $input, OutputInterface $output): void
     {
+        /** @psalm-suppress MixedAssignment */
         $projectName = $input->getOption('projectname');
-        if (!$projectName) {
+        if (!is_string($projectName) || '' === $projectName) {
+            /** @psalm-suppress MixedAssignment */
             $projectName = $this->getTransifexConfigValue('/project');
 
-            if (!$projectName) {
-                throw new \RuntimeException('Error: unable to determine transifex project name.');
+            if (!is_string($projectName) || '' === $projectName) {
+                throw new RuntimeException('Error: unable to determine transifex project name.');
             }
 
-            $this->writelnVerbose($output, sprintf('<info>automatically using project: %s</info>', $projectName));
+            $this->writelnVerbose($output, sprintf('<info>automatically detected project: %s</info>', $projectName));
         }
-        $this->project->setProject($projectName);
+        if (!str_contains($projectName, '/')) {
+            $this->writeln(
+                $output,
+                sprintf(
+                    '<error>' .
+                    'Project name "%1$s" is not in expected format, please specify as "<organization>/<project>". ' .
+                    'We will use "%1$s/%1$s" for the moment - This will fail in the future.' .
+                    '</error>',
+                    $projectName
+                )
+            );
+            $projectName .= '/' . $projectName;
+        }
+
+        [$projectName, $organizationName] = explode('/', $projectName);
+        $project = $this->getProject();
+        $project->setProject($projectName);
+        $project->setOrganization($organizationName);
     }
 
     /**
      * Set the php file header from command config of use default.
      *
-     * @return void
-     *
-     * @throws \RuntimeException When the value can not be determined.
+     * @throws RuntimeException When the value can not be determined.
      */
-    private function setPhpFileHeader()
+    private function setPhpFileHeader(): void
     {
+        /** @psalm-suppress MixedAssignment */
         if (null === $fileHeader = $this->getTransifexConfigValue('/php-file-header')) {
             $fileHeader = 'Translations are managed using Transifex. To create a new translation
 or to help to maintain an existing one, please register at transifex.com.
@@ -298,95 +298,85 @@ or to help to maintain an existing one, please register at transifex.com.
 last-updated: $$lastchanged$$
 ';
         }
-
         if (is_string($fileHeader)) {
             $fileHeader = explode("\n", $fileHeader);
         }
 
-        $this->project->setPhpFileHeader($fileHeader);
+        if (!is_array($fileHeader)) {
+            throw new RuntimeException('Error: invalid file header provided.');
+        }
+
+        $this->getProject()->setPhpFileHeader(
+            array_values(array_map(fn (mixed $value) => (string) $value, $fileHeader))
+        );
     }
 
     /**
      * Set the prefix, either from command line parameter or from config.
      *
      * @param InputInterface  $input  The input to use.
-     *
      * @param OutputInterface $output The output to use.
      *
-     * @return void
-     *
-     * @throws \RuntimeException When the value can not be determined.
+     * @throws RuntimeException When the value can not be determined.
      */
-    private function setPrefix(InputInterface $input, OutputInterface $output)
+    private function setPrefix(InputInterface $input, OutputInterface $output): void
     {
-        $prefix = $input->getOption('prefix');
-
-        if (null === $prefix) {
-            $prefix = $this->getTransifexConfigValue('/prefix');
-
-            if (null === $prefix) {
-                throw new \RuntimeException('Error: unable to determine transifex prefix.');
+        /** @psalm-suppress MixedAssignment */
+        if (!is_string($prefix = $input->getOption('prefix'))) {
+            /** @psalm-suppress MixedAssignment */
+            if (!is_string($prefix = $this->getTransifexConfigValue('/prefix'))) {
+                throw new RuntimeException('Error: unable to determine transifex prefix.');
             }
             $this->writelnVerbose($output, sprintf('<info>automatically using prefix: %s</info>', $prefix));
         }
 
-        $this->project->setPrefix($prefix);
+        $this->getProject()->setPrefix($prefix);
     }
 
     /**
      * Set the xliff directory, either from command line parameter or from config.
      *
      * @param InputInterface  $input  The input to use.
-     *
      * @param OutputInterface $output The output to use.
      *
-     * @return void
-     *
-     * @throws \RuntimeException When the value can not be determined.
+     * @throws RuntimeException When the value can not be determined.
      */
-    private function setXliffDirectory(InputInterface $input, OutputInterface $output)
+    private function setXliffDirectory(InputInterface $input, OutputInterface $output): void
     {
-        $txlang = $input->getOption('xliff');
-
-        if (null === $txlang) {
-            $txlang = $this->getTransifexConfigValue('/languages_tx');
-
-            if (null === $txlang) {
-                throw new \RuntimeException('Error: unable to determine transifex root folder.');
+        /** @psalm-suppress MixedAssignment */
+        if (!is_string($txLang = $input->getOption('xliff'))) {
+            /** @psalm-suppress MixedAssignment */
+            if (!is_string($txLang = $this->getTransifexConfigValue('/languages_tx'))) {
+                throw new RuntimeException('Error: unable to determine transifex root folder.');
             }
-            $this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $txlang));
+            $this->writelnVerbose($output, sprintf('<info>automatically using xliff folder: %s</info>', $txLang));
         }
 
-        $this->project->setXliffDirectory($txlang);
+        $this->getProject()->setXliffDirectory($txLang);
     }
 
     /**
      * Set the contao language file directory, either from command line parameter or from config.
      *
      * @param InputInterface  $input  The input to use.
-     *
      * @param OutputInterface $output The output to use.
      *
-     * @return void
-     *
-     * @throws \RuntimeException When the value can not be determined.
+     * @throws RuntimeException When the value can not be determined.
      */
-    private function setContaoLanguageDirectory(InputInterface $input, OutputInterface $output)
+    private function setContaoLanguageDirectory(InputInterface $input, OutputInterface $output): void
     {
-        $ctolang = $input->getOption('contao');
-
-        if (null === $ctolang) {
-            $ctolang = $this->getTransifexConfigValue('/languages_cto');
-
-            if (null === $ctolang) {
-                throw new \RuntimeException('Error: unable to determine contao language root folder.');
+        /** @psalm-suppress MixedAssignment */
+        if (!is_string($ctoLang = $input->getOption('contao'))) {
+            /** @psalm-suppress MixedAssignment */
+            if (!is_string($ctoLang = $this->getTransifexConfigValue('/languages_cto'))) {
+                throw new RuntimeException('Error: unable to determine contao language root folder.');
             }
             $this->writelnVerbose(
                 $output,
-                sprintf('<info>automatically using Contao language folder: %s</info>', $ctolang)
+                sprintf('<info>automatically using Contao language folder: %s</info>', $ctoLang)
             );
         }
 
-        $this->project->setContaoDirectory($ctolang);
+        $this->getProject()->setContaoDirectory($ctoLang);
     }
 }

@@ -31,10 +31,7 @@ use Symfony\Component\Finder\Finder;
  */
 class FromPhpToXliff extends AbstractConverter
 {
-    /**
-     * {@inheritDoc}
-     */
-    protected function collectResourceNamesFromBaseLanguage()
+    protected function collectResourceNamesFromBaseLanguage(): array
     {
         $finder = new Finder();
         $finder
@@ -46,25 +43,19 @@ class FromPhpToXliff extends AbstractConverter
 
         $files = [];
         foreach ($finder as $file) {
-            $files[] = basename($file->getFilename(), '.php');
+            $files[] = $file->getBasename('.' . $file->getExtension());
         }
 
         return $files;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function collectLanguages()
+    protected function collectLanguages(): array
     {
         $locator = new LanguageDirectoryLocator($this->xliffPath, $this->logger);
         return $locator->determineLanguages($this->onlyLanguages);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function processLanguage($resources, $language)
+    protected function processLanguage(array $resources, string $language): void
     {
         $this->logger->info('processing language: {language}...', ['language' => $language]);
         foreach ($resources as $resource) {
@@ -73,12 +64,10 @@ class FromPhpToXliff extends AbstractConverter
             $source      = $this->createSourcePhp($resource, $language);
             $base        = $this->createBasePhp($resource);
             $destination = $this->createDestinationXliffFile($resource, $language);
-            if (file_exists($source->getFileName())) {
-                $time = filemtime($source->getFileName());
-            } else {
-                $time = filemtime($base->getFileName());
+            $time = $source->getLastChange() ?? $base->getLastChange();
+            if (null !== $time) {
+                $destination->setDate($time);
             }
-            $destination->setDate($time);
 
             // Synchronize all target values from source file to XLIFF file.
             TranslationSync::syncFrom($source, $destination->setMode('target'), false, $this->logger);
@@ -97,11 +86,9 @@ class FromPhpToXliff extends AbstractConverter
      * @param string $resource The resource name.
      * @param string $language The language code.
      *
-     * @return ContaoFile|null
-     *
      * @throws InvalidArgumentException When the domain does not match the original value in the Xliff.
      */
-    private function createSourcePhp($resource, $language)
+    private function createSourcePhp(string $resource, string $language): ContaoFile
     {
         $srcFile = $this->contaoPath . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $resource . '.php';
         return new ContaoFile($srcFile, $this->logger);
@@ -112,11 +99,9 @@ class FromPhpToXliff extends AbstractConverter
      *
      * @param string $resource The resource name.
      *
-     * @return ContaoFile|null
-     *
      * @throws InvalidArgumentException When the domain does not match the original value in the Xliff.
      */
-    private function createBasePhp($resource)
+    private function createBasePhp(string $resource): ContaoFile
     {
         return $this->createSourcePhp($resource, $this->baseLanguage);
     }
@@ -126,10 +111,8 @@ class FromPhpToXliff extends AbstractConverter
      *
      * @param string $resource The resource name.
      * @param string $language The language code.
-     *
-     * @return XliffFile
      */
-    private function createDestinationXliffFile($resource, $language)
+    private function createDestinationXliffFile(string $resource, string $language): XliffFile
     {
         $dstFile     = $this->xliffPath . DIRECTORY_SEPARATOR . $language . DIRECTORY_SEPARATOR . $resource . '.xlf';
         $destination = new XliffFile($dstFile, $this->logger);

@@ -19,36 +19,29 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
+use CyberSpectrum\ContaoToolBox\Transifex\Download\AbstractResourceDownloader;
 use CyberSpectrum\ContaoToolBox\Transifex\Download\ContaoResourceDownloader;
 use CyberSpectrum\ContaoToolBox\Transifex\Download\XliffResourceDownloader;
-use CyberSpectrum\PhpTransifex\Model\ProjectModel;
+use CyberSpectrum\PhpTransifex\Model\Project;
 use InvalidArgumentException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function explode;
+use function in_array;
+
 /**
  * This command is used for downloading translations from transifex.
  */
-class DownloadTransifex extends TransifexBase
+final class DownloadTransifex extends TransifexBase
 {
-    /**
-     * {@inheritDoc}
-     */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName('download-transifex');
         $this->setDescription('Download xliff translations from transifex.');
-
-        $this->addOption(
-            'mode',
-            'm',
-            InputOption::VALUE_OPTIONAL,
-            'Download mode to use (reviewed, translated, default).',
-            'reviewed'
-        );
 
         $this->addOption(
             'destination',
@@ -64,54 +57,30 @@ class DownloadTransifex extends TransifexBase
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $project    = $this->getPhpTransifex()->project($this->project->getProject());
-        $downloader = $this->createDownloader($input->getOption('destination'), new ConsoleLogger($output), $project);
+        $project          = $this->getProject();
+        $txProject        = $this->getPhpTransifexProject();
+        $downloader       = $this->createDownloader(
+            (string) $input->getOption('destination'),
+            new ConsoleLogger($output),
+            $txProject
+        );
 
+        /** @psalm-suppress MixedAssignment */
         if ('all' !== ($languages = $input->getArgument('languages'))) {
-            $downloader->setAllowedLanguages(explode(',', $languages));
+            $downloader->setAllowedLanguages(explode(',', (string) $languages));
         }
-        $downloader->setDomainPrefix($this->project->getPrefix());
-        $downloader->setTranslationMode($this->getTranslationMode($input));
-        if ($skipFiles = $this->project->getSkipFiles()) {
-            $downloader->setResourceFilter(function ($resourceSlug) use ($skipFiles) {
-                return !in_array($resourceSlug, $skipFiles, true);
-            });
-        }
-
-        $downloader->download();
-    }
-
-    /**
-     * Obtain the translation mode to use when downloading.
-     *
-     * @param InputInterface $input An InputInterface instance.
-     *
-     * @return string
-     *
-     * @throws \InvalidArgumentException When the translation mode is not reviewed, translated or default.
-     */
-    private function getTranslationMode(InputInterface $input)
-    {
-        $translationMode = $input->getOption('mode');
-        $validModes      = ['reviewed', 'translated', 'default'];
-        if (!in_array($translationMode, $validModes, true)) {
-            throw new \InvalidArgumentException(
-                sprintf(
-                    'Invalid translation mode %s specified. Must be one of %s',
-                    $translationMode,
-                    implode(', ', $validModes)
-                )
+        $downloader->setDomainPrefix($project->getPrefix());
+        if ($skipFiles = $project->getSkipFiles()) {
+            $downloader->setResourceFilter(
+                fn (string $resourceSlug): bool => !in_array($resourceSlug, $skipFiles, true)
             );
         }
 
-        // HOTFIX: translated actually appears to be "translator".
-        if ('translated' === $translationMode) {
-            $translationMode = 'translator';
-        }
+        $downloader->download();
 
-        return $translationMode;
+        return 0;
     }
 
     /**
@@ -119,28 +88,30 @@ class DownloadTransifex extends TransifexBase
      *
      * @param string        $destination The desired destination.
      * @param ConsoleLogger $logger      The logger to use.
-     * @param ProjectModel  $project     The project.
-     *
-     * @return ContaoResourceDownloader|XliffResourceDownloader
+     * @param Project       $project     The project.
      *
      * @throws InvalidArgumentException When the passed destination is invalid.
      */
-    private function createDownloader($destination, ConsoleLogger $logger, $project)
-    {
-
+    private function createDownloader(
+        string $destination,
+        ConsoleLogger $logger,
+        Project $project
+    ): AbstractResourceDownloader {
+        $myProject = $this->getProject();
         switch ($destination) {
             case 'xliff':
                 return new XliffResourceDownloader(
                     $project,
-                    $this->project->getXliffDirectory(),
-                    $this->project->getBaseLanguage(),
+                    $myProject->getXliffDirectory(),
+                    $myProject->getBaseLanguage(),
                     $logger
                 );
             case 'contao':
                 return new ContaoResourceDownloader(
                     $project,
-                    $this->project->getContaoDirectory(),
-                    $this->project->getBaseLanguage(),
+                    $myProject->getContaoDirectory(),
+                    $myProject->getBaseLanguage(),
+                    $myProject->getPhpFileHeader(),
                     $logger
                 );
             default:

@@ -20,35 +20,33 @@
 namespace CyberSpectrum\ContaoToolBox\Locator;
 
 use CyberSpectrum\ContaoToolBox\Util\DelegatingLogger;
+use DirectoryIterator;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
+
+use function in_array;
+use function is_dir;
+use function preg_match;
+use function sprintf;
 
 /**
  * This class locates language directories within a base directory.
  */
 class LanguageDirectoryLocator
 {
-    /**
-     * The logger instance.
-     *
-     * @var LoggerInterface
-     */
-    private $logger;
+    /** The logger instance. */
+    private readonly LoggerInterface $logger;
 
-    /**
-     * The base directory.
-     *
-     * @var string
-     */
-    private $baseDir;
+    /** The base directory. */
+    private readonly string $baseDir;
 
     /**
      * Create a new instance.
      *
-     * @param string          $baseDir The base Directory.
-     *
-     * @param LoggerInterface $logger  The logger to use.
+     * @param string           $baseDir The base Directory.
+     * @param ?LoggerInterface $logger  The logger to use.
      */
-    public function __construct($baseDir, LoggerInterface $logger = null)
+    public function __construct(string $baseDir, ?LoggerInterface $logger)
     {
         $this->logger  = new DelegatingLogger($logger);
         $this->baseDir = $baseDir;
@@ -57,22 +55,22 @@ class LanguageDirectoryLocator
     /**
      * Determine the list of languages.
      *
-     * @param array $allowed The languages to be kept.
+     * @param list<string> $allowed The languages to be kept.
      *
-     * @return string[]
+     * @return list<string>
      *
-     * @throws \InvalidArgumentException When the given source directory does not exist, an exception is thrown.
+     * @throws InvalidArgumentException When the given source directory does not exist, an exception is thrown.
      */
-    public function determineLanguages($allowed = [])
+    public function determineLanguages(array $allowed = []): array
     {
         if (!is_dir($this->baseDir)) {
-            throw new \InvalidArgumentException(sprintf('The path %s does not exist.', $this->baseDir));
+            throw new InvalidArgumentException(sprintf('The path %s does not exist.', $this->baseDir));
         }
 
         $this->logger->notice('scanning for languages in: {src-dir}', ['src-dir' => $this->baseDir]);
 
         $matches  = [];
-        $iterator = new \DirectoryIterator($this->baseDir);
+        $iterator = new DirectoryIterator($this->baseDir);
         do {
             $item = $iterator->getFilename();
             if ($iterator->isDot()) {
@@ -96,24 +94,19 @@ class LanguageDirectoryLocator
      * Test if the passed value is a valid handle for a language directory.
      *
      * @param string $dirName The name.
-     *
-     * @return bool
      */
-    private function isValidLanguageDirectory($dirName)
+    private function isValidLanguageDirectory(string $dirName): bool
     {
-        return preg_match('#^[a-z]{2}([-_][a-zA-Z]{0,2})?$#', $dirName);
+        return 1 === preg_match('#^[a-z]{2}([-_][a-zA-Z]{0,2})?$#', $dirName);
     }
 
     /**
      * Test if the passed name matches the filter.
      *
-     * @param string   $dirName The directory name.
-     *
-     * @param string[] $filter  The filtered names.
-     *
-     * @return bool
+     * @param string       $dirName The directory name.
+     * @param list<string> $filter  The filtered names.
      */
-    private function isFiltered($dirName, $filter)
+    private function isFiltered(string $dirName, array $filter): bool
     {
         if (empty($filter)) {
             return false;

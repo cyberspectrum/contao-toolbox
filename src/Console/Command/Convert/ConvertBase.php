@@ -29,30 +29,28 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function explode;
+use function is_string;
+
 /**
  * This class provides base methods for converting commands.
  */
 abstract class ConvertBase extends CommandBase
 {
-    /**
-     * {@inheritDoc}
-     */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->addOption('cleanup', null, InputOption::VALUE_NONE, 'if set, remove obsolete files.');
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $converter = $this->createConverter(new ConsoleLogger($output));
-        if ('all' !== ($languages = $input->getArgument('languages'))) {
+        /** @psalm-suppress MixedAssignment */
+        if ('all' !== ($languages = $input->getArgument('languages')) && is_string($languages)) {
             $converter->setOnlyLanguages(explode(',', $languages));
         }
-        if ($skipFiles = $this->project->getSkipFiles()) {
+        if ($skipFiles = $this->getProject()->getSkipFiles()) {
             $converter->setIgnoredResources($skipFiles);
         }
         if ($input->getOption('cleanup')) {
@@ -60,14 +58,14 @@ abstract class ConvertBase extends CommandBase
         }
 
         $converter->convert();
+
+        return 0;
     }
 
     /**
      * Create the converter instance.
      *
      * @param LoggerInterface $logger The logger instance.
-     *
-     * @return AbstractConverter
      */
-    abstract protected function createConverter(LoggerInterface $logger);
+    abstract protected function createConverter(LoggerInterface $logger): AbstractConverter;
 }

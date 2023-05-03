@@ -26,29 +26,39 @@ use CyberSpectrum\ContaoToolBox\Console\Command\Convert\ConvertToXliff;
 use CyberSpectrum\ContaoToolBox\Console\Command\Transifex\DownloadTransifex;
 use CyberSpectrum\ContaoToolBox\Console\Command\Transifex\UploadTransifex;
 use CyberSpectrum\ContaoToolBox\Util\JsonConfig;
+use RuntimeException;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Command\HelpCommand;
 use Symfony\Component\Console\Command\ListCommand;
+use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function chdir;
+use function defined;
+use function file_exists;
+use function getcwd;
+use function getenv;
+use function is_string;
+use function rtrim;
+use function str_replace;
+
 /**
  * This class implements the main application of the toolbox.
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class ToolBoxApplication extends BaseApplication
 {
     /**
      * The application home dir.
      *
-     * @var string
+     * @psalm-suppress PropertyNotSetInConstructor
      */
-    protected $home;
+    private string $home;
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function getDefaultCommands()
+    protected function getDefaultCommands(): array
     {
         return array(
             new ConvertFromXliff(),
@@ -61,10 +71,7 @@ class ToolBoxApplication extends BaseApplication
         );
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    protected function getDefaultInputDefinition()
+    protected function getDefaultInputDefinition(): InputDefinition
     {
         $result = parent::getDefaultInputDefinition();
         $result->addOption(
@@ -79,19 +86,16 @@ class ToolBoxApplication extends BaseApplication
         return $result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function doRun(InputInterface $input, OutputInterface $output)
+    public function doRun(InputInterface $input, OutputInterface $output): int
     {
-        if ($newWorkDir = $this->getNewWorkingDir($input)) {
+        if (null !== ($newWorkDir = $this->getNewWorkingDir($input))) {
             $oldWorkingDir = getcwd();
             chdir($newWorkDir);
         }
 
         $result = parent::doRun($input, $output);
 
-        if (isset($oldWorkingDir)) {
+        if (isset($oldWorkingDir) && is_string($oldWorkingDir)) {
             chdir($oldWorkingDir);
         }
 
@@ -103,20 +107,16 @@ class ToolBoxApplication extends BaseApplication
      *
      * @param InputInterface $input The input instance.
      *
-     * @return string
-     *
-     * @throws \RuntimeException When the working dir is invalid.
+     * @throws RuntimeException When the working dir is invalid.
      */
-    private function getNewWorkingDir(InputInterface $input)
+    private function getNewWorkingDir(InputInterface $input): ?string
     {
-        $workingDir = $input->getParameterOption(
-            array(
-                '--working-dir',
-                '-d'
-            )
-        );
-        if ((false !== $workingDir) && !is_dir($workingDir)) {
-            throw new \RuntimeException('Invalid working directory specified.');
+        $workingDir = $input->getParameterOption(['--working-dir', '-d']);
+        if (false === $workingDir) {
+            return null;
+        }
+        if (!is_string($workingDir) || !is_dir($workingDir)) {
+            throw new RuntimeException('Invalid working directory specified.');
         }
 
         return $workingDir;
@@ -125,12 +125,11 @@ class ToolBoxApplication extends BaseApplication
     /**
      * Determine the home directory where cbt config files shall be stored.
      *
-     * @return string
-     *
-     * @throws \RuntimeException When neither a valid home dir nor the CBT_HOME environment variables are defined.
+     * @throws RuntimeException When neither a valid home dir nor the CBT_HOME environment variables are defined.
      */
-    protected function getHome()
+    protected function getHome(): string
     {
+        /** @psalm-suppress RedundantPropertyInitializationCheck */
         if (isset($this->home)) {
             return $this->home;
         }
@@ -138,19 +137,21 @@ class ToolBoxApplication extends BaseApplication
         $home = getenv('CBT_HOME');
         if (!$home) {
             if (defined('PHP_WINDOWS_VERSION_MAJOR')) {
-                if (!getenv('APPDATA')) {
-                    throw new \RuntimeException(
+                $appData = getenv('APPDATA');
+                if (empty($appData)) {
+                    throw new RuntimeException(
                         'The APPDATA or CBT_HOME environment variable must be set for cbt to run correctly'
                     );
                 }
-                $home = str_replace('\\', '/', getenv('APPDATA')) . '/CBT';
+                $home = str_replace('\\', '/', $appData) . '/CBT';
             } else {
-                if (!getenv('HOME')) {
-                    throw new \RuntimeException(
+                $home = getenv('HOME');
+                if (empty($home)) {
+                    throw new RuntimeException(
                         'The HOME or CBT_HOME environment variable must be set for cbt to run correctly'
                     );
                 }
-                $home = rtrim(getenv('HOME'), '/') . '/.config/ctb';
+                $home = rtrim($home, '/') . '/.config/ctb';
             }
         }
 
@@ -160,11 +161,9 @@ class ToolBoxApplication extends BaseApplication
     }
 
     /**
-     * Retrieve the config instance.
-     *
-     * @return JsonConfig|null
+     * Retrieve a config instance.
      */
-    public function getConfig()
+    public function getConfig(): ?JsonConfig
     {
         $dir = $this->getHome();
         if (!file_exists($dir . '/config.json')) {

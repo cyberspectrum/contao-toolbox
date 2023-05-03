@@ -21,54 +21,51 @@ namespace CyberSpectrum\ContaoToolBox\Transifex\Download;
 
 use CyberSpectrum\ContaoToolBox\Translation\Base\TranslationFileInterface;
 use CyberSpectrum\ContaoToolBox\Translation\Contao\ContaoFile;
-use CyberSpectrum\PhpTransifex\Model\ProjectModel;
-use CyberSpectrum\PhpTransifex\Model\ResourceModel;
+use CyberSpectrum\PhpTransifex\Model\Project;
+use CyberSpectrum\PhpTransifex\Model\Resource;
+use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
+
+use function assert;
+use function implode;
 
 /**
  * This class synchronizes all Contao resources from transifex.
  */
-class ContaoResourceDownloader extends AbstractResourceDownloader
+final class ContaoResourceDownloader extends AbstractResourceDownloader
 {
-    /**
-     * The file header.
-     *
-     * @var string[]
-     */
-    private $fileHeader;
-
     /**
      * Create a new instance.
      *
-     * @param ProjectModel    $project         The project to process.
+     * @param Project         $project         The project to process.
      * @param string          $outputDirectory The output directory.
      * @param string          $baseLanguage    The base language.
-     * @param string[]        $fileHeader      The file header to use.
+     * @param list<string>    $fileHeader      The file header to use.
      * @param LoggerInterface $logger          The logger to use.
      */
     public function __construct(
-        ProjectModel $project,
-        $outputDirectory,
-        $baseLanguage,
-        array $fileHeader,
+        Project $project,
+        string $outputDirectory,
+        string $baseLanguage,
+        /** @var list<string> */
+        private readonly array $fileHeader,
         LoggerInterface $logger
     ) {
         parent::__construct($project, $outputDirectory, $baseLanguage, $logger);
-        $this->fileHeader = $fileHeader;
     }
 
     /**
      * Fetch the contao files for the passed resource.
      *
-     * @param ResourceModel $resource The resource slug.
+     * @param Resource $resource The resource slug.
      *
-     * @return ContaoFile[]
+     * @return list<ContaoFile>
      */
-    protected function getFiles(ResourceModel $resource)
+    protected function getFiles(Resource $resource): array
     {
         $files = [];
         foreach ($this->allowedLanguages as $language) {
-            $files[] = $this->createContaoFile($resource->slug(), $language);
+            $files[] = $this->createContaoFile($resource->getSlug(), $language);
         }
 
         return $files;
@@ -79,10 +76,8 @@ class ContaoResourceDownloader extends AbstractResourceDownloader
      *
      * @param string $resource     The resource slug.
      * @param string $languageCode The language code.
-     *
-     * @return ContaoFile
      */
-    private function createContaoFile($resource, $languageCode)
+    private function createContaoFile(string $resource, string $languageCode): ContaoFile
     {
         $file = new ContaoFile(
             implode(
@@ -100,14 +95,15 @@ class ContaoResourceDownloader extends AbstractResourceDownloader
      * Set the file header and date.
      *
      * @param TranslationFileInterface $file The file.
-     *
-     * @return void
      */
     protected function postProcess(TranslationFileInterface $file): void
     {
         parent::postProcess($file);
-        /** @var ContaoFile $file */
+        assert($file instanceof ContaoFile);
         $file->setFileHeader($this->fileHeader);
-        $file->setLastChange(time());
+
+        if ($file->isChanged()) {
+            $file->setLastChange(new DateTimeImmutable());
+        }
     }
 }

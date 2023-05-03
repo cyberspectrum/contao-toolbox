@@ -19,36 +19,41 @@
 
 namespace CyberSpectrum\ContaoToolBox\Translation\Base;
 
+use Iterator;
+
 /**
  * This class provides an abstract base of a simple iterator over translation files.
+ *
+ * @template TValue
+ * @template-covariant TFile of TranslationFileInterface
+ *
+ * @implements Iterator<string, TValue>
  */
-abstract class AbstractTranslationIterator implements \Iterator
+abstract class AbstractTranslationIterator implements Iterator
 {
     /**
      * The file we belong to.
      *
-     * @var TranslationFileInterface
+     * @var TFile
      */
-    protected $file;
+    protected TranslationFileInterface $file;
 
     /**
      * The list of translation keys.
      *
-     * @var string[]
+     * @var list<string>
      */
-    protected $keys;
+    protected array $keys;
 
     /**
      * The current position in the file.
-     *
-     * @var int
      */
-    protected $position = 0;
+    protected int $position = 0;
 
     /**
      * Create a new instance.
      *
-     * @param TranslationFileInterface $file The file we are working on.
+     * @param TFile $file The file we are working on.
      */
     public function __construct(TranslationFileInterface $file)
     {
@@ -57,34 +62,22 @@ abstract class AbstractTranslationIterator implements \Iterator
         $this->keys     = $file->keys();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function rewind()
+    public function rewind(): void
     {
         $this->position = 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function key()
+    public function key(): string
     {
         return $this->keys[$this->position];
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function next()
+    public function next(): void
     {
         ++$this->position;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function valid()
+    public function valid(): bool
     {
         return isset($this->keys[$this->position]);
     }

@@ -20,60 +20,72 @@
 namespace CyberSpectrum\ContaoToolBox\Translation\Xliff;
 
 use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractFile;
+use DateTimeImmutable;
+use DateTimeInterface;
+use DOMDocument;
+use DOMElement;
+use DOMNode;
+use DOMNodeList;
+use DOMXPath;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Traversable;
+
+use function dirname;
+use function file_exists;
+use function is_dir;
+use function mkdir;
+use function sprintf;
+use function unlink;
+use function var_export;
 
 /**
  * This class represents a XLIFF translation file.
+ *
+ * @extends AbstractFile<TranslationEntry, XliffFile>
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class XliffFile extends AbstractFile
+final class XliffFile extends AbstractFile
 {
     /**
      * The xliff Namespace.
      */
-    const NS = 'urn:oasis:names:tc:xliff:document:1.2';
+    public const NS = 'urn:oasis:names:tc:xliff:document:1.2';
 
     /**
      * The document we are currently working on.
-     *
-     * @var \DOMDocument
      */
-    protected $doc;
+    protected DOMDocument $doc;
 
     /**
      * The filename to work on.
-     *
-     * @var string
      */
-    protected $filename;
+    protected ?string $filename;
 
     /**
      * The mode we are working in, either "source" or "target".
-     *
-     * @var string
      */
-    private $mode;
+    private string $mode;
 
     /**
      * Flag if the contents have been changed.
-     *
-     * @var bool
      */
-    private $changed = false;
+    private bool $changed = false;
 
     /**
      * Create a new instance.
      *
-     * @param string|null     $filename The filename to use or null when none should be loaded.
-     *
-     * @param LoggerInterface $logger   The logger to use.
+     * @param string|null          $filename The filename to use or null when none should be loaded.
+     * @param LoggerInterface|null $logger   The logger to use.
      */
-    public function __construct($filename = null, LoggerInterface $logger = null)
+    public function __construct(?string $filename = null, ?LoggerInterface $logger = null)
     {
         parent::__construct($logger);
         $this->filename = $filename;
 
-        $this->doc                     = new \DOMDocument('1.0', 'UTF-8');
+        $this->doc                     = new DOMDocument('1.0', 'UTF-8');
         $this->doc->preserveWhiteSpace = false;
         $this->doc->formatOutput       = true;
 
@@ -86,11 +98,9 @@ class XliffFile extends AbstractFile
      *
      * @param string $mode The mode to use (either 'source' or 'target').
      *
-     * @return XliffFile
-     *
      * @throws InvalidArgumentException When an invalid mode has been passed.
      */
-    public function setMode($mode)
+    public function setMode(string $mode): self
     {
         if ('source' !== $mode && 'target' !== $mode) {
             throw new InvalidArgumentException('Invalid mode provided ' . $mode);
@@ -106,10 +116,8 @@ class XliffFile extends AbstractFile
 
     /**
      * Retrieve the current file mode.
-     *
-     * @return string
      */
-    public function getMode()
+    public function getMode(): string
     {
         return $this->mode;
     }
@@ -117,61 +125,51 @@ class XliffFile extends AbstractFile
     /**
      * {@inheritDoc}
      *
-     * @throws \RuntimeException When an empty id is encountered.
+     * @throws RuntimeException When an empty id is encountered.
      */
-    public function keys()
+    public function keys(): array
     {
-        /** @var \DOMNodeList $tmp */
+        /** @var DOMNodeList $tmp */
         $transUnits = $this->getXPath()->query('/xliff:xliff/xliff:file/xliff:body/xliff:trans-unit');
 
         $result = [];
 
         if ($transUnits->length > 0) {
-            /** @var \DOMElement $element */
+            /** @var DOMElement $element */
             foreach ($transUnits as $element) {
                 if (!$this->getAttribute($element, 'id')) {
-                    throw new \RuntimeException('Empty Id: ' . var_export($element, true));
+                    throw new RuntimeException('Empty Id: ' . var_export($element, true));
                 }
-                $result[] = (string) $this->getAttribute($element, 'id');
+                $result[] = $this->getAttribute($element, 'id');
             }
         }
 
         return $result;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return XliffFile
-     */
-    public function remove($key)
+    public function remove(string $key): self
     {
         $unit = $this->searchForId($key);
         if ($unit) {
-            $unit->parentNode->removeChild($unit);
+            $unit->parentNode?->removeChild($unit);
             $this->changed = true;
         }
 
         return $this;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return XliffFile
-     */
-    public function set($key, $value)
+    public function set(string $key, string $value): self
     {
-        $unit   = $this->searchForId($key, true);
+        $unit   = $this->searchOrCreateId($key);
         $source = $this->getXPathFirstItem('xliff:' . $this->mode, $unit);
 
         // If already present check
         if (null === $source) {
-            $source = $unit->appendChild($this->doc->createElementNS(self::NS, $this->mode));
+            $source = $unit->appendChild($this->createElement($this->mode));
             // Mark changed, we add the key here.
             $this->changed = true;
         } elseif ($source->firstChild) {
-            if ($value === $source->firstChild) {
+            if ($value === $source->firstChild->textContent) {
                 // Nothing changed, we can exit here.
                 return $this;
             }
@@ -186,10 +184,7 @@ class XliffFile extends AbstractFile
         return $this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function get($key)
+    public function get(string $key): ?string
     {
         $unit = $this->searchForId($key);
 
@@ -201,18 +196,12 @@ class XliffFile extends AbstractFile
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function isChanged()
+    public function isChanged(): bool
     {
         return $this->changed;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function getLanguageCode()
+    public function getLanguageCode(): string
     {
         return $this->getTgtLang();
     }
@@ -220,11 +209,9 @@ class XliffFile extends AbstractFile
     /**
      * Save the contents to disk.
      *
-     * @return void
-     *
-     * @throws \RuntimeException When the directory can not be created.
+     * @throws RuntimeException When the directory can not be created.
      */
-    public function save()
+    public function save(): void
     {
         if ($this->filename) {
             if (empty($this->keys()) && file_exists($this->filename)) {
@@ -234,9 +221,12 @@ class XliffFile extends AbstractFile
                 return;
             }
 
-            if (!is_dir($directory = dirname($this->filename))
-                && !mkdir($directory, 0755, true) && !is_dir($directory)) {
-                throw new \RuntimeException(sprintf('Directory "%s" was not created', $directory));
+            if (
+                !is_dir($directory = dirname($this->filename))
+                && !mkdir($directory, 0755, true)
+                && !is_dir($directory)
+            ) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $directory));
             }
 
             $this->doc->save($this->filename);
@@ -247,10 +237,8 @@ class XliffFile extends AbstractFile
 
     /**
      * Load the content from a string.
-     *
-     * @return string
      */
-    public function saveXML()
+    public function saveXML(): string
     {
         return $this->doc->saveXML();
     }
@@ -259,10 +247,8 @@ class XliffFile extends AbstractFile
      * Load the file from disk.
      *
      * @param string|null $filename The filename.
-     *
-     * @return void
      */
-    public function load($filename)
+    public function load(?string $filename): void
     {
         if ($filename && file_exists($filename)) {
             $this->doc->load($filename, LIBXML_NSCLEAN);
@@ -275,20 +261,16 @@ class XliffFile extends AbstractFile
      * Load the content from a string.
      *
      * @param string $content The XML string.
-     *
-     * @return void
      */
-    public function loadXML($content)
+    public function loadXML(string $content): void
     {
         $this->doc->loadXML($content, LIBXML_NSCLEAN);
     }
 
     /**
      * Create the basic document structure.
-     *
-     * @return void
      */
-    protected function createBasicDocument()
+    protected function createBasicDocument(): void
     {
         $this->doc->loadXML(
             '<?xml version="1.0" encoding="UTF-8"?>' .
@@ -298,7 +280,7 @@ class XliffFile extends AbstractFile
 
         // Set some basic information.
         $this->setDataType('plaintext');
-        $this->setDate(time());
+        $this->setDate(new DateTimeImmutable());
         $this->setOriginal('');
         $this->setSrcLang('en');
         $this->setTgtLang('en');
@@ -306,10 +288,8 @@ class XliffFile extends AbstractFile
 
     /**
      * Retrieve the filename.
-     *
-     * @return string
      */
-    public function getFileName()
+    public function getFileName(): ?string
     {
         return $this->filename;
     }
@@ -322,10 +302,8 @@ class XliffFile extends AbstractFile
      * You may use a custom datatype here but have to prefix it with "x-".
      *
      * @param string $datatype The data type.
-     *
-     * @return void
      */
-    public function setDataType($datatype)
+    public function setDataType(string $datatype): void
     {
         $this->setFileAttribute('datatype', $datatype);
     }
@@ -334,34 +312,31 @@ class XliffFile extends AbstractFile
      * Get the datat ype for this file.
      *
      * See http://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html#datatype
-     *
-     * @return string
      */
-    public function getDataType()
+    public function getDataType(): string
     {
         return $this->getFileAttribute('datatype');
     }
 
     /**
      * Sets the last modification time in this file.
-     *
-     * @param int $date Timestamp.
-     *
-     * @return void
      */
-    public function setDate($date)
+    public function setDate(DateTimeInterface $date): void
     {
-        $this->setFileAttribute('date', date('c', $date));
+        $this->setFileAttribute('date', $date->format(DateTimeInterface::ATOM));
     }
 
     /**
      * Return the last modification time from this file as timestamp.
-     *
-     * @return int
      */
-    public function getDate()
+    public function getDate(): DateTimeInterface
     {
-        return strtotime($this->getFileAttribute('date'));
+        $date = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $this->getFileAttribute('date'));
+        if (false === $date) {
+            throw new InvalidArgumentException('Invalid date format: ' . $this->getFileAttribute('date'));
+        }
+
+        return $date;
     }
 
     /**
@@ -370,20 +345,16 @@ class XliffFile extends AbstractFile
      * You will most likely the file name of the original resource or something like this here.
      *
      * @param string $original The name of the original data source.
-     *
-     * @return void
      */
-    public function setOriginal($original)
+    public function setOriginal(string $original): void
     {
         $this->setFileAttribute('original', $original);
     }
 
     /**
      * Get the original resource name from this file.
-     *
-     * @return string
      */
-    public function getOriginal()
+    public function getOriginal(): string
     {
         return $this->getFileAttribute('original');
     }
@@ -391,13 +362,11 @@ class XliffFile extends AbstractFile
     /**
      * Set the source language for this file.
      *
-     * @param string $srclang The language code from ISO 639-1.
-     *
-     * @return void
+     * @param string $language The language code from ISO 639-1.
      */
-    public function setSrcLang($srclang)
+    public function setSrcLang(string $language): void
     {
-        $this->setFileAttribute('source-language', $srclang);
+        $this->setFileAttribute('source-language', $language);
     }
 
     /**
@@ -405,7 +374,7 @@ class XliffFile extends AbstractFile
      *
      * @return string The language code from ISO 639-1
      */
-    public function getSrcLang()
+    public function getSrcLang(): string
     {
         return $this->getFileAttribute('source-language');
     }
@@ -413,13 +382,11 @@ class XliffFile extends AbstractFile
     /**
      * Set the target language for this file.
      *
-     * @param string $tgtlang The language code from ISO 639-1.
-     *
-     * @return void
+     * @param string $language The language code from ISO 639-1.
      */
-    public function setTgtLang($tgtlang)
+    public function setTgtLang(string $language): void
     {
-        $this->setFileAttribute('target-language', $tgtlang);
+        $this->setFileAttribute('target-language', $language);
     }
 
     /**
@@ -427,17 +394,20 @@ class XliffFile extends AbstractFile
      *
      * @return string The language code from ISO 639-1.
      */
-    public function getTgtLang()
+    public function getTgtLang(): string
     {
         return $this->getFileAttribute('target-language');
     }
 
+    public function getIterator(): Traversable
+    {
+        return new TranslationIterator($this);
+    }
+
     /**
      * Workaround the root namespace problem helper.
-     *
-     * @return bool
      */
-    protected function rootNSWorkaround()
+    protected function rootNSWorkaround(): bool
     {
         return $this->doc->documentElement->isDefaultNamespace(self::NS);
     }
@@ -448,15 +418,11 @@ class XliffFile extends AbstractFile
      * Work around method for the fact that DOMDocument adds some mysterious namespache "xmlns:default"
      * when the root NS is the requested XMLNS and setAttributeNS() is used.
      *
-     * @param \DOMElement $node  The node to which the attribute shall be written to.
-     *
-     * @param string      $name  The name of the attribute.
-     *
-     * @param string      $value The value for the attribute.
-     *
-     * @return \DOMElement
+     * @param DOMElement $node  The node to which the attribute shall be written to.
+     * @param string     $name  The name of the attribute.
+     * @param string     $value The value for the attribute.
      */
-    protected function setAttribute(\DOMElement $node, $name, $value)
+    protected function setAttribute(DOMElement $node, string $name, string $value): DOMElement
     {
         if ($this->rootNSWorkaround()) {
             $node->setAttribute($name, $value);
@@ -473,13 +439,10 @@ class XliffFile extends AbstractFile
      * Work around method for the fact that DOMDocument adds some mysterious namespache "xmlns:default"
      * when the root NS is the requested XMLNS and setAttributeNS() is used.
      *
-     * @param \DOMElement $node The node from which the attribute shall be read.
-     *
-     * @param string      $name The name of the attribute.
-     *
-     * @return string
+     * @param DOMElement $node The node from which the attribute shall be read.
+     * @param string     $name The name of the attribute.
      */
-    protected function getAttribute(\DOMElement $node, $name)
+    protected function getAttribute(DOMElement $node, string $name): string
     {
         if ($this->rootNSWorkaround()) {
             return $node->getAttribute($name);
@@ -492,39 +455,29 @@ class XliffFile extends AbstractFile
      * Sets the given attribute in the XML element "file" to the given value.
      *
      * @param string $name  The name of the attribute to set.
-     *
      * @param string $value The language code from ISO 639-1.
-     *
-     * @return void
      */
-    protected function setFileAttribute($name, $value)
+    protected function setFileAttribute(string $name, string $value): void
     {
-        $file = $this->getXPathFirstItem('/xliff:xliff/xliff:file');
-        $this->setAttribute($file, $name, $value);
+        $this->setAttribute($this->getFile(), $name, $value);
     }
 
     /**
      * Gets the given attribute in the XML element "file".
      *
      * @param string $name The name of the attribute to get.
-     *
-     * @return string
      */
-    protected function getFileAttribute($name)
+    protected function getFileAttribute(string $name): string
     {
-        $file = $this->getXPathFirstItem('/xliff:xliff/xliff:file');
-
-        return $this->getAttribute($file, $name);
+        return $this->getAttribute($this->getFile(), $name);
     }
 
     /**
      * Creates a new XPath object for the doc with the namespace xliff registered.
-     *
-     * @return \DOMXPath
      */
-    protected function getXPath()
+    protected function getXPath(): DOMXPath
     {
-        $xpath = new \DOMXPath($this->doc);
+        $xpath = new DOMXPath($this->doc);
 
         $xpath->registerNamespace('xliff', self::NS);
 
@@ -534,18 +487,23 @@ class XliffFile extends AbstractFile
     /**
      * Perform a Xpath search with the given query and return the first match if found.
      *
-     * @param string $query       The query to use.
-     *
-     * @param null   $contextnode The context node to apply.
-     *
-     * @return \DOMElement|\DOMNode|null
+     * @param string       $query       The query to use.
+     * @param DOMNode|null $contextNode The context node to apply.
      */
-    protected function getXPathFirstItem($query, $contextnode = null)
+    protected function getXPathFirstItem(string $query, ?DOMNode $contextNode = null): ?DOMElement
     {
-        /** @var \DOMNodeList $tmp */
-        $tmp = $this->getXPath()->query($query, $contextnode);
+        $tmp = $this->getXPath()->query($query, $contextNode);
+        if (!$tmp instanceof DOMNodeList) {
+            return null;
+        }
 
-        return $tmp->length ? $tmp->item(0) : null;
+        if ($tmp->length === 0) {
+            return null;
+        }
+        $item = $tmp->item(0);
+        assert($item instanceof DOMElement);
+
+        return $item;
     }
 
     /**
@@ -555,37 +513,19 @@ class XliffFile extends AbstractFile
      *
      * @param string $identifier The id string to search for.
      *
-     * @param bool   $create     If true, an element with the given Id will be created if none has been found.
-     *
-     * @return \DOMNode
-     *
-     * @throws \RuntimeException When an empty Id is queried, an Exception is thrown.
+     * @throws RuntimeException When an empty id is queried, an Exception is thrown.
      */
-    protected function searchForId($identifier, $create = false)
+    private function searchOrCreateId(string $identifier): DOMElement
     {
         if ('' === $identifier) {
-            throw new \RuntimeException('Empty Id passed.');
+            throw new RuntimeException('Empty Id passed.');
         }
 
-        /** @var \DOMNodeList $transUnits */
-        if ($this->rootNSWorkaround()) {
-            $transUnit = $this->getXPathFirstItem(
-                '/xliff:xliff/xliff:file/xliff:body/xliff:trans-unit[@id=\'' . $identifier . '\']'
-            );
-        } else {
-            $transUnit = $this->getXPathFirstItem(
-                '/xliff:xliff/xliff:file/xliff:body/xliff:trans-unit[@xliff:id=\'' . $identifier . '\']'
-            );
-        }
+        $transUnit = $this->searchForId($identifier);
 
-        if ($create && (null === $transUnit)) {
-            $body = $this->getXPathFirstItem('/xliff:xliff/xliff:file/xliff:body');
-
-            /** @var $transUnit \DOMElement */
-            $transUnit = $this->doc->createElementNS(self::NS, 'trans-unit');
-
-            $body->appendChild($transUnit);
-
+        if (null === $transUnit) {
+            $transUnit = $this->createElement('trans-unit');
+            $this->getBody()->appendChild($transUnit);
             $this->setAttribute($transUnit, 'id', $identifier);
         }
 
@@ -593,10 +533,47 @@ class XliffFile extends AbstractFile
     }
 
     /**
-     * {@inheritDoc}
+     * Searches for the XMLNode that contains the given id.
+     *
+     * @param string $identifier The id string to search for.
+     *
+     * @throws RuntimeException When an empty id is queried, an Exception is thrown.
      */
-    public function getIterator()
+    private function searchForId(string $identifier): ?DOMElement
     {
-        return new TranslationIterator($this);
+        if ('' === $identifier) {
+            throw new RuntimeException('Empty Id passed.');
+        }
+
+        return $this->getXPathFirstItem(
+            $this->rootNSWorkaround()
+            ? '/xliff:xliff/xliff:file/xliff:body/xliff:trans-unit[@id=\'' . $identifier . '\']'
+            : '/xliff:xliff/xliff:file/xliff:body/xliff:trans-unit[@xliff:id=\'' . $identifier . '\']'
+        );
+    }
+
+    private function getFile(): DOMElement
+    {
+        if (null === ($file = $this->getXPathFirstItem('/xliff:xliff/xliff:file'))) {
+            $file = $this->createElement('file');
+            $this->doc->documentElement->appendChild($file);
+        }
+
+        return $file;
+    }
+
+    private function getBody(): DOMElement
+    {
+        if (null === ($body = $this->getXPathFirstItem('/xliff:xliff/xliff:file/xliff:body'))) {
+            $body = $this->createElement('body');
+            $this->getFile()->appendChild($body);
+        }
+
+        return $body;
+    }
+
+    private function createElement(string $name): DOMElement
+    {
+        return $this->doc->createElementNS(self::NS, $name);
     }
 }

@@ -21,8 +21,8 @@ namespace CyberSpectrum\ContaoToolBox\Transifex\Download;
 
 use Closure;
 use CyberSpectrum\ContaoToolBox\Translation\Base\TranslationFileInterface;
-use CyberSpectrum\PhpTransifex\Model\ProjectModel;
-use CyberSpectrum\PhpTransifex\Model\ResourceModel;
+use CyberSpectrum\PhpTransifex\Model\Project;
+use CyberSpectrum\PhpTransifex\Model\Resource;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 
@@ -31,75 +31,48 @@ use Psr\Log\LoggerInterface;
  */
 abstract class AbstractResourceDownloader
 {
-    /**
-     * The download mode (one of: default, reviewed, translator).
-     *
-     * @var string
-     */
-    private $translationMode = 'default';
-
-    /**
-     * The project.
-     *
-     * @var ProjectModel
-     */
-    private $project;
-
-    /**
-     * The logger to use.
-     *
-     * @var LoggerInterface
-     */
-    protected $logger;
+    /** The logger to use. */
+    protected readonly LoggerInterface $logger;
 
     /**
      * The allowed language codes.
      *
-     * @var string[]
+     * @var list<string>
      */
-    protected $allowedLanguages;
+    protected array $allowedLanguages = [];
 
-    /**
-     * The prefix to apply to the translation domain.
-     *
-     * @var string
-     */
-    protected $domainPrefix = '';
+    /** The prefix to apply to the translation domain. */
+    protected string $domainPrefix = '';
 
-    /**
-     * The base language.
-     *
-     * @var string
-     */
-    protected $baseLanguage;
+    /** The base language. */
+    protected readonly string $baseLanguage;
 
-    /**
-     * The output directory.
-     *
-     * @var string
-     */
-    protected $outputDirectory;
+    /** The output directory. */
+    protected readonly string $outputDirectory;
 
     /**
      * An optional closure to filter resources.
      *
-     * @var Closure
+     * @var null|Closure(string): bool
      */
-    private $resourceFilter;
+    private ?Closure $resourceFilter = null;
 
     /**
      * Create a new instance.
      *
-     * @param ProjectModel    $project         The project to process.
+     * @param Project         $project         The project to process.
      * @param string          $outputDirectory The output directory.
      * @param string          $baseLanguage    The base language.
      * @param LoggerInterface $logger          The logger to use.
      */
-    public function __construct(ProjectModel $project, $outputDirectory, $baseLanguage, LoggerInterface $logger)
-    {
-        $this->project         = $project;
-        $this->baseLanguage    = (string) $baseLanguage;
-        $this->outputDirectory = (string) $outputDirectory;
+    public function __construct(
+        private readonly Project $project,
+        string $outputDirectory,
+        string $baseLanguage,
+        LoggerInterface $logger
+    ) {
+        $this->baseLanguage    = $baseLanguage;
+        $this->outputDirectory = $outputDirectory;
         $this->logger          = $logger;
         // Initially allow all languages.
         $this->setAllowedLanguages();
@@ -109,17 +82,15 @@ abstract class AbstractResourceDownloader
      * Set the allowed language codes.
      *
      * @param string[]|null $allowedLanguages The allowed language codes.
-     *
-     * @return AbstractResourceDownloader
      */
-    public function setAllowedLanguages(array $allowedLanguages = null)
+    public function setAllowedLanguages(array $allowedLanguages = null): self
     {
         $this->allowedLanguages = $this->project->languages()->codes();
         if (null !== $allowedLanguages) {
-            $this->allowedLanguages = array_intersect($this->allowedLanguages, $allowedLanguages);
+            $this->allowedLanguages = array_values(array_intersect($this->allowedLanguages, $allowedLanguages));
         }
         // Base language must never be polled.
-        $this->allowedLanguages = array_diff($this->allowedLanguages, [$this->baseLanguage]);
+        $this->allowedLanguages = array_values(array_diff($this->allowedLanguages, [$this->baseLanguage]));
 
         return $this;
     }
@@ -128,26 +99,10 @@ abstract class AbstractResourceDownloader
      * Set the domain prefix.
      *
      * @param string $domainPrefix The new prefix.
-     *
-     * @return AbstractResourceDownloader
      */
-    public function setDomainPrefix($domainPrefix)
+    public function setDomainPrefix(string $domainPrefix): self
     {
-        $this->domainPrefix = (string) $domainPrefix;
-
-        return $this;
-    }
-
-    /**
-     * Set translation mode.
-     *
-     * @param string $translationMode The new translation mode (one of: default, reviewed, translator).
-     *
-     * @return AbstractResourceDownloader
-     */
-    public function setTranslationMode($translationMode)
-    {
-        $this->translationMode = (string) $translationMode;
+        $this->domainPrefix = $domainPrefix;
 
         return $this;
     }
@@ -161,27 +116,23 @@ abstract class AbstractResourceDownloader
      *   return true; // When the resource should be skipped.
      * }
      *
-     * @param Closure $resourceFilter The new value.
-     *
-     * @return AbstractResourceDownloader
+     * @param null|Closure(string): bool $resourceFilter The new value.
      */
-    public function setResourceFilter(Closure $resourceFilter = null)
+    public function setResourceFilter(?Closure $resourceFilter): self
     {
         $this->resourceFilter = $resourceFilter;
 
         return $this;
     }
 
-    /**
-     * Perform the synchronization.
-     *
-     * @return void
-     */
-    public function download()
+    /** Perform the synchronization. */
+    public function download(): void
     {
-        foreach ($this->project->resources() as $resource) {
-            if ((null !== $this->resourceFilter)
-                && !$this->resourceFilter->__invoke($this->stripDomainPrefix($resource->slug()))) {
+        foreach ($this->project->resources()->getIterator() as $resource) {
+            if (
+                (null !== $this->resourceFilter)
+                && !$this->resourceFilter->__invoke($this->stripDomainPrefix($resource->getSlug()))
+            ) {
                 continue;
             }
             $this->processResource($resource);
@@ -191,49 +142,43 @@ abstract class AbstractResourceDownloader
     /**
      * Process a single resource.
      *
-     * @param ResourceModel $resource The resource to process.
-     *
-     * @return void
+     * @param Resource $resource The resource to process.
      */
-    private function processResource($resource)
+    private function processResource(Resource $resource): void
     {
-        if (0 !== strpos($resource->slug(), $this->domainPrefix)) {
+        if (!str_starts_with($slug = $resource->getSlug(), $this->domainPrefix)) {
             $this->logger->info(
                 'Resource {slug} does not match domain prefix {prefix}, skipping...',
-                ['slug' => $resource->slug(), 'prefix' => $this->domainPrefix]
+                ['slug' => $slug, 'prefix' => $this->domainPrefix]
             );
             return;
         }
-        $this->logger->notice('Processing resource {slug}', ['slug' => $resource->slug()]);
+        $this->logger->notice('Processing resource {slug}', ['slug' => $slug]);
         $files = $this->getFiles($resource);
         $sync  = new ResourceTranslationDownloader($resource, $files, $this->logger);
-        $sync
-            ->setTranslationMode($this->translationMode)
-            ->process();
+        $sync->process();
         $this->saveFiles($files);
     }
 
     /**
      * Fetch the translation files for the passed resource.
      *
-     * @param ResourceModel $resource The resource slug.
+     * @param Resource $resource The resource slug.
      *
-     * @return TranslationFileInterface[]
+     * @return list<TranslationFileInterface>
      */
-    abstract protected function getFiles(ResourceModel $resource);
+    abstract protected function getFiles(Resource $resource): array;
 
     /**
      * Strip the domain prefix from the passed slug.
      *
      * @param string $resourceSlug The slug to strip the prefix from.
      *
-     * @return string
-     *
      * @throws InvalidArgumentException When the slug is not prefixed.
      */
-    protected function stripDomainPrefix($resourceSlug)
+    protected function stripDomainPrefix(string $resourceSlug): string
     {
-        if (0 !== strpos($resourceSlug, $this->domainPrefix)) {
+        if (!str_starts_with($resourceSlug, $this->domainPrefix)) {
             throw new InvalidArgumentException('Slug is not prefixed.');
         }
 
@@ -245,8 +190,6 @@ abstract class AbstractResourceDownloader
      *
      * @param TranslationFileInterface $file The file.
      *
-     * @return void
-     *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     protected function postProcess(TranslationFileInterface $file): void
@@ -257,14 +200,12 @@ abstract class AbstractResourceDownloader
      * Save the passed translation files.
      *
      * @param TranslationFileInterface[] $files The files to save.
-     *
-     * @return void
      */
-    private function saveFiles($files)
+    private function saveFiles(array $files): void
     {
         foreach ($files as $file) {
+            $this->postProcess($file);
             if ($file->isChanged()) {
-                $this->postProcess($file);
                 $file->save();
             }
         }

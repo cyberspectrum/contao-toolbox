@@ -27,57 +27,44 @@ interface TranslationFileInterface
     /**
      * Retrieve a list of all language keys.
      *
-     * @return string[]
+     * @return list<string>
      */
-    public function keys();
+    public function keys(): array;
 
     /**
      * Search for an entry with the given id and remove it if found.
      *
      * @param string $key The language key to be searched.
-     *
-     * @return AbstractFile
      */
-    public function remove($key);
+    public function remove(string $key): self;
 
     /**
      * Set a translation value.
      *
      * @param string $key   The translation key.
-     *
      * @param string $value The value to set.
-     *
-     * @return AbstractFile
      */
-    public function set($key, $value);
+    public function set(string $key, string $value): self;
 
     /**
      * Retrieve a translation string.
      *
      * @param string $key The translation key.
-     *
-     * @return string
      */
-    public function get($key);
+    public function get(string $key): ?string;
 
     /**
      * Flag determining if the file contains changes.
-     *
-     * @return bool
      */
-    public function isChanged();
+    public function isChanged(): bool;
 
     /**
      * Retrieve the language code of this file.
-     *
-     * @return mixed
      */
-    public function getLanguageCode();
+    public function getLanguageCode(): string;
 
     /**
      * Save the file to disk.
-     *
-     * @return void
      */
-    public function save();
+    public function save(): void;
 }

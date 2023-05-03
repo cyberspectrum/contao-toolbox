@@ -26,40 +26,34 @@ use Psr\Log\LoggerInterface;
 /**
  * This class takes care of synching one file with another.
  */
-class TranslationSync
+final class TranslationSync
 {
     /**
      * The source file.
-     *
-     * @var TranslationFileInterface
      */
-    private $source;
+    private TranslationFileInterface $source;
 
     /**
      * The destination file.
-     *
-     * @var TranslationFileInterface
      */
-    private $destination;
+    private TranslationFileInterface $destination;
 
     /**
      * The logger instance.
-     *
-     * @var LoggerInterface
      */
-    private $logger;
+    private DelegatingLogger $logger;
 
     /**
      * Create a new instance.
      *
      * @param TranslationFileInterface $source      The source file.
      * @param TranslationFileInterface $destination The destination file.
-     * @param LoggerInterface          $logger      The logger to use.
+     * @param LoggerInterface|null     $logger      The logger to use.
      */
     public function __construct(
         TranslationFileInterface $source,
         TranslationFileInterface $destination,
-        LoggerInterface $logger = null
+        ?LoggerInterface $logger = null
     ) {
         $this->logger      = new DelegatingLogger($logger);
         $this->source      = $source;
@@ -68,10 +62,8 @@ class TranslationSync
 
     /**
      * Synchronize the contents of two translation files and return if the content has been changed.
-     *
-     * @return bool
      */
-    public function sync()
+    public function sync(): bool
     {
         $changed = false;
 
@@ -92,10 +84,8 @@ class TranslationSync
 
     /**
      * Remove all keys in destination that are not present in source.
-     *
-     * @return bool
      */
-    public function cleanUp()
+    public function cleanUp(): bool
     {
         $removed = false;
         foreach (array_diff($this->destination->keys(), $this->source->keys()) as $key) {
@@ -112,17 +102,15 @@ class TranslationSync
      * @param TranslationFileInterface $source      The source file.
      * @param TranslationFileInterface $destination The destination file.
      * @param bool                     $cleanUp     Flag if orphan keys shall be removed from the destination.
-     * @param LoggerInterface          $logger      The logger to use.
-     *
-     * @return mixed
+     * @param LoggerInterface|null     $logger      The logger to use.
      */
     public static function syncFrom(
         TranslationFileInterface $source,
         TranslationFileInterface $destination,
-        $cleanUp = true,
-        LoggerInterface $logger = null
-    ) {
-        $sync   = new static($source, $destination, $logger);
+        bool $cleanUp = true,
+        ?LoggerInterface $logger = null
+    ): bool {
+        $sync   = new self($source, $destination, $logger);
         $result = false;
         if ($cleanUp) {
             $result = $sync->cleanUp();

@@ -20,25 +20,25 @@
 namespace CyberSpectrum\ContaoToolBox\Translation\Xliff;
 
 use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractTranslationEntry;
+use Exception;
 
 /**
  * This class represents a translation entry in a XLIFF file.
  *
- * @property XliffFile $doc Defined in parent class.
+ * @extends AbstractTranslationEntry<XliffFile>
  */
-class TranslationEntry extends AbstractTranslationEntry
+final class TranslationEntry extends AbstractTranslationEntry
 {
     /**
      * Create a new instance.
      *
-     * @param string $key The translation key.
+     * @param string    $key The translation key.
+     * @param XliffFile $doc The document this entry belongs to.
      *
-     * @param XliffFile   $doc The document this entry belongs to.
-     *
-     * @throws \Exception When the key is empty.
+     * @throws Exception When the key is empty.
      */
     // @codingStandardsIgnoreStart - Method override is not useless, we change the parameter type.
-    public function __construct($key, XliffFile $doc)
+    public function __construct(string $key, XliffFile $doc)
     {
         parent::__construct($key, $doc);
     }
@@ -48,10 +48,8 @@ class TranslationEntry extends AbstractTranslationEntry
      * Set the source value.
      *
      * @param string $value The value to set.
-     *
-     * @return TranslationEntry
      */
-    public function setSource($value)
+    public function setSource(string $value): self
     {
         $mode = $this->doc->getMode();
         $this->doc->setMode('source');
@@ -63,10 +61,8 @@ class TranslationEntry extends AbstractTranslationEntry
 
     /**
      * Fetches the source value from this entry.
-     *
-     * @return null|string
      */
-    public function getSource()
+    public function getSource(): ?string
     {
         $mode = $this->doc->getMode();
         $this->doc->setMode('source');
@@ -80,10 +76,8 @@ class TranslationEntry extends AbstractTranslationEntry
      * Set the target value.
      *
      * @param string $value The value to set.
-     *
-     * @return TranslationEntry
      */
-    public function setTarget($value)
+    public function setTarget(string $value): self
     {
         $mode = $this->doc->getMode();
         $this->doc->setMode('target');
@@ -95,10 +89,8 @@ class TranslationEntry extends AbstractTranslationEntry
 
     /**
      * Fetches the target value from this entry.
-     *
-     * @return null|string
      */
-    public function getTarget()
+    public function getTarget(): ?string
     {
         $mode = $this->doc->getMode();
         $this->doc->setMode('target');

@@ -20,7 +20,7 @@
 namespace CyberSpectrum\ContaoToolBox\Transifex\Upload;
 
 use Closure;
-use CyberSpectrum\PhpTransifex\Model\ProjectModel;
+use CyberSpectrum\PhpTransifex\Model\Project;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -28,74 +28,36 @@ use Psr\Log\LoggerInterface;
  */
 abstract class AbstractResourceUploader
 {
-    /**
-     * The project.
-     *
-     * @var ProjectModel
-     */
-    private $project;
+    /** The prefix to apply to the translation domain. */
+    protected string $domainPrefix = '';
 
-    /**
-     * The logger to use.
-     *
-     * @var LoggerInterface
-     */
-    protected $logger;
-
-    /**
-     * The prefix to apply to the translation domain.
-     *
-     * @var string
-     */
-    protected $domainPrefix = '';
-
-    /**
-     * The base language.
-     *
-     * @var string
-     */
-    protected $baseLanguage;
-
-    /**
-     * The output directory.
-     *
-     * @var string
-     */
-    protected $outputDirectory;
-
-    /**
-     * An optional closure to filter resources.
-     *
-     * @var Closure
-     */
-    private $resourceFilter;
+    /** An optional closure to filter resources. */
+    private ?Closure $resourceFilter = null;
 
     /**
      * Create a new instance.
      *
-     * @param ProjectModel    $project         The project to process.
+     * @param Project         $project         The project to process.
      * @param string          $outputDirectory The output directory.
      * @param string          $baseLanguage    The base language.
      * @param LoggerInterface $logger          The logger to use.
      */
-    public function __construct(ProjectModel $project, $outputDirectory, $baseLanguage, LoggerInterface $logger)
-    {
-        $this->project         = $project;
-        $this->baseLanguage    = (string) $baseLanguage;
-        $this->outputDirectory = (string) $outputDirectory;
-        $this->logger          = $logger;
+    public function __construct(
+        private readonly Project $project,
+        protected readonly string $outputDirectory,
+        protected readonly string $baseLanguage,
+        protected readonly LoggerInterface $logger
+    ) {
     }
 
     /**
      * Set the domain prefix.
      *
      * @param string $domainPrefix The new prefix.
-     *
-     * @return AbstractResourceUploader
      */
-    public function setDomainPrefix($domainPrefix)
+    public function setDomainPrefix(string $domainPrefix): self
     {
-        $this->domainPrefix = (string) $domainPrefix;
+        $this->domainPrefix = $domainPrefix;
 
         return $this;
     }
@@ -109,42 +71,37 @@ abstract class AbstractResourceUploader
      *   return true; // When the resource should be skipped.
      * }
      *
-     * @param Closure $resourceFilter The new value.
-     *
-     * @return AbstractResourceUploader
+     * @param Closure|null $resourceFilter The new value.
      */
-    public function setResourceFilter(Closure $resourceFilter = null)
+    public function setResourceFilter(?Closure $resourceFilter = null): self
     {
         $this->resourceFilter = $resourceFilter;
 
         return $this;
     }
 
-    /**
-     * Upload the resources.
-     *
-     * @return void
-     */
-    public function upload()
+    /** Upload the resources. */
+    public function upload(): void
     {
         $files     = $this->getResourceFiles();
         $resources = $this->project->resources();
         foreach ($files as $resourceSlug => $fileContent) {
-            if ((null !== $this->resourceFilter)
-                && !$this->resourceFilter->__invoke($resourceSlug)) {
+            if (
+                (null !== $this->resourceFilter)
+                && !$this->resourceFilter->__invoke($resourceSlug)
+            ) {
                 continue;
             }
             $prefixedSlug = $this->domainPrefix . $resourceSlug;
             if ($resources->has($prefixedSlug)) {
                 $this->logger->notice('Updating resource {resource}', ['resource' => $prefixedSlug]);
-                $resource = $resources->get($prefixedSlug);
+                $resource = $resources->getByName($prefixedSlug);
             } else {
                 $this->logger->notice('Creating new resource {resource}', ['resource' => $prefixedSlug]);
                 $resource = $resources->add($prefixedSlug, $prefixedSlug, 'XLIFF');
             }
             $resource->setContent($fileContent);
         }
-        $this->project->save();
     }
 
     /**
@@ -152,7 +109,7 @@ abstract class AbstractResourceUploader
      *
      * Resulting array has the resource slug as key and the file contents as value.
      *
-     * @return string[]
+     * @return array<string, string>
      */
-    abstract protected function getResourceFiles();
+    abstract protected function getResourceFiles(): array;
 }

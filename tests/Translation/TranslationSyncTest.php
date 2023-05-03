@@ -32,10 +32,8 @@ class TranslationSyncTest extends TestCase
      * Test that the synchronization works.
      *
      * This tests that only changed values are really set.
-     *
-     * @return void
      */
-    public function testSync()
+    public function testSync(): void
     {
         $source = $this->getMockForAbstractClass(TranslationFileInterface::class);
         $source->expects($this->once())->method('keys')->willReturn(['translation-key', 'another-key']);
@@ -61,12 +59,8 @@ class TranslationSyncTest extends TestCase
         $sync->sync();
     }
 
-    /**
-     * Test that the cleanup works.
-     *
-     * @return void
-     */
-    public function testCleanUp()
+    /** Test that the cleanup works. */
+    public function testCleanUp(): void
     {
         $source = $this->getMockForAbstractClass(TranslationFileInterface::class);
         $source->expects($this->once())->method('keys')->willReturn(['translation-key']);
@@ -83,12 +77,8 @@ class TranslationSyncTest extends TestCase
         $sync->cleanUp();
     }
 
-    /**
-     * Test the sync from method.
-     *
-     * @return void
-     */
-    public function testSyncFrom()
+    /** Test the sync from method. */
+    public function testSyncFrom(): void
     {
         $source = $this->getMockForAbstractClass(TranslationFileInterface::class);
         $source->expects($this->exactly(2))->method('keys')->willReturn(['translation-key', 'another-key']);
@@ -117,15 +107,11 @@ class TranslationSyncTest extends TestCase
             ->method('remove')
             ->with('obsolete');
 
-        TranslationSync::syncFrom($source, $destination, true);
+        TranslationSync::syncFrom($source, $destination);
     }
 
-    /**
-     * Test the sync from method.
-     *
-     * @return void
-     */
-    public function testSyncFromWithoutCleanup()
+    /** Test the sync from method. */
+    public function testSyncFromWithoutCleanup(): void
     {
         $source = $this->getMockForAbstractClass(TranslationFileInterface::class);
         $source->expects($this->once())->method('keys')->willReturn(['translation-key', 'another-key']);

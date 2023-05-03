@@ -19,66 +19,65 @@
 
 namespace CyberSpectrum\ContaoToolBox;
 
+use RuntimeException;
+
 /**
  * This class holds meta information about the project being processed.
  */
 class Project
 {
-    /**
-     * The name of the transifex project.
-     *
-     * @var string
-     */
-    private $project = '';
+    /** The name of the transifex organization. */
+    private string $organization = '';
+
+    /** The name of the transifex project. */
+    private string $project = '';
 
     /**
      * The php doc header to use in php files.
      *
-     * @var string[]
+     * @var list<string>
      */
-    private $phpFileHeader = [];
+    private array $phpFileHeader = [];
 
-    /**
-     * The prefix to apply to all language files.
-     *
-     * @var string
-     */
-    private $prefix = '';
+    /** The prefix to apply to all language files. */
+    private string $prefix = '';
 
-    /**
-     * Location of the transifex (xliff) directories.
-     *
-     * @var string
-     */
-    private $xliffDirectory = '';
+    /** Location of the transifex (xliff) directories. */
+    private string $xliffDirectory = '';
 
-    /**
-     * Location of the contao language directories.
-     *
-     * @var string
-     */
-    private $contaoDirectory = '';
+    /** Location of the contao language directories. */
+    private string $contaoDirectory = '';
 
-    /**
-     * Name of the base language (i.e. en).
-     *
-     * @var string
-     */
-    private $baseLanguage = '';
+    /** Name of the base language (i.e. en). */
+    private string $baseLanguage = '';
 
     /**
      * Names of files to skip.
      *
-     * @var string[]
+     * @var list<string>
      */
-    protected $skipFiles = [];
+    protected array $skipFiles = [];
+
+    /** Retrieve organization. */
+    public function getOrganization(): string
+    {
+        return $this->organization;
+    }
 
     /**
-     * Retrieve project
+     * Set organization.
      *
-     * @return string
+     * @param string $organization The new value.
      */
-    public function getProject()
+    public function setOrganization(string $organization): self
+    {
+        $this->organization = $organization;
+
+        return $this;
+    }
+
+    /** Retrieve project */
+    public function getProject(): string
     {
         return $this->project;
     }
@@ -87,14 +86,12 @@ class Project
      * Set project.
      *
      * @param string $project The new value.
-     *
-     * @return Project
      */
-    public function setProject($project)
+    public function setProject(string $project): self
     {
         $this->guardValidSlug($project);
 
-        $this->project = (string) $project;
+        $this->project = $project;
 
         return $this;
     }
@@ -102,9 +99,9 @@ class Project
     /**
      * Retrieve php file header.
      *
-     * @return string[]
+     * @return list<string>
      */
-    public function getPhpFileHeader()
+    public function getPhpFileHeader(): array
     {
         return $this->phpFileHeader;
     }
@@ -112,23 +109,17 @@ class Project
     /**
      * Set php file header.
      *
-     * @param string[] $phpFileHeader The new value.
-     *
-     * @return Project
+     * @param list<string> $phpFileHeader The new value.
      */
-    public function setPhpFileHeader(array $phpFileHeader)
+    public function setPhpFileHeader(array $phpFileHeader): self
     {
         $this->phpFileHeader = $phpFileHeader;
 
         return $this;
     }
 
-    /**
-     * Retrieve prefix
-     *
-     * @return string
-     */
-    public function getPrefix()
+    /** Retrieve prefix */
+    public function getPrefix(): string
     {
         return $this->prefix;
     }
@@ -137,24 +128,18 @@ class Project
      * Set prefix.
      *
      * @param string $prefix The new value.
-     *
-     * @return Project
      */
-    public function setPrefix($prefix)
+    public function setPrefix(string $prefix): self
     {
         $this->guardValidSlug($prefix);
 
-        $this->prefix = (string) $prefix;
+        $this->prefix = $prefix;
 
         return $this;
     }
 
-    /**
-     * Retrieve xliff directory.
-     *
-     * @return string
-     */
-    public function getXliffDirectory()
+    /** Retrieve xliff directory. */
+    public function getXliffDirectory(): string
     {
         return $this->xliffDirectory;
     }
@@ -163,22 +148,16 @@ class Project
      * Set xliff directory.
      *
      * @param string $xliffDirectory The new value.
-     *
-     * @return Project
      */
-    public function setXliffDirectory($xliffDirectory)
+    public function setXliffDirectory(string $xliffDirectory): self
     {
-        $this->xliffDirectory = (string) $xliffDirectory;
+        $this->xliffDirectory = $xliffDirectory;
 
         return $this;
     }
 
-    /**
-     * Retrieve contao language directory.
-     *
-     * @return string
-     */
-    public function getContaoDirectory()
+    /** Retrieve contao language directory. */
+    public function getContaoDirectory(): string
     {
         return $this->contaoDirectory;
     }
@@ -187,22 +166,18 @@ class Project
      * Set contao language directory.
      *
      * @param string $contaoDirectory The new value.
-     *
-     * @return Project
      */
-    public function setContaoDirectory($contaoDirectory)
+    public function setContaoDirectory(string $contaoDirectory): self
     {
-        $this->contaoDirectory = (string) $contaoDirectory;
+        $this->contaoDirectory = $contaoDirectory;
 
         return $this;
     }
 
     /**
      * Retrieve base language.
-     *
-     * @return string
      */
-    public function getBaseLanguage()
+    public function getBaseLanguage(): string
     {
         return $this->baseLanguage;
     }
@@ -211,12 +186,10 @@ class Project
      * Set base language.
      *
      * @param string $baseLanguage The new value.
-     *
-     * @return Project
      */
-    public function setBaseLanguage($baseLanguage)
+    public function setBaseLanguage(string $baseLanguage): self
     {
-        $this->baseLanguage = (string) $baseLanguage;
+        $this->baseLanguage = $baseLanguage;
 
         return $this;
     }
@@ -224,9 +197,9 @@ class Project
     /**
      * Retrieve files to skip.
      *
-     * @return \string[]
+     * @return list<string>
      */
-    public function getSkipFiles()
+    public function getSkipFiles(): array
     {
         return $this->skipFiles;
     }
@@ -234,13 +207,11 @@ class Project
     /**
      * Set files to skip.
      *
-     * @param \string[] $skipFiles The new value.
-     *
-     * @return Project
+     * @param list<string> $skipFiles The new value.
      */
-    public function setSkipFiles($skipFiles)
+    public function setSkipFiles(array $skipFiles): self
     {
-        $this->skipFiles = (array) $skipFiles;
+        $this->skipFiles = $skipFiles;
 
         return $this;
     }
@@ -250,16 +221,15 @@ class Project
      *
      * @param string $slug The slug to test.
      *
-     * @return void
-     *
-     * @throws \RuntimeException When the slug is invalid, an exception is thrown.
+     * @throws RuntimeException When the slug is invalid, an exception is thrown.
      */
-    protected function guardValidSlug($slug)
+    protected function guardValidSlug(string $slug): void
     {
-        if (preg_match_all('#^([a-z,A-Z,0-9,\-,_]*)(.+)?$#', $slug, $matches)
+        if (
+            preg_match_all('#^([a-zA-Z0-9\-_]*)(.+)?$#', $slug, $matches)
             && ('' !== $matches[2][0])
         ) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 sprintf(
                     'Error: prefix "%s" is invalid. It must only contain letters, numbers, underscores and hyphens. ' .
                     'Found problem near: "%s"',

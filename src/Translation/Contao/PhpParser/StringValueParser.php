@@ -22,91 +22,77 @@ namespace CyberSpectrum\ContaoToolBox\Translation\Contao\PhpParser;
 /**
  * This class parses a string value.
  */
-class StringValueParser extends AbstractParser
+final class StringValueParser extends AbstractParser
 {
     /**
      * The values.
      *
-     * @var string[]
+     * @var list<string|null>
      */
-    private $data;
+    private array $data = [];
 
-    /**
-     * {@inheritDoc}
-     */
-    public function parse()
+    public function parse(): void
     {
         while (true) {
-            // String concatenation.
-            if ($this->isIgnoredToken()) {
-                $this->getNextToken();
-                continue;
-            }
-            if ($this->tokenIs(T_CONSTANT_ENCAPSED_STRING)) {
-                $token        = $this->getToken();
-                $this->data[] = stripslashes(substr($token[1], 1, -1));
-                $this->getNextToken();
-                continue;
-            }
-            if ($this->tokenIs(T_LNUMBER)) {
-                $token        = $this->getToken();
-                $this->data[] = (string) $token[1];
-                $this->getNextToken();
-                continue;
-            }
-            if ($this->tokenIs(T_STRING)) {
-                $token = $this->getToken();
-                if ('null' !== strtolower($token[1])) {
+            switch (true) {
+                // String concatenation.
+                case $this->isIgnoredToken():
+                    $this->getNextToken();
+                    break;
+                case $this->tokenIs(T_CONSTANT_ENCAPSED_STRING):
+                    $token = $this->getToken();
+                    assert(is_array($token));
+                    $this->data[] = stripslashes(substr($token[1], 1, -1));
+                    $this->getNextToken();
+                    break;
+                case $this->tokenIs(T_LNUMBER):
+                    $token = $this->getToken();
+                    assert(is_array($token));
+                    $this->data[] = $token[1];
+                    $this->getNextToken();
+                    break;
+                case $this->tokenIs(T_STRING):
+                    $token = $this->getToken();
+                    assert(is_array($token));
+                    if ('null' !== strtolower($token[1])) {
+                        $this->bailUnexpectedToken();
+                    }
+                    $this->data[] = null;
+                    $this->getNextToken();
+                    break;
+                case $this->isEndToken():
+                    break 2;
+                default:
                     $this->bailUnexpectedToken();
-                }
-                $this->data[] = null;
-                $this->getNextToken();
-                continue;
             }
-
-            if ($this->isEndToken()) {
-                break;
-            }
-
-            $this->bailUnexpectedToken();
         }
-    }
-
-    /**
-     * Check if the current token is any of the ignored tokens.
-     *
-     * @return bool
-     */
-    private function isIgnoredToken()
-    {
-        return $this->tokenIs('.') || $this->tokenIs(T_COMMENT) || $this->tokenIs(T_DOC_COMMENT);
-    }
-
-    /**
-     * Check if the current token is a ending token.
-     *
-     * @return bool
-     */
-    private function isEndToken()
-    {
-        return $this->tokenIs(';')
-        || $this->tokenIs(',')
-        || $this->tokenIs(')')
-        || $this->tokenIs(']')
-        || $this->tokenIs(T_DOUBLE_ARROW);
     }
 
     /**
      * Retrieve the value of the string parser.
-     *
-     * @return null|string
      */
-    public function getValue()
+    public function getValue(): ?string
     {
-        if (!(is_array($this->data) && count($this->data))) {
+        if ([] === $this->data) {
             return null;
         }
 
         return implode('', $this->data);
+    }
+
+    /**
+     * Check if the current token is any of the ignored tokens.
+     */
+    private function isIgnoredToken(): bool
+    {
+        return $this->tokenIsAnyOf('.', T_COMMENT, T_DOC_COMMENT);
+    }
+
+    /**
+     * Check if the current token is an ending token.
+     */
+    private function isEndToken(): bool
+    {
+        return $this->tokenIsAnyOf(';', ',', ')', ']', T_DOUBLE_ARROW);
     }
 }

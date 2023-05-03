@@ -27,12 +27,8 @@ use CyberSpectrum\ContaoToolBox\Tests\TestCase;
  */
 class LanguageDirectoryLocatorTest extends TestCase
 {
-    /**
-     * Test that the locator finds all directories.
-     *
-     * @return void
-     */
-    public function testLocator()
+    /** Test that the locator finds all directories. */
+    public function testLocator(): void
     {
         $tmp = $this->getTempDir();
         mkdir($tmp . DIRECTORY_SEPARATOR . 'en');
@@ -41,7 +37,7 @@ class LanguageDirectoryLocatorTest extends TestCase
         mkdir($tmp . DIRECTORY_SEPARATOR . 'fr');
         mkdir($tmp . DIRECTORY_SEPARATOR . 'de_DE');
 
-        $locator = new LanguageDirectoryLocator($tmp);
+        $locator = new LanguageDirectoryLocator($tmp, null);
 
         $result = $locator->determineLanguages();
         sort($result);
@@ -49,12 +45,8 @@ class LanguageDirectoryLocatorTest extends TestCase
         $this->assertSame(['de', 'de_DE', 'en', 'fr'], $result);
     }
 
-    /**
-     * Test that the locator finds all directories but filters correctly.
-     *
-     * @return void
-     */
-    public function testLocatorFiltered()
+    /** Test that the locator finds all directories but filters correctly. */
+    public function testLocatorFiltered(): void
     {
         $tmp = $this->getTempDir();
         mkdir($tmp . DIRECTORY_SEPARATOR . 'en');
@@ -63,7 +55,7 @@ class LanguageDirectoryLocatorTest extends TestCase
         mkdir($tmp . DIRECTORY_SEPARATOR . 'fr');
         mkdir($tmp . DIRECTORY_SEPARATOR . 'de_DE');
 
-        $locator = new LanguageDirectoryLocator($tmp);
+        $locator = new LanguageDirectoryLocator($tmp, null);
 
         $result = $locator->determineLanguages(['de', 'de_DE', 'fr']);
         sort($result);
@@ -71,26 +63,15 @@ class LanguageDirectoryLocatorTest extends TestCase
         $this->assertSame(['de', 'de_DE', 'fr'], $result);
     }
 
-    /**
-     * Test we get an exception for non existent base dirs.
-     *
-     * @return void
-     */
-    public function testBailsForNonExistantDirectory()
+    /** Test we get an exception for non-existent base dirs. */
+    public function testBailsForNonExistentDirectory(): void
     {
         $tmp = $this->getTempDir();
 
-        if (method_exists($this, 'expectException')) {
-            $this->expectException(\InvalidArgumentException::class);
-            $this->expectExceptionMessage('The path ' . $tmp . DIRECTORY_SEPARATOR . 'languages does not exist.');
-        } else {
-            $this->setExpectedException(
-                \InvalidArgumentException::class,
-                'The path ' . $tmp . DIRECTORY_SEPARATOR . 'languages does not exist.'
-            );
-        }
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('The path ' . $tmp . DIRECTORY_SEPARATOR . 'languages does not exist.');
 
-        $locator = new LanguageDirectoryLocator($tmp . DIRECTORY_SEPARATOR . 'languages');
+        $locator = new LanguageDirectoryLocator($tmp . DIRECTORY_SEPARATOR . 'languages', null);
 
         $locator->determineLanguages();
     }

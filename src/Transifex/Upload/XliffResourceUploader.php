@@ -19,17 +19,16 @@
 
 namespace CyberSpectrum\ContaoToolBox\Transifex\Upload;
 
+use DirectoryIterator;
+
 /**
  * This class is the uploader for Xliff resources.
  */
 class XliffResourceUploader extends AbstractResourceUploader
 {
-    /**
-     * {@inheritDoc}
-     */
-    protected function getResourceFiles()
+    protected function getResourceFiles(): array
     {
-        $iterator = new \DirectoryIterator($this->outputDirectory . DIRECTORY_SEPARATOR . $this->baseLanguage);
+        $iterator = new DirectoryIterator($this->outputDirectory . DIRECTORY_SEPARATOR . $this->baseLanguage);
         $files    = [];
         while ($iterator->valid()) {
             if ($this->isValidFile($iterator)) {
@@ -44,11 +43,9 @@ class XliffResourceUploader extends AbstractResourceUploader
     /**
      * Test if the current file of the iterator is valid.
      *
-     * @param \DirectoryIterator $iterator The iterator.
-     *
-     * @return bool
+     * @param DirectoryIterator $iterator The iterator.
      */
-    private function isValidFile($iterator)
+    private function isValidFile(DirectoryIterator $iterator): bool
     {
         return !$iterator->isDot()
             && $iterator->isFile()

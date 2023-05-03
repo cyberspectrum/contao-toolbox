@@ -29,23 +29,22 @@ abstract class AbstractParser implements ParserInterface
      *
      * @var Parser
      */
-    protected $parser;
+    protected Parser $parser;
 
     /**
      * The depth level.
      *
      * @var int
      */
-    protected $level;
+    protected int $level;
 
     /**
      * Create a new parser instance.
      *
      * @param Parser $parser The parenting parser instance.
-     *
      * @param int    $level  The depth level this parser is in.
      */
-    public function __construct(Parser $parser, $level = 0)
+    public function __construct(Parser $parser, int $level = 0)
     {
         $this->parser = $parser;
         $this->level  = $level;
@@ -55,67 +54,49 @@ abstract class AbstractParser implements ParserInterface
      * Pass a debug message to the parenting parser.
      *
      * @param string $message The debug message.
-     *
-     * @return void
      */
-    protected function debug($message)
+    protected function debug(string $message): void
     {
         $this->parser->debug(static::class . ' ' . $this->level . ' ' . $message);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function pushStack($value)
+    public function pushStack(array|string $value): void
     {
         $this->parser->pushStack($value);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function popStack()
+    public function popStack(): mixed
     {
         return $this->parser->popStack();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function resetStack()
+    public function resetStack(): void
     {
         $this->parser->resetStack();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function tokenIs($type)
+    public function tokenIs(string|int $type): bool
     {
         return $this->parser->tokenIs($type);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function bailUnexpectedToken($expected = false)
+    public function tokenIsAnyOf(string|int ...$types): bool
+    {
+        return $this->parser->tokenIsAnyOf(...$types);
+    }
+
+    public function bailUnexpectedToken(false|int|string $expected = false): never
     {
         $this->parser->bailUnexpectedToken($expected);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function getToken()
+    public function getToken(): null|string|array
     {
         return $this->parser->getToken();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function getNextToken($searchfor = false)
+    public function getNextToken(false|int|string $searchFor = false): void
     {
-        $this->parser->getNextToken($searchfor);
+        $this->parser->getNextToken($searchFor);
     }
 }

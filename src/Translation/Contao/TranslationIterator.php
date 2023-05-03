@@ -23,6 +23,8 @@ use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractTranslationIterator;
 
 /**
  * This class provides an iterator over all language strings in a Contao File.
+ *
+ * @template-extends AbstractTranslationIterator<TranslationEntry, ContaoFile>
  */
 class TranslationIterator extends AbstractTranslationIterator
 {
@@ -38,10 +40,7 @@ class TranslationIterator extends AbstractTranslationIterator
     }
     // @codingStandardsIgnoreEnd
 
-    /**
-     * {@inheritDoc}
-     */
-    public function current()
+    public function current(): TranslationEntry
     {
         return new TranslationEntry($this->key(), $this->file);
     }

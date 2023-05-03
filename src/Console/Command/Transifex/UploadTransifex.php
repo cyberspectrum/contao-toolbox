@@ -19,24 +19,24 @@
 
 namespace CyberSpectrum\ContaoToolBox\Console\Command\Transifex;
 
+use CyberSpectrum\ContaoToolBox\Transifex\Upload\AbstractResourceUploader;
 use CyberSpectrum\ContaoToolBox\Transifex\Upload\ContaoResourceUploader;
 use CyberSpectrum\ContaoToolBox\Transifex\Upload\XliffResourceUploader;
-use CyberSpectrum\PhpTransifex\Model\ProjectModel;
+use CyberSpectrum\PhpTransifex\Model\Project;
 use InvalidArgumentException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function in_array;
+
 /**
  * This class handles the uploading of language files to transifex.
  */
-class UploadTransifex extends TransifexBase
+final class UploadTransifex extends TransifexBase
 {
-    /**
-     * {@inheritDoc}
-     */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this->setName('upload-transifex');
@@ -56,19 +56,19 @@ class UploadTransifex extends TransifexBase
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $project = $this->getPhpTransifex()->project($this->project->getProject());
-
-        $uploader = $this->createUploader($input->getOption('source'), new ConsoleLogger($output), $project);
-        $uploader->setDomainPrefix($this->project->getPrefix());
-        if ($skipFiles = $this->project->getSkipFiles()) {
-            $uploader->setResourceFilter(function ($resourceSlug) use ($skipFiles) {
-                return !in_array($resourceSlug, $skipFiles, true);
-            });
+        $project          = $this->getProject();
+        $txProject        = $this->getPhpTransifexProject();
+        $uploader = $this->createUploader((string) $input->getOption('source'), new ConsoleLogger($output), $txProject);
+        $uploader->setDomainPrefix($project->getPrefix());
+        if ($skipFiles = $project->getSkipFiles()) {
+            $uploader->setResourceFilter(fn (string $resourceSlug): bool => !in_array($resourceSlug, $skipFiles, true));
         }
 
         $uploader->upload();
+
+        return 0;
     }
 
     /**
@@ -76,27 +76,29 @@ class UploadTransifex extends TransifexBase
      *
      * @param string        $source  The desired source.
      * @param ConsoleLogger $logger  The logger to use.
-     * @param ProjectModel  $project The project.
-     *
-     * @return ContaoResourceUploader|XliffResourceUploader
+     * @param Project       $project The project.
      *
      * @throws InvalidArgumentException When the passed destination is invalid.
      */
-    private function createUploader($source, ConsoleLogger $logger, $project)
-    {
+    private function createUploader(
+        string $source,
+        ConsoleLogger $logger,
+        Project $project
+    ): AbstractResourceUploader {
+        $myProject = $this->getProject();
         switch ($source) {
             case 'xliff':
                 return new XliffResourceUploader(
                     $project,
-                    $this->project->getXliffDirectory(),
-                    $this->project->getBaseLanguage(),
+                    $myProject->getXliffDirectory(),
+                    $myProject->getBaseLanguage(),
                     $logger
                 );
             case 'contao':
                 return new ContaoResourceUploader(
                     $project,
-                    $this->project->getContaoDirectory(),
-                    $this->project->getBaseLanguage(),
+                    $myProject->getContaoDirectory(),
+                    $myProject->getBaseLanguage(),
                     $logger
                 );
             default:

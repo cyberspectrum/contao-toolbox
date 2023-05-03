@@ -23,6 +23,8 @@ use CyberSpectrum\ContaoToolBox\Translation\Base\AbstractTranslationIterator;
 
 /**
  * This class provides a simple iterator over XLIFF files.
+ *
+ * @template-extends AbstractTranslationIterator<TranslationEntry, XliffFile>
  */
 class TranslationIterator extends AbstractTranslationIterator
 {
@@ -38,10 +40,7 @@ class TranslationIterator extends AbstractTranslationIterator
     }
     // @codingStandardsIgnoreEnd
 
-    /**
-     * {@inheritDoc}
-     */
-    public function current()
+    public function current(): TranslationEntry
     {
         return new TranslationEntry($this->key(), $this->file);
     }

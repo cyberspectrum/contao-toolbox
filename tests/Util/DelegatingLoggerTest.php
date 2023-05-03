@@ -30,11 +30,9 @@ use Psr\Log\LogLevel;
 class DelegatingLoggerTest extends TestCase
 {
     /**
-     * Test that a log call get's delegated.
-     *
-     * @return void
+     * Test that a log call gets delegated.
      */
-    public function testDelegatesLogCall()
+    public function testDelegatesLogCall(): void
     {
         $mockLog = $this->getMockForAbstractClass(LoggerInterface::class);
         $mockLog->expects($this->once())->method('log')->with(LogLevel::ALERT, 'Whoopsie!', ['context' => 'value']);
@@ -45,12 +43,10 @@ class DelegatingLoggerTest extends TestCase
 
     /**
      * Test that logging works when no logger is available.
-     *
-     * @return void
      */
-    public function testIgnoresLogCallWithoutLogger()
+    public function testIgnoresLogCallWithoutLogger(): void
     {
-        $logger = new DelegatingLogger();
+        $logger = new DelegatingLogger(null);
         $logger->alert('Whoopsie!', ['context' => 'value']);
         $this->addToAssertionCount(1);
     }

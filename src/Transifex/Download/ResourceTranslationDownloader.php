@@ -22,76 +22,31 @@ namespace CyberSpectrum\ContaoToolBox\Transifex\Download;
 use CyberSpectrum\ContaoToolBox\Translation\Base\TranslationFileInterface;
 use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
-use CyberSpectrum\PhpTransifex\Model\ResourceModel;
+use CyberSpectrum\PhpTransifex\Model\Resource;
 use Psr\Log\LoggerInterface;
 
 /**
  * This class synchronizes translations of a resource from transifex into the passed translation files.
  */
-class ResourceTranslationDownloader
+final class ResourceTranslationDownloader
 {
-    /**
-     * The logger to use.
-     *
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
-     * The resource to synchronize.
-     *
-     * @var ResourceModel
-     */
-    private $resource;
-
-    /**
-     * The files to process.
-     *
-     * @var TranslationFileInterface[]
-     */
-    private $files;
-
-    /**
-     * The download mode (one of: default, reviewed, translator).
-     *
-     * @var string
-     */
-    private $translationMode = 'default';
-
     /**
      * Create a new instance.
      *
-     * @param ResourceModel              $resource The resource to synchronize.
-     * @param TranslationFileInterface[] $files    The language files.
-     * @param LoggerInterface            $logger   The logger to use.
+     * @param Resource                       $resource The resource to synchronize.
+     * @param list<TranslationFileInterface> $files    The language files to process.
+     * @param LoggerInterface                $logger   The logger to use.
      */
-    public function __construct(ResourceModel $resource, $files, LoggerInterface $logger)
-    {
-        $this->resource = $resource;
-        $this->files    = $files;
-        $this->logger   = $logger;
+    public function __construct(
+        private readonly Resource $resource,
+        /** @var list<TranslationFileInterface> */
+        private readonly array $files,
+        private readonly LoggerInterface $logger
+    ) {
     }
 
-    /**
-     * Set translation mode.
-     *
-     * @param string $translationMode The new mode (one of: default, reviewed, translator).
-     *
-     * @return ResourceTranslationDownloader
-     */
-    public function setTranslationMode($translationMode)
-    {
-        $this->translationMode = (string) $translationMode;
-
-        return $this;
-    }
-
-    /**
-     * Process the conversion.
-     *
-     * @return void
-     */
-    public function process()
+    /** Process the conversion. */
+    public function process(): void
     {
         foreach ($this->files as $file) {
             $this->handleLanguage($file);
@@ -102,19 +57,17 @@ class ResourceTranslationDownloader
      * Handle a language file.
      *
      * @param TranslationFileInterface $file The file to process.
-     *
-     * @return void
      */
-    private function handleLanguage(TranslationFileInterface $file)
+    private function handleLanguage(TranslationFileInterface $file): void
     {
         $langCode    = $file->getLanguageCode();
         $translation = $this->resource->translations()->get($langCode);
         $this->logger->info(
-            'Updating language <info>{langCode}</info> ({completed} complete)',
-            ['langCode' => $langCode, 'completed' => $translation->statistic()->completed()]
+            'Updating language <info>{langCode}</info> ({completed}% complete)',
+            ['langCode' => $langCode, 'completed' => $translation->statistic()->getCompletedPercentage()]
         );
         $new = new XliffFile(null, $this->logger);
-        $new->loadXML($translation->contents($this->translationMode));
+        $new->loadXML($translation->getContents());
 
         TranslationSync::syncFrom($new->setMode('target'), $file, false, $this->logger);
     }

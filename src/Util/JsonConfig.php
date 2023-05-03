@@ -20,6 +20,16 @@
 
 namespace CyberSpectrum\ContaoToolBox\Util;
 
+use InvalidArgumentException;
+
+use function array_shift;
+use function explode;
+use function file_exists;
+use function is_array;
+use function json_decode;
+use function json_last_error;
+use function sprintf;
+
 /**
  * This class represents a simple json config.
  */
@@ -28,63 +38,65 @@ class JsonConfig
     /**
      * The array read from the json file.
      *
-     * @var array
+     * @var array<string, mixed>
      */
-    protected $data;
+    protected array $data;
 
     /**
      * Create a new instance.
      *
      * @param string $filename The filename.
      *
-     * @throws \InvalidArgumentException When a parsing error occured.
+     * @throws InvalidArgumentException When a parsing error occured.
      */
-    public function __construct($filename)
+    public function __construct(string $filename)
     {
         if (!file_exists($filename)) {
-            throw new \InvalidArgumentException('Error: file not found: ' . $filename);
+            throw new InvalidArgumentException('Error: file not found: ' . $filename);
         }
 
-        $this->data = json_decode(file_get_contents($filename), true);
+        $data = json_decode(file_get_contents($filename), true);
 
-        if (null === $this->data) {
-            throw new \InvalidArgumentException(sprintf('Error parsing %s - %s', $filename, json_last_error()));
+        if (!is_array($data)) {
+            throw new InvalidArgumentException(sprintf('Error parsing %s - %s', $filename, json_last_error()));
         }
+        /** @var array<string, mixed> $data */
+        $this->data = $data;
     }
 
     /**
      * Scan to a given value.
      *
-     * @param string[] $path  The paths.
-     * @param array    $scope The current array scope.
-     *
-     * @return null|array|string|int
+     * @param list<string>         $path  The paths.
+     * @param array<string, mixed> $scope The current array scope.
      */
-    protected function scanTo($path, $scope)
+    protected function scanTo(array $path, array $scope): mixed
     {
-        if (!($sub = array_shift($path)) || !isset($scope[$sub])) {
+        if (!($sub = array_shift($path)) || null === ($value = $scope[$sub] ?? null)) {
             return null;
         }
-
-        if (!$path) {
-            return $scope[$sub];
+        if (empty($path)) {
+            return $value;
         }
 
-        return $this->scanTo($path, $scope[$sub]);
+        if (!is_array($value)) {
+            return null;
+        }
+        /** @var array<string, mixed> $value */
+
+        return $this->scanTo($path, $value);
     }
 
     /**
      * Retrieve a config value.
      *
      * @param string $path The path.
-     *
-     * @return null|array|string|int
      */
-    public function getConfigValue($path)
+    public function getConfigValue(string $path): mixed
     {
         $chunks = explode('/', $path);
 
-        if (!$chunks[0]) {
+        if ('' === $chunks[0]) {
             array_shift($chunks);
         }
 

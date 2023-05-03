@@ -21,26 +21,30 @@ namespace CyberSpectrum\ContaoToolBox\Transifex\Download;
 
 use CyberSpectrum\ContaoToolBox\Translation\TranslationSync;
 use CyberSpectrum\ContaoToolBox\Translation\Xliff\XliffFile;
-use CyberSpectrum\PhpTransifex\Model\ResourceModel;
+use CyberSpectrum\PhpTransifex\Model\Resource;
+use LogicException;
 use RuntimeException;
+
+use function file_exists;
+use function implode;
 
 /**
  * This class synchronizes all XLIFF resources from transifex.
  */
-class XliffResourceDownloader extends AbstractResourceDownloader
+final class XliffResourceDownloader extends AbstractResourceDownloader
 {
     /**
      * Fetch the xliff files for the passed resource.
      *
-     * @param ResourceModel $resource The resource slug.
+     * @param Resource $resource The resource slug.
      *
-     * @return XliffFile[]
+     * @return list<XliffFile>
      *
      * @throws RuntimeException When the base language file is missing.
      */
-    protected function getFiles(ResourceModel $resource)
+    protected function getFiles(Resource $resource): array
     {
-        $domain    = $this->stripDomainPrefix($slug = $resource->slug());
+        $domain    = $this->stripDomainPrefix($slug = $resource->getSlug());
         $localFile = implode(DIRECTORY_SEPARATOR, [$this->outputDirectory, $this->baseLanguage, $domain . '.xlf']);
         $baseFile  = new XliffFile($localFile, $this->logger);
         if (!file_exists($localFile)) {
@@ -79,18 +83,19 @@ class XliffResourceDownloader extends AbstractResourceDownloader
      * @param string    $resource     The resource slug.
      * @param string    $languageCode The language code.
      * @param XliffFile $baseFile     The base language file.
-     *
-     * @return XliffFile
      */
-    private function createXliffFile($resource, $languageCode, XliffFile $baseFile)
+    private function createXliffFile(string $resource, string $languageCode, XliffFile $baseFile): XliffFile
     {
         $domain = $this->stripDomainPrefix($resource);
         $local  = new XliffFile(
             implode(DIRECTORY_SEPARATOR, [$this->outputDirectory, $languageCode, $domain . '.xlf']),
             $this->logger
         );
-
-        if (!file_exists($local->getFileName())) {
+        $fileName = $local->getFileName();
+        if (null === $fileName) {
+            throw new LogicException('File name not specified');
+        }
+        if (!file_exists($fileName)) {
             // Set base values.
             $local->setDataType('php');
             $local->setOriginal($domain);
