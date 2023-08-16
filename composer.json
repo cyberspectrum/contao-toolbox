@@ -48,6 +48,7 @@
     "allow-plugins": {
       "php-http/discovery": true
     },
+    "bin-dir": "bin",
     "sort-packages": true
   },
   "extra": {
