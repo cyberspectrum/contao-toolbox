@@ -277,10 +277,12 @@ final class ContaoFile extends AbstractFile
     {
         $keys = array_keys($this->langstrings);
 
-        if (empty($keys) && file_exists($this->filename)) {
-            $this->logger->notice('File {file} is empty, deleting...', ['file' => $this->filename]);
-            unlink($this->filename);
-            $this->changed = false;
+        if (empty($keys)) {
+            if (file_exists($this->filename)) {
+                $this->logger->notice('File {file} is empty, deleting...', ['file' => $this->filename]);
+                unlink($this->filename);
+                $this->changed = false;
+            }
             return;
         }
 
