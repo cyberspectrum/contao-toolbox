@@ -100,10 +100,53 @@ final class ContaoResourceDownloader extends AbstractResourceDownloader
     {
         parent::postProcess($file);
         assert($file instanceof ContaoFile);
-        $file->setFileHeader($this->fileHeader);
+
+        // Set file header if either the file is changed or the file header is changed.
+        if ($this->fileHeader !== $this->obtainOldHeader($file) || $file->isChanged()) {
+            $file->setFileHeader($this->fileHeader);
+        }
 
         if ($file->isChanged()) {
             $file->setLastChange(new DateTimeImmutable());
         }
+    }
+
+    /** @return list<string> */
+    private function obtainOldHeader(ContaoFile $file): array
+    {
+        $oldHeader = $file->getFileHeader();
+        // If the file is changed, no need to check if the file header has changed.
+        if (!$file->isChanged()) {
+            return $oldHeader;
+        }
+        // If the file is not changed, check if the file header has changed.
+
+        // Loop over all lines in new file header
+        // Check if the line contains any of the placeholders
+        // If so, perform a preg_match on any line from the source - on match, extract the value and replace in file.
+        foreach ($this->fileHeader as $newLine) {
+            foreach (
+                [
+                    'lastchanged' => '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}',
+                    'language'    => '[a-zA-Z]{2}',
+                    'year'        => '\d{4}'
+                ] as $variable => $matchGroup
+            ) {
+                if (str_contains($newLine, '$$' . $variable . '$$')) {
+                    $pattern = '#^' . str_replace(
+                        '\$\$' . $variable . '\$\$',
+                        '(?<' . $variable . '>' . $matchGroup . ')',
+                        preg_quote($newLine, '#')
+                    ) . '$#';
+                    foreach ($oldHeader as $index => $oldLine) {
+                        if (1 === preg_match($pattern, $oldLine)) {
+                            $oldHeader[$index] = $newLine;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $oldHeader;
     }
 }
