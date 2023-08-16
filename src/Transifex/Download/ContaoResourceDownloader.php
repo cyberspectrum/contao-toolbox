@@ -116,7 +116,7 @@ final class ContaoResourceDownloader extends AbstractResourceDownloader
     {
         $oldHeader = $file->getFileHeader();
         // If the file is changed, no need to check if the file header has changed.
-        if (!$file->isChanged()) {
+        if ($file->isChanged()) {
             return $oldHeader;
         }
         // If the file is not changed, check if the file header has changed.
