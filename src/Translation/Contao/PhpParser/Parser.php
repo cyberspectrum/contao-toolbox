@@ -245,6 +245,7 @@ final class Parser implements ParserInterface
         $this->token = null;
         $this->keyStack = [];
         $this->autoIndex = [];
+        reset($this->tokens);
     }
 
     public function parse(): void

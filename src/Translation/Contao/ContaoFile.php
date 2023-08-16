@@ -271,6 +271,8 @@ final class ContaoFile extends AbstractFile
         $parser = new Parser($this, $this->logger);
         $parser->setContent($data);
         $parser->parse();
+        // We do not want to track this as changed.
+        $this->changed = false;
     }
 
     public function save(): void
