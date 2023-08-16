@@ -66,16 +66,16 @@ jobs:
         run: composer ${{ matrix.composer_install }} --prefer-stable --no-interaction --no-progress
 
       - name: PHP ${{ matrix.php }} Update phpcq
-        run: ./vendor/bin/phpcq self-update --unsigned
+        run: ./bin/phpcq self-update --unsigned
 
       - name: PHP ${{ matrix.php }} Install phpcq toolchain
-        run: ./vendor/bin/phpcq ${{ matrix.phpcq_install }} -v
+        run: ./bin/phpcq ${{ matrix.phpcq_install }} -v
 
       - name: PHP ${{ matrix.php }} Run tests
-        run: ./vendor/bin/phpcq run -v -o github-action -o default ${{ matrix.phpcq_flags }}
+        run: ./bin/phpcq run -v -o github-action -o default ${{ matrix.phpcq_flags }}
 
       - name: PHP ${{ matrix.php }} Build phar
-        run: ./vendor/bin/phpcq run -v box
+        run: ./bin/phpcq run -v box
         if: ${{ success() }} && {{ matrix.phar }}
 
       - name: PHP ${{ matrix.php }} Upload build directory to artifact
